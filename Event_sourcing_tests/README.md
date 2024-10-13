@@ -1,0 +1,1 @@
+Private repository for the students of LINFO2145 (Cloud Computing) of the class 2023-2024. Students should create a private fork of this repository and pull instructions when they are made available.
