@@ -15,5 +15,5 @@ In the project we use the `typescript` client to test the functionnalities of th
 ```bash
 npm run start
 ```
-For more information about the EventStoreDB client for typescript see [this link]('https://developers.eventstore.com/clients/grpc/reading-events.html').
+For more information about the EventStoreDB client for typescript see [this link](https://developers.eventstore.com/clients/grpc/reading-events.html).
 
