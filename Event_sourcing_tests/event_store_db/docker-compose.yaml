@@ -1,0 +1,13 @@
+services:
+  event-store:
+    image: eventstore/eventstore:latest
+    ports: ["2113:2113", "1113:1113"]
+    # --enable-atom-pub-over-http is necessary to use AtomPub
+    # --insecure is necessary to disable HTTPS
+    # command: ["--insecure", "--run-projections=all", "--enable-atom-pub-over-http"]
+    env_file:
+      - shared.env
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure

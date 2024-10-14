@@ -1,0 +1,57 @@
+services:
+  esdb-node1:
+    image: eventstore/eventstore:latest
+    env_file:
+      - shared.env
+    environment:
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.12:2113,172.30.240.13:2113
+      - EVENTSTORE_INT_IP=172.30.240.11
+      - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2111
+    ports:
+      - 2111:2113
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.11
+    restart: unless-stopped
+
+  esdb-node2:
+    image: eventstore/eventstore:latest
+    env_file:
+      - shared.env
+    environment:
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.13:2113
+      - EVENTSTORE_INT_IP=172.30.240.12
+      - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2112
+    ports:
+      - 2112:2113
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.12
+    restart: unless-stopped
+
+  esdb-node3:
+    image: eventstore/eventstore:latest
+    env_file:
+      - shared.env
+    environment:
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.12:2113
+      - EVENTSTORE_INT_IP=172.30.240.13
+      - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2113
+    ports:
+      - 2113:2113
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.13
+    restart: unless-stopped
+
+networks:
+  clusternetwork:
+    name: eventstoredb.local
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.240.0/24
