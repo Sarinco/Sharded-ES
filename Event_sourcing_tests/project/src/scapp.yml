@@ -38,4 +38,3 @@ services:     # list all services for your application
     networks: [ "scapp-net" ]
 networks:
   scapp-net:
-    external: true
