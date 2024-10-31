@@ -1,6 +1,7 @@
 import { EventStoreDBClient, jsonEvent, FORWARDS, START, JSONEventType } from "@eventstore/db-client";
 import { v4 as uuid } from 'uuid';
-import { Product, ProductAddedEvent } from "./types/product";
+import { Product } from "./types/product";
+import { ProductAddedEvent } from "./types/product-events";
 
 // Create a client connected to your local EventStoreDB instance
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
@@ -45,36 +46,52 @@ async function checkProductStream(products: any[]) {
 
 async function addProductsProjection() {
     const projection = `
-      fromStream('products')
-          .when({
-              $init() {
-                  return {};
-              },
-              ProductAdded(state, event) {
-                  const productId = event.data.id;
-                  const initialCount = event.data.count || 0;
-                  if (!state[productId]) {
-                      state[productId] = { 
-                        name: event.data.name,
-                        price: event.data.price,
-                        description: event.data.description,
-                        image: event.data.image,
-                        category: event.data.category,
-                        count: initialCount 
-                      };
-                  }
-              },
-              ProductBought(state, event) {
-                  const productId = event.data.id;
-                  const itemsBought = event.data.count || 0;
-                  if (state[productId]) {
-                      state[productId].count -= itemsBought;
-                  }
-              }
-          })
-          .outputState()
+fromStream('products')
+    .when({
+        $init() {
+            return {};
+        },
+        ProductAdded(state, event) {
+            const productId = event.data.id;
+            const initialCount = event.data.count || 0;
+            if (!state[productId]) {
+                state[productId] = { 
+                name: event.data.name,
+                price: event.data.price,
+                description: event.data.description,
+                image: event.data.image,
+                category: event.data.category,
+                count: initialCount 
+                };
+            }
+        },
+        ProductBought(state, event) {
+            const productId = event.data.id;
+            const itemsBought = event.data.count || 0;
+            if (state[productId]) {
+                state[productId].count -= itemsBought;
+            }
+        },
+        ProductUpdated(state, event) {
+            const productId = event.data.id;
+            const field = event.data.field;
+            const updateValue = event.data.updateValue;
+            if (state[productId]) {
+                state[productId][field] = updateValue;
+            }
+        }
+    })
+.outputState()
     `;
-    await client.createProjection("products-projection", projection);
+    const name = "products-projection";
+    try {
+        await client.createProjection(name, projection);
+        console.log("Projection created successfully");
+    } catch (error: any) {
+        if (!error.message.includes("Conflict"))
+            throw error;
+        console.log(`${name} already exists`);
+    }
 }
 
 const products = [

@@ -13,7 +13,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Use product routes
-app.use('/products', productRoutes);
+app.use('/api/products', productRoutes);
 
 // Start the server
 app.listen(PORT, () => {

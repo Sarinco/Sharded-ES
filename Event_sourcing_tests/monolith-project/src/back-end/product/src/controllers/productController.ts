@@ -1,6 +1,7 @@
 import { EventStoreDBClient, jsonEvent, FORWARDS, START } from "@eventstore/db-client";
 import { v4 as uuid } from 'uuid';
-import { Product, ProductAddedEvent, ProductBoughtEvent, ProductUpdatedEvent } from "../types/product";
+import { Product } from "../types/product";
+import { ProductAddedEvent, ProductBoughtEvent, ProductUpdatedEvent } from "../types/product-events";
 
 // Create a client connected to your local EventStoreDB instance
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
