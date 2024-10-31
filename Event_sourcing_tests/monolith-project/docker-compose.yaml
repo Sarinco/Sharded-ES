@@ -11,7 +11,8 @@ services:
       - "5173:5173"
     environment:
       - PUBLIC_AUTH_SERVICE_URL=http://localhost:80
-      - VITE_PRODUCT_URL=http://gateway:80
+      # Because running on host machine 
+      - VITE_GATEWAY_URL=http://localhost:80
     command: npm run dev -- --host
     depends_on:
       - product

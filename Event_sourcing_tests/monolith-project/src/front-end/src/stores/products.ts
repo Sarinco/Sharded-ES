@@ -4,7 +4,7 @@ import { addToast } from '@stores/toasts';
 import { env } from '$env/dynamic/public';
 // import { Product } from '../types/product';
 
-const PRODUCT_URL = `${import.meta.env.VITE_PRODUCT_URL}/api/products` || 'http://localhost:5000/products';
+const PRODUCT_URL = `${import.meta.env.VITE_GATEWAY_URL}/api/products` || 'http://localhost:80/products';
 console.log('PRODUCT_URL:', PRODUCT_URL);
 
 function createProducts() {
