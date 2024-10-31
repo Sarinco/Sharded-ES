@@ -83,6 +83,20 @@ const product = {
     // Update a product
     update: async (req: any, res: any) => {
         try {
+            console.log("req.body: ", req.body);
+            console.log("Calling the update method with id: ", req.body.id, " and field: ", req.body.field, " and updateValue: ", req.body.updateValue);
+            if (req.body.id === undefined || req.body.id === "") {
+                res.status(400).send("Invalid id");
+                return;
+            }
+            if (req.body.field === undefined || req.body.field === "") {
+                res.status(400).send("Invalid field");
+                return;
+            }
+            if (req.body.updateValue === undefined || req.body.updateValue === "") {
+                res.status(400).send("Invalid updateValue");
+                return;
+            }
             const event = jsonEvent<ProductUpdatedEvent>({
                 type: "ProductUpdated",
                 data: {
