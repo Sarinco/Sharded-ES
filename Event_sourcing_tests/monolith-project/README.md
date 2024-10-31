@@ -13,6 +13,7 @@ docker-compose up
 ```
 
 The front-end and backend are setup to automatically reload when the files are changed.
+There a init-db file that is run in the product service to initialize the database with some products if there is none, but for some reason if there no products in the database it will add them and not start the server so you will need to re-run the command.
 
 
 ## Services
