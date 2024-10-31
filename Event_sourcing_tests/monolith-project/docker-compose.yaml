@@ -18,10 +18,18 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./src/back-end/product:/app
+      - ./utils/types:/app/src/types
     ports:
       - "5000:5000"
     # The watch command will check for changes in the code and restart the server
-    command: npm run watch
+    command: sh boot-in-order.sh 
+    environment:
+      - PORT=5000
+      - DB_ADDRESS=event-store
+      - DB_PORT=2113
+    depends_on:
+      event-store:
+        condition: service_healthy
 
   event-store:
     extends:
