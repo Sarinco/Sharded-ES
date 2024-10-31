@@ -3,18 +3,30 @@ services:
     build: 
       context: ./src/front-end
       dockerfile: Dockerfile
+    volumes:
+      - ./src/front-end:/app
     ports:
       - "3000:3000"
+      - "5173:5173"
     environment:
       - PUBLIC_AUTH_SERVICE_URL=http://localhost:80
-    command: node build
-    networks:
-      - default
+    command: npm run dev -- --host
+
+  product:
+    build:
+      context: ./src/back-end/product
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/back-end/product:/app
+    ports:
+      - "5000:5000"
+    # The watch command will check for changes in the code and restart the server
+    command: npm run watch
+
   event-store:
     extends:
       file: src/back-end/event_store_db/docker-compose.yaml
       service: event-store
-
 
 networks:
   default:
