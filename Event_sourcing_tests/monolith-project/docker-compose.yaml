@@ -1,0 +1,21 @@
+services:
+  frontend:
+    build: 
+      context: ./src/front-end
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PUBLIC_AUTH_SERVICE_URL=http://localhost:80
+    command: node build
+    networks:
+      - default
+  event-store:
+    extends:
+      file: src/back-end/event_store_db/docker-compose.yaml
+      service: event-store
+
+
+networks:
+  default:
+    driver: bridge
