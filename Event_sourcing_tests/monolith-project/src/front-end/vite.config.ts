@@ -9,5 +9,9 @@ export default defineConfig({
 			'@interfaces': path.resolve('./src/interfaces')
 		}
 	},
-	plugins: [sveltekit()]
+	plugins: [sveltekit()],
+    server: {
+        https: false,
+        host: '0.0.0.0'
+    }
 });

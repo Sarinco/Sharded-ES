@@ -1,22 +1,56 @@
 import { derived, writable } from 'svelte/store';
+import axios from 'axios';
+import { addToast } from '@stores/toasts';
+import { env } from '$env/dynamic/public';
+// import { Product } from '../types/product';
 
-export const products = createProducts();
+const PRODUCT_URL = `${import.meta.env.VITE_PRODUCT_URL}/api/products` || 'http://localhost:5000/products';
+console.log('PRODUCT_URL:', PRODUCT_URL);
 
 function createProducts() {
-	const { subscribe, set, update } = writable(staticCatalog());
+	const handleError = (error: any, message: string) => {
+		console.error(`${message}:`, error);
+		addToast({
+			message: `Failed to ${message.toLowerCase()}`,
+			type: 'error',
+			dismissible: true,
+			timeout: 3000,
+		});
+	};
+
+	const getProducts = async () => {
+		try {
+			const response = await axios.get(PRODUCT_URL);
+			const data = response.data;
+			const categorizedProducts = categorizeProducts(data);
+			set(categorizedProducts);
+            console.log('categorizedProducts:', categorizedProducts);
+			return categorizedProducts;
+		} catch (error) {
+			handleError(error, 'get products');
+		}
+	};
+
+	const categorizeProducts = (products: any[]): any => {
+		const categorizedProducts: any = {};
+
+		for (const product of products) {
+			if (!categorizedProducts[product.category]) {
+				categorizedProducts[product.category] = [];
+			}
+
+			categorizedProducts[product.category].push(product);
+		}
+
+		return categorizedProducts;
+	};
+
+	const { subscribe, set, update } = writable(getProducts());
 
 	return {
 		subscribe,
 		update,
 		set,
-		__addProduct: (product) =>
-			update((oldProducts) => {
-				if (!(product.category in oldProducts)) {
-					oldProducts[product.category] = [];
-				}
-				oldProducts[product.category].push({ ...product, id: crypto.randomUUID() });
-				return oldProducts;
-			})
 	};
 }
 function staticCatalog() {
@@ -91,6 +125,9 @@ function staticCatalog() {
 		]
 	};
 }
+
+
+export const products = createProducts();
 
 export const productsMerged = derived(products, ($products) => {
 	return Object.values($products).flat();

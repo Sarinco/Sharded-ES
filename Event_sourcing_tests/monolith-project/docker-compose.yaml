@@ -5,12 +5,16 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./src/front-end:/app
+      - ./utils/types/product.ts:/app/src/types/product.ts
     ports:
       - "3000:3000"
       - "5173:5173"
     environment:
       - PUBLIC_AUTH_SERVICE_URL=http://localhost:80
+      - VITE_PRODUCT_URL=http://gateway:80
     command: npm run dev -- --host
+    depends_on:
+      - product
 
   product:
     build:
@@ -35,6 +39,19 @@ services:
     extends:
       file: src/back-end/event_store_db/docker-compose.yaml
       service: event-store
+
+  gateway:
+    image: nginx:alpine
+    volumes:
+      - ./src/gateway/nginx.conf:/etc/nginx/nginx.conf
+      - ./src/gateway/template-variables:/etc/nginx/templates/10-variables.conf.template:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - product
+    environment:
+      - FRONTEND_URL=http://frontend:3000
 
 networks:
   default:
