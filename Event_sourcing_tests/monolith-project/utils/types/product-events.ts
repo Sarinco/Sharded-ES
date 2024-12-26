@@ -41,7 +41,6 @@ export class ProductAddedEvent {
             })
         }
     }
-
 };
 
 // Buying a product event
@@ -71,8 +70,6 @@ export class ProductBoughtEvent {
             })
         }
     }
-
-
 };
 
 // Updating a product event

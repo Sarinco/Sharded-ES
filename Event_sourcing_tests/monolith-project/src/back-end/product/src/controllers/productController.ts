@@ -1,4 +1,4 @@
-const { Kafka } = require('kafkajs');
+const { Kafka, EachMessagePayload } = require('kafkajs');
 import { v4 as uuid } from 'uuid';
 import { Product } from "../types/product";
 import { ProductAddedEvent, ProductBoughtEvent, ProductUpdatedEvent } from "../types/product-events";
@@ -13,6 +13,7 @@ const client = new Kafka({
 
 
 const producer = client.producer()
+const consumer = client.consumer({ groupId: 'product-group' });
 
 const product = {
     // Retrieve all products
@@ -22,6 +23,17 @@ const product = {
             console.log("Calling the findAll method");
 
             // Retrieve all products form products-projection
+            await consumer.connect();
+            await consumer.subscribe({ topic: 'products', fromBeginning: true });
+
+            await consumer.run({
+                eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
+                    const product: Product = JSON.parse(message.value.toString());
+                    products.push(product);
+                },
+            });
+
+            console.log("Products: ", products);
 
             res.send(products);
         } catch (error) {
@@ -68,7 +80,7 @@ const product = {
         }
     },
 
-    // Buy a product
+   // Buy a product
     buy: async (req: any, res: any) => {
         try {
             console.log("req.body: ", req.body);
