@@ -14,7 +14,7 @@
     "description": "",
     "dependencies": {
         "express": "^4.16.4",
-        "@eventstore/db-client": "^6.2.1",
+        "kafkajs": "^1.16.0",
         "uuid": "^8.3.2"
     },
     "devDependencies": {

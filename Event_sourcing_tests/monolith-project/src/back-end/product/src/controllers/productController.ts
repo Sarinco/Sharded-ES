@@ -1,12 +1,18 @@
-import { EventStoreDBClient, jsonEvent, FORWARDS, START } from "@eventstore/db-client";
+const { Kafka } = require('kafkajs');
 import { v4 as uuid } from 'uuid';
 import { Product } from "../types/product";
 import { ProductAddedEvent, ProductBoughtEvent, ProductUpdatedEvent } from "../types/product-events";
 
 // Create a client connected to your local EventStoreDB instance
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
-const DB_PORT = process.env.DB_PORT || "2113";
-const client = EventStoreDBClient.connectionString(`esdb://${DB_ADDRESS}:${DB_PORT}?tls=false`);
+const DB_PORT = process.env.DB_PORT || "9092";
+const client = new Kafka({
+    clientId: 'event-pipeline',
+    brokers: [`${DB_ADDRESS}:${DB_PORT}`],
+});
+
+
+const producer = client.producer()
 
 const product = {
     // Retrieve all products
@@ -16,11 +22,7 @@ const product = {
             console.log("Calling the findAll method");
 
             // Retrieve all products form products-projection
-            const events: any[] = await client.getProjectionResult("products-projection");
 
-            for (const [id, product] of Object.entries(events)) {
-                products.push(new Product(id, product.name, product.price, product.description, product.image, product.category, product.count));
-            }
             res.send(products);
         } catch (error) {
             console.log("Error in findAll method: ", error);
@@ -31,19 +33,34 @@ const product = {
     // Add a new product
     add: async (req: any, res: any) => {
         try {
-            const event = jsonEvent<ProductAddedEvent>({
-                type: "ProductAdded",
-                data: {
-                    id: uuid(),
-                    name: req.body.name,
-                    price: req.body.price,
-                    description: req.body.description,
-                    image: req.body.image,
-                    category: req.body.category,
-                    count: req.body.count
-                }
+            console.log("Address used: ", `${DB_ADDRESS}:${DB_PORT}`);
+
+            if (req.body.name === undefined || req.body.name === "") {
+                res.status(400).send("Invalid name");
+                return;
+            }
+
+            if (req.body.price === undefined || req.body.price === "") {
+                res.status(400).send("Invalid price");
+                return;
+            }
+
+            const event: ProductAddedEvent = new ProductAddedEvent(
+                uuid(),
+                req.body.name,
+                req.body.price,
+                req.body.description,
+                req.body.image,
+                req.body.category,
+                req.body.count
+            );
+
+            await producer.connect();
+            await producer.send({
+                topic: 'products',
+                messages: [event.toJSON()]
             });
-            await client.appendToStream("products", event);
+
             res.send("Product added successfully");
         } catch (error) {
             console.log("Error in add method: ", error);
@@ -64,14 +81,15 @@ const product = {
                 res.status(400).send("Invalid id");
                 return;
             }
-            const event = jsonEvent<ProductBoughtEvent>({
-                type: "ProductBought",
-                data: {
-                    id: req.body.id,
-                    count: req.body.count
-                }
-            });
-            await client.appendToStream("products", event);
+            // const event = jsonEvent<ProductBoughtEvent>({
+            //     type: "ProductBought",
+            //     data: {
+            //         id: req.body.id,
+            //         count: req.body.count
+            //     }
+            // });
+
+
             res.send("Product bought successfully");
         } catch (error) {
             console.log("Error in buy method: ", error);
@@ -97,15 +115,16 @@ const product = {
                 res.status(400).send("Invalid updateValue");
                 return;
             }
-            const event = jsonEvent<ProductUpdatedEvent>({
-                type: "ProductUpdated",
-                data: {
-                    id: req.body.id,
-                    field: req.body.field,
-                    updateValue: req.body.updateValue
-                }
-            });
-            await client.appendToStream("products", event);
+            // const event = jsonEvent<ProductUpdatedEvent>({
+            //     type: "ProductUpdated",
+            //     data: {
+            //         id: req.body.id,
+            //         field: req.body.field,
+            //         updateValue: req.body.updateValue
+            //     }
+            // });
+
+
             res.send("Product updated successfully");
         } catch (error) {
             console.log("Error in update method: ", error);

@@ -33,11 +33,9 @@ services:
     command: sh boot-in-order.sh 
     environment:
       - PORT=5000
-      - DB_ADDRESS=event-store
-      - DB_PORT=2113
-    depends_on:
-      event-store:
-        condition: service_healthy
+      - DB_ADDRESS=broker
+      - DB_PORT=9092
+
   gateway:
     image: nginx:alpine
     volumes:
