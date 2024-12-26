@@ -1,3 +1,6 @@
+include:
+  - src/back-end/event-pipeline/docker-compose.yaml # Event pipeline service (Kafka)
+
 services:
   frontend:
     build: 
@@ -35,12 +38,6 @@ services:
     depends_on:
       event-store:
         condition: service_healthy
-
-  event-store:
-    extends:
-      file: src/back-end/event_store_db/docker-compose.yaml
-      service: event-store
-
   gateway:
     image: nginx:alpine
     volumes:
