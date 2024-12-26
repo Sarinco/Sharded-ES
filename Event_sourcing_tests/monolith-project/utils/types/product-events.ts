@@ -27,7 +27,7 @@ export class ProductAddedEvent {
         // Return a JSON representation for KafkaJS
         return {
             key: this.id,
-            value: {
+            value: JSON.stringify({
                 type: "ProductAdded",
                 data: {
                     id: this.id,
@@ -38,7 +38,7 @@ export class ProductAddedEvent {
                     category: this.category,
                     count: this.count
                 }
-            }
+            })
         }
     }
 
@@ -62,13 +62,13 @@ export class ProductBoughtEvent {
         // Return a JSON representation for KafkaJS
         return {
             key: this.id,
-            value: {
+            value: JSON.stringify({
                 type: "ProductBought",
                 data: {
                     id: this.id,
                     count: this.count
                 }
-            }
+            })
         }
     }
 
@@ -95,14 +95,14 @@ export class ProductUpdatedEvent {
         // Return a JSON representation for KafkaJS
         return {
             key: this.id,
-            value: {
+            value: JSON.stringify({
                 type: "ProductUpdated",
                 data: {
                     id: this.id,
                     field: this.field,
                     updateValue: this.updateValue
                 }
-            }
+            })
         }
     }
 

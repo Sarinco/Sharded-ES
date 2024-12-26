@@ -30,6 +30,15 @@ The product service is a service that is responsible for managing the products o
 To test it you can use the following curl commands:
 
 ```bash
+curl http://localhost:80/api/products/add \
+   -H "Content-Type: application/json" \-d '{"name": "NAME", "price": 10}'
+```
+This command create a simple product with a name and a price and add it to the database.
+
+
+The rest is not supposed to work now but should later.
+
+```bash
 curl http://localhost:80/api/products/buy \
    -H "Content-Type: application/json" \-d '{"id": "ID", "count": 2}'
 
