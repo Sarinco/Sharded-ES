@@ -17,3 +17,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'metadata' | nc -w 2 localhost 9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
