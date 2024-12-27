@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import productRoutes from './routes/productRoute';
+import stockRoutes from './routes/stockRoute';
 // import productCrud from './crud/productCrud';
 
 const app = express();
@@ -12,8 +12,8 @@ app.get('/', (req: Request, res: Response) => {
     res.send('Hello World!');
 });
 
-// Use product routes
-app.use('/api/products', productRoutes);
+// Use stock routes
+app.use('/api/stock', stockRoutes);
 
 // Start the server
 app.listen(PORT, () => {

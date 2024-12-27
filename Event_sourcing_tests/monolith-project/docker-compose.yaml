@@ -18,14 +18,14 @@ services:
       - VITE_GATEWAY_URL=http://localhost:80
     command: npm run dev -- --host
     depends_on:
-      - product
+      - stock 
 
-  product:
+  stock:
     build:
-      context: ./src/back-end/product
+      context: ./src/back-end/stock
       dockerfile: Dockerfile
     volumes:
-      - ./src/back-end/product:/app
+      - ./src/back-end/stock:/app
       - ./utils/types:/app/src/types
     ports:
       - "5000:5000"
@@ -45,7 +45,7 @@ services:
       - "80:80"
     depends_on:
       - frontend
-      - product
+      - stock
     environment:
       - FRONTEND_URL=http://frontend:3000
 

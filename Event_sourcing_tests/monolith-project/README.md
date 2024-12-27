@@ -22,15 +22,14 @@ There a init-db file that is run in the product service to initialize the databa
 
 The product service is a service that is responsible for managing the products of the project. It has the following endpoints:
 
-- `GET /products`: Get all the products
-- `POST /buy`: Buy a product with a count 
+- `GET /stock`: Get all the products
 - `PUT /`: Update a product
 - `POST /add`: Create a product
 
 To test it you can use the following curl commands:
 
 ```bash
-curl http://localhost:80/api/products/add \
+curl http://localhost:80/api/stock/add \
    -H "Content-Type: application/json" \-d '{"name": "NAME", "price": 10}'
 ```
 This command create a simple product with a name and a price and add it to the database.

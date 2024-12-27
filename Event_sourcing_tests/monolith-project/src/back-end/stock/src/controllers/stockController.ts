@@ -1,7 +1,7 @@
 const { Kafka, EachMessagePayload } = require('kafkajs');
 import { v4 as uuid } from 'uuid';
 import { Product } from "../types/product";
-import { ProductAddedEvent, ProductBoughtEvent, ProductUpdatedEvent } from "../types/product-events";
+import { ProductAddedEvent, ProductBoughtEvent, ProductUpdatedEvent } from "../types/stock-events";
 
 // Create a client connected to your local EventStoreDB instance
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
@@ -13,10 +13,10 @@ const client = new Kafka({
 
 
 const producer = client.producer()
-const consumer = client.consumer({ groupId: 'product-group' });
+const consumer = client.consumer({ groupId: 'stock-group' });
 
-const product = {
-    // Retrieve all products
+const stock = {
+    // Retrieve all stocks
     findAll: async (req: any, res: any) => {
         try {
             const products: Product[] = [];
@@ -80,36 +80,6 @@ const product = {
         }
     },
 
-   // Buy a product
-    buy: async (req: any, res: any) => {
-        try {
-            console.log("req.body: ", req.body);
-            console.log("Calling the buy method with id: ", req.body.id, " and count: ", req.body.count);
-            if (req.body.count <= 0) {
-                res.status(400).send("Invalid count");
-                return;
-            }
-            if (req.body.id === undefined || req.body.id === "") {
-                res.status(400).send("Invalid id");
-                return;
-            }
-            // const event = jsonEvent<ProductBoughtEvent>({
-            //     type: "ProductBought",
-            //     data: {
-            //         id: req.body.id,
-            //         count: req.body.count
-            //     }
-            // });
-
-
-            res.send("Product bought successfully");
-        } catch (error) {
-            console.log("Error in buy method: ", error);
-            res.status(500).send
-        }
-    },
-
-
     // Update a product
     update: async (req: any, res: any) => {
         try {
@@ -146,4 +116,4 @@ const product = {
     }
 }
 
-export default product;
+export default stock;
