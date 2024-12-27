@@ -35,6 +35,8 @@ services:
       - PORT=5000
       - DB_ADDRESS=broker
       - DB_PORT=9092
+    depends_on:
+      - broker
 
   gateway:
     image: nginx:alpine

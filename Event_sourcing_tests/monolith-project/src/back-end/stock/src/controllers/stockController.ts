@@ -2,6 +2,7 @@ const { Kafka, EachMessagePayload } = require('kafkajs');
 import { v4 as uuid } from 'uuid';
 import { Product } from "../types/product";
 import { ProductAddedEvent, ProductBoughtEvent, ProductUpdatedEvent } from "../types/stock-events";
+import { productEventHandler } from "../handlers/productEventHandler";
 
 // Create a client connected to your local EventStoreDB instance
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
@@ -14,6 +15,17 @@ const client = new Kafka({
 
 const producer = client.producer()
 const consumer = client.consumer({ groupId: 'stock-group' });
+consumer.connect();
+consumer.subscribe({ topic: 'products', fromBeginning: true });
+
+const localProducts: Product[] = [];
+consumer.run({
+    eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
+        const product: Product = JSON.parse(message.value.toString());
+        console.log("Product: ", product);
+        productEventHandler(localProducts, product);
+    },
+});
 
 const stock = {
     // Retrieve all stocks
@@ -22,20 +34,7 @@ const stock = {
             const products: Product[] = [];
             console.log("Calling the findAll method");
 
-            // Retrieve all products form products-projection
-            await consumer.connect();
-            await consumer.subscribe({ topic: 'products', fromBeginning: true });
-
-            await consumer.run({
-                eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
-                    const product: Product = JSON.parse(message.value.toString());
-                    products.push(product);
-                },
-            });
-
-            console.log("Products: ", products);
-
-            res.send(products);
+            res.send(localProducts);
         } catch (error) {
             console.log("Error in findAll method: ", error);
             res.status(500).send
