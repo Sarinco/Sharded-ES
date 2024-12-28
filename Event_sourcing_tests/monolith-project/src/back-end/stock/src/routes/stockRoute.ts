@@ -12,5 +12,8 @@ router.post('/add', stock.add);
 // Update a product
 router.put('/', stock.update);
 
+// Delete a product
+router.delete('/', stock.delete);
+
 
 export default router;

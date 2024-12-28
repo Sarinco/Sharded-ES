@@ -104,3 +104,28 @@ export class ProductUpdatedEvent {
     }
 
 };
+
+export class ProductDeletedEvent {
+    id: string;
+
+    constructor(id: string) {
+        this.id = id;
+    }
+
+    static fromJSON(json: any): ProductDeletedEvent {
+        return new ProductDeletedEvent(json.id);
+    }
+
+    toJSON(): any {
+        // Return a JSON representation for KafkaJS
+        return {
+            key: this.id,
+            value: JSON.stringify({
+                type: "ProductDeleted",
+                data: {
+                    id: this.id
+                }
+            })
+        }
+    }
+}
