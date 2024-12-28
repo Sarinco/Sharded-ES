@@ -23,20 +23,24 @@ producer.start().then(() => {
 });
 
 const consumer = client.consumer({ groupId: 'stock-group' });
-consumer.connect();
-consumer.subscribe({ topic: 'products', fromBeginning: true });
-
+const topic = 'products';
 const localProducts: Product[] = [];
 
+const run = async () => {
+    await consumer.connect()
+    await consumer.subscribe({ topic, fromBeginning: true })
+    // Small local equivalent of CQRS for the stock service
+    await consumer.run({
+        eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
+            const product: Product = JSON.parse(message.value.toString());
+            console.log("ProductEvent: ", product);
+            productEventHandler(localProducts, product);
+        },
+    });
+}
 
-// Small local equivalent of CQRS for the stock service
-consumer.run({
-    eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
-        const product: Product = JSON.parse(message.value.toString());
-        console.log("ProductEvent: ", product);
-        productEventHandler(localProducts, product);
-    },
-});
+run().catch(e => console.error(`[stock/consumer] ${e.message}`, e))
+
 
 const stock = {
     // Retrieve all stocks
@@ -92,8 +96,8 @@ const stock = {
     update: async (req: any, res: any) => {
         try {
             console.log("req.body: ", req.body);
-            console.log("Calling the update method with id: ", req.body.id, " and field: ", req.body.field, " and updateValue: ", req.body.updateValue);
-            if (req.body.id === undefined || req.body.id === "") {
+            console.log("Calling the update method with id: ", req.param.id, " and field: ", req.body.field, " and updateValue: ", req.body.updateValue);
+            if (req.param.id === undefined || req.param.id === "") {
                 res.status(400).send("Invalid id");
                 return;
             }
@@ -107,7 +111,7 @@ const stock = {
             }
 
             const event: ProductUpdatedEvent = new ProductUpdatedEvent(
-                req.body.id,
+                req.param.id,
                 req.body.field,
                 req.body.updateValue
             )

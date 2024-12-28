@@ -10,10 +10,10 @@ router.get('/', stock.findAll);
 router.post('/add', stock.add);
 
 // Update a product
-router.put('/', stock.update);
+router.put('/:id', stock.update);
 
 // Delete a product
-router.delete('/', stock.delete);
+router.delete('/:id', stock.delete);
 
 
 export default router;

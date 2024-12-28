@@ -38,15 +38,14 @@ curl http://localhost:80/api/stock/add \
 ```
 This command create a simple product with a name and a price and add it to the database.
 
-
-The rest is not supposed to work now but should later.
+```bash
+ curl -X DELETE "http://localhost:80/api/stock/5c729e31-8d5a-47e0-ab54-fb1233bd791d"
+```
+This command deletes the product with the id `5c729e31-8d5a-47e0-ab54-fb1233bd791d`.
 
 ```bash
-curl http://localhost:80/api/products/buy \
-   -H "Content-Type: application/json" \-d '{"id": "ID", "count": 2}'
-
-curl http://localhost:80/api/products 
-
-curl -X PUT http://localhost:80/api/products/ \
-   -H "Content-Type: application/json" \-d '{"id": "ID", "field": "field_to_change", "updateValue": "new_value"}'
+curl +PUT "http://localhost:80/api/stock/2f75b6cc-00d1-4c84-aaca-adbcd7cf8166" \                          ─╯
+-H "Content-Type: application/json" \
+-d '{"field": "name", "updateValue": "banana1"}'
 ```
+This command updates the product with the id `2f75b6cc-00d1-4c84-aaca-adbcd7cf8166` with the new name `banana1`. !! NOT WORKING YET !!
