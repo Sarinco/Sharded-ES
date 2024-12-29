@@ -20,6 +20,29 @@ services:
     depends_on:
       - stock 
 
+
+  ## STOCK
+  db-stock:
+    extends:
+      file: src/back-end/cassandra-db/docker-compose.yaml
+      service: cassandra
+    ports:
+      - "5001:9042" # Expose the default Cassandra CQL port
+    environment:
+      CASSANDRA_CLUSTER_NAME: "stock"
+      CASSANDRA_SEEDS: "db-stock"
+      CASSANDRA_START_RPC: "true" # Remote procedure call
+      CASSANDRA_BROADCAST_ADDRESS: "db-stock"
+      CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
+  init-db-stock:
+    image: cassandra    
+    depends_on:
+      - db-stock # IMPORTANT: this init container can only start up after the original container is started
+    restart: "no" # IMPORTANT: the restart should be set to "no" so that the init container is used only once after the original container is started
+    entrypoint: [ "/init.sh" ] # executing the init script
+    volumes:
+      - ./src/back-end/cassandra-db/init-scripts/stock-init.sh:/init.sh # the init script is added via volumes
+
   stock:
     build:
       context: ./src/back-end/stock

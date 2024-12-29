@@ -4,6 +4,7 @@ import { Product } from "../types/product";
 import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/stock-events";
 import { productEventHandler } from "../handlers/productEventHandler";
 import { ProducerFactory } from "./producerFactory";
+import { Cassandra } from './cassandra';
 
 // Create a client connected to your local EventStoreDB instance
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
@@ -13,6 +14,10 @@ const client = new Kafka({
     brokers: [`${DB_ADDRESS}:${DB_PORT}`],
 });
 
+
+// Connect to the Cassandra database
+const cassandra = new Cassandra();
+cassandra.connect();
 
 // const producer = client.producer()
 const producer = new ProducerFactory('event-pipeline', [`${DB_ADDRESS}:${DB_PORT}`]);
@@ -49,7 +54,7 @@ const stock = {
             res.send(localProducts);
         } catch (error) {
             console.log("Error in findAll method: ", error);
-            res.status(500).send
+            res.status(500).send(error);
         }
     },
 
@@ -84,11 +89,11 @@ const stock = {
                 res.send("Product added successfully");
             }).catch((error: any) => {
                 console.log("Error in add method: ", error);
-                res.status(500).send
+                res.status(500).send(error);
             });
         } catch (error) {
             console.log("Error in add method: ", error);
-            res.status(500).send
+            res.status(500).send(error);
         }
     },
 
@@ -124,12 +129,12 @@ const stock = {
                 res.send("Product updated successfully");
             }).catch((error: any) => {
                 console.log("Error in update method: ", error);
-                res.status(500).send
+                res.status(500).send(error);
             });
 
         } catch (error) {
             console.log("Error in update method: ", error);
-            res.status(500).send
+            res.status(500).send(error);
 
         }
     },
@@ -153,12 +158,12 @@ const stock = {
                 res.send("Product deleted successfully");
             }).catch((error: any) => {
                 console.log("Error in delete method: ", error);
-                res.status(500).send
+                res.status(500).send(error);
             });
 
         } catch (error) {
             console.log("Error in delete method: ", error);
-            res.status(500).send
+            res.status(500).send(error);
         }
     }
 }
