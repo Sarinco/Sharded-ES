@@ -2,6 +2,11 @@ version: '3.9'
 services:
   cassandra:
     image: cassandra:4.0
-    container_name: cassandra
     ports:
       - "9042:9042" # Expose the default Cassandra CQL port
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh --execute 'DESCRIBE keyspaces;'"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+

@@ -7,7 +7,7 @@ const router = Router();
 router.get('/', stock.findAll);
 
 // Add a new product
-router.post('/add', stock.add);
+router.post('/', stock.add);
 
 // Update a product
 router.put('/:id', stock.update);

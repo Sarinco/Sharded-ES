@@ -1,7 +1,6 @@
 services:
   broker:
     image: apache/kafka:latest
-    container_name: broker
     ports:
       - "9092:9092"
       - "9093:9093"

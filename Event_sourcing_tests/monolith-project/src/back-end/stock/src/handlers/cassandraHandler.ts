@@ -3,13 +3,15 @@ import cassandra from 'cassandra-driver';
 
 export class Cassandra {
     private client: cassandra.Client;
+    private keyspace: string;
 
-    constructor() {
+    constructor(keyspace: string) {
         this.client = new cassandra.Client({
             contactPoints: ['db-stock'],
             localDataCenter: 'datacenter1',
             keyspace: 'products',
         });
+        this.keyspace = keyspace;
     }
 
     async connect() {
@@ -22,13 +24,13 @@ export class Cassandra {
         }
     }
 
-    async ensureKeyspace() {
-        const query = `CREATE KEYSPACE IF NOT EXISTS products WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`;
+    async insert(table: string, values: string) {
+        const query = `INSERT INTO ${this.keyspace}.${table} VALUES '${values}'`;
         try {
             await this.client.execute(query);
-            console.log('Keyspace "products" is ready');
+            console.log('Inserted data into Cassandra');
         } catch (err) {
-            console.error('Failed to create keyspace "products"', err);
+            console.error('Failed to insert data into Cassandra', err);
             process.exit(1);
         }
     }

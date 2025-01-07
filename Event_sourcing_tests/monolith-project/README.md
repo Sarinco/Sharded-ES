@@ -29,10 +29,10 @@ The product service is a service that is responsible for managing the products o
 To test it you can use the following curl commands:
 
 ```bash
-curl http://localhost:80/api/stock/add \
+curl http://localhost:80/api/stock/ \
    -H "Content-Type: application/json" \-d '{"name": "NAME", "price": 10}'
 
-curl http://localhost:80/api/stock/add \
+curl http://localhost:80/api/stock/ \
    -H "Content-Type: application/json" \-d '{"name": "banana", "price": 10, "description": "Just a banana", "image": "https://plus.unsplash.com/premium_photo-1724250081106-4bb1be9bf950?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmFuYW5hfGVufDB8fDB8fHww", "count": 20, "category": "Fruits"}'
 # For a nice example of a banana
 ```
@@ -44,7 +44,7 @@ This command create a simple product with a name and a price and add it to the d
 This command deletes the product with the id `5c729e31-8d5a-47e0-ab54-fb1233bd791d`.
 
 ```bash
-curl +PUT "http://localhost:80/api/stock/2f75b6cc-00d1-4c84-aaca-adbcd7cf8166" \                          ─╯
+curl +PUT "http://localhost:80/api/stock/2f75b6cc-00d1-4c84-aaca-adbcd7cf8166" \
 -H "Content-Type: application/json" \
 -d '{"field": "name", "updateValue": "banana1"}'
 ```

@@ -34,14 +34,20 @@ services:
       CASSANDRA_START_RPC: "true" # Remote procedure call
       CASSANDRA_BROADCAST_ADDRESS: "db-stock"
       CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
-  init-db-stock:
-    image: cassandra    
-    depends_on:
-      - db-stock # IMPORTANT: this init container can only start up after the original container is started
-    restart: "no" # IMPORTANT: the restart should be set to "no" so that the init container is used only once after the original container is started
-    entrypoint: [ "/init.sh" ] # executing the init script
     volumes:
-      - ./src/back-end/cassandra-db/init-scripts/stock-init.sh:/init.sh # the init script is added via volumes
+      - ./src/back-end/cassandra-db/init-scripts/stock.cql:/docker-entrypoint-initdb.d/stock.cql
+
+  # db-stock-init:     
+  #   image: nuvo/docker-cqlsh
+  #   depends_on:
+  #     db-stock:
+  #       condition: service_healthy
+  #   environment:
+  #     - CQLSH_HOST=db-stock
+  #     - CQLSH_PORT=9042
+  #     - CQLSH_VERSION=3.4.6
+  #   volumes:
+  #     - ./src/back-end/cassandra-db/init-scripts/stock.cql:/scripts/data.cql
 
   stock:
     build:

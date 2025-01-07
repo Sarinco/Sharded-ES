@@ -3,8 +3,8 @@ import { v4 as uuid } from 'uuid';
 import { Product } from "../types/product";
 import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/stock-events";
 import { productEventHandler } from "../handlers/productEventHandler";
-import { ProducerFactory } from "./producerFactory";
-import { Cassandra } from './cassandra';
+import { ProducerFactory } from "../handlers/kafkaHandler";
+import { Cassandra } from '../handlers/cassandraHandler';
 
 // Create a client connected to your local EventStoreDB instance
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
@@ -14,10 +14,13 @@ const client = new Kafka({
     brokers: [`${DB_ADDRESS}:${DB_PORT}`],
 });
 
+// For the Cassandra database
+const KEYSPACE = 'products';
 
 // Connect to the Cassandra database
-const cassandra = new Cassandra();
+const cassandra = new Cassandra(KEYSPACE);
 cassandra.connect();
+
 
 // const producer = client.producer()
 const producer = new ProducerFactory('event-pipeline', [`${DB_ADDRESS}:${DB_PORT}`]);
