@@ -9,7 +9,7 @@ export class Cassandra {
         this.client = new cassandra.Client({
             contactPoints: ['db-stock'],
             localDataCenter: 'datacenter1',
-            keyspace: 'products',
+            keyspace: keyspace,
         });
         this.keyspace = keyspace;
     }
