@@ -7,23 +7,25 @@ import { ProducerFactory } from "../handlers/kafkaHandler";
 import { Cassandra } from '../handlers/cassandraHandler';
 
 // Create a client connected to your local EventStoreDB instance
-const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
-const DB_PORT = process.env.DB_PORT || "9092";
+const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
+const EVENT_PORT = process.env.EVENT_PORT || "9092";
 const client = new Kafka({
     clientId: 'event-pipeline',
-    brokers: [`${DB_ADDRESS}:${DB_PORT}`],
+    brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
 });
 
 // For the Cassandra database
-const KEYSPACE = 'products';
+const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
+const DB_PORT = process.env.DB_PORT || "9042";
+const KEYSPACE = process.env.KEYSPACE || "stock";
 
 // Connect to the Cassandra database
-const cassandra = new Cassandra(KEYSPACE);
+const cassandra = new Cassandra(KEYSPACE, [`${DB_ADDRESS}:${DB_PORT}`]);
 cassandra.connect();
 
 
 // const producer = client.producer()
-const producer = new ProducerFactory('event-pipeline', [`${DB_ADDRESS}:${DB_PORT}`]);
+const producer = new ProducerFactory('event-pipeline', [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
 producer.start().then(() => {
     console.log("Producer started successfully");
 }).catch((error: any) => {
@@ -42,7 +44,7 @@ const run = async () => {
         eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
             const product: Product = JSON.parse(message.value.toString());
             console.log("ProductEvent: ", product);
-            productEventHandler(localProducts, product);
+            productEventHandler(cassandra, product);
         },
     });
 }
@@ -54,7 +56,11 @@ const stock = {
     // Retrieve all stocks
     findAll: async (req: any, res: any) => {
         try {
-            res.send(localProducts);
+            // Get the products from the Cassandra database
+            const query = `SELECT * FROM ${KEYSPACE}.product`;
+            const result = await cassandra.client.execute(query);
+            console.log("Result: ", result.rows);
+            res.send(result.rows);
         } catch (error) {
             console.log("Error in findAll method: ", error);
             res.status(500).send(error);

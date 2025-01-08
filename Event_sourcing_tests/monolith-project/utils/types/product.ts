@@ -17,4 +17,12 @@ export class Product {
         this.category = category;
         this.count = count;
     }
+
+    static getColumsList(): string {
+        return '(id, name, price, description, image, category, count)';
+    }
+
+    createCQL(): string {
+        return `(${this.id}, '${this.name}', ${this.price}, '${this.description}', '${this.image}', '${this.category}', ${this.count})`;
+    }
 }

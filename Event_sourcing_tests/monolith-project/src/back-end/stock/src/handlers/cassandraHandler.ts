@@ -2,12 +2,12 @@ import cassandra from 'cassandra-driver';
 
 
 export class Cassandra {
-    private client: cassandra.Client;
+    public client: cassandra.Client;
     private keyspace: string;
 
-    constructor(keyspace: string) {
+    constructor(keyspace: string, contactPoints: string[]) {
         this.client = new cassandra.Client({
-            contactPoints: ['db-stock'],
+            contactPoints: contactPoints,
             localDataCenter: 'datacenter1',
             keyspace: keyspace,
         });
@@ -24,8 +24,8 @@ export class Cassandra {
         }
     }
 
-    async insert(table: string, values: string) {
-        const query = `INSERT INTO ${this.keyspace}.${table} VALUES '${values}'`;
+    async insert(table: string, colunms: string, values: string) {
+        const query = `INSERT INTO ${this.keyspace}.${table} ${colunms} VALUES ${values}`;
         try {
             await this.client.execute(query);
             console.log('Inserted data into Cassandra');

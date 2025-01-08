@@ -1,55 +1,47 @@
 import { Product } from "../types/product";
 import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/stock-events";
+import { Cassandra } from './cassandraHandler';
 
 // Handle event and update the state of the product list
-export function productEventHandler(state: Product[], event: any) {
+export function productEventHandler(cassandra: Cassandra, event: any) {
     switch (event.type) {
         case "ProductAdded":
             const productAddedEvent = event.data as ProductAddedEvent;
-            state.push(new Product(productAddedEvent.id, productAddedEvent.name, productAddedEvent.price, productAddedEvent.description, productAddedEvent.image, productAddedEvent.category, productAddedEvent.count));
-            console.log("Product added successfully");
+            const newProduct = new Product(
+                productAddedEvent.id,
+                productAddedEvent.name,
+                productAddedEvent.price,
+                productAddedEvent.description,
+                productAddedEvent.image,
+                productAddedEvent.category,
+                productAddedEvent.count
+            );  
+            cassandra.insert('product', Product.getColumsList(), newProduct.createCQL());
+
             break;
         case "ProductDeleted":
             const productDeletedEvent = event.data as ProductDeletedEvent;
-            const index = state.findIndex(product => product.id === productDeletedEvent.id);
-            if (index !== -1) {
-                state.splice(index, 1);
+            const query = `DELETE FROM product WHERE id = ?`;
+            cassandra.client.execute(query, [productDeletedEvent.id]).then(() => {
                 console.log("Product deleted successfully");
-            } else {
-                console.log("Product not found");
-            }
+            }).catch((error: any) => {
+                console.log("Error in delete method: ", error);
+            })
+
             break;
         case "ProductUpdated":
             const productUpdatedEvent = event.data as ProductUpdatedEvent;
-            const product = state.find(product => product.id === productUpdatedEvent.id);
-            if (product) {
-                switch (productUpdatedEvent.field) {
-                    case "name":
-                        product.name = productUpdatedEvent.updateValue;
-                        break;
-                    case "price":
-                        product.price = parseFloat(productUpdatedEvent.updateValue);
-                        break;
-                    case "description":
-                        product.description = productUpdatedEvent.updateValue;
-                        break;
-                    case "image":
-                        product.image = productUpdatedEvent.updateValue;
-                        break;
-                    case "category":
-                        product.category = productUpdatedEvent.updateValue;
-                        break;
-                    case "count":
-                        product.count = parseInt(productUpdatedEvent.updateValue);
-                        break;
-                    default:
-                        console.log("Invalid field");
-                        break;
-                }
+            const id = productUpdatedEvent.id;
+            const field = productUpdatedEvent.field;
+            const updateValue = productUpdatedEvent.updateValue;
+
+            const queryUpdate = `UPDATE product SET ${field} = ? WHERE id = ?`;
+            cassandra.client.execute(queryUpdate, [updateValue, id]).then(() => {
                 console.log("Product updated successfully");
-            } else {
-                console.log("Product not found");
-            }
+            }).catch((error: any) => {
+                console.log("Error in update method: ", error);
+            })
+
             break;
             
         default:
