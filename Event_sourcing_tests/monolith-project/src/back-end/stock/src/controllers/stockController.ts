@@ -13,6 +13,7 @@ const client = new Kafka({
     clientId: 'event-pipeline',
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
 });
+const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
 
 // For the Cassandra database
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
@@ -25,7 +26,7 @@ cassandra.connect();
 
 
 // const producer = client.producer()
-const producer = new ProducerFactory('event-pipeline', [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
+const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
 producer.start().then(() => {
     console.log("Producer started successfully");
 }).catch((error: any) => {
@@ -34,7 +35,6 @@ producer.start().then(() => {
 
 const consumer = client.consumer({ groupId: 'stock-group' });
 const topic = 'products';
-const localProducts: Product[] = [];
 
 const run = async () => {
     await consumer.connect()
@@ -60,6 +60,10 @@ const stock = {
             const query = `SELECT * FROM ${KEYSPACE}.product`;
             const result = await cassandra.client.execute(query);
             console.log("Result: ", result.rows);
+            result.rows.forEach(row => {
+                console.log(row);
+            });
+
             res.send(result.rows);
         } catch (error) {
             console.log("Error in findAll method: ", error);
@@ -110,8 +114,8 @@ const stock = {
     update: async (req: any, res: any) => {
         try {
             console.log("req.body: ", req.body);
-            console.log("Calling the update method with id: ", req.param.id, " and field: ", req.body.field, " and updateValue: ", req.body.updateValue);
-            if (req.param.id === undefined || req.param.id === "") {
+            console.log("Calling the update method with id: ", req.params.id, " and field: ", req.body.field, " and updateValue: ", req.body.updateValue);
+            if (req.params.id === undefined || req.params.id === "") {
                 res.status(400).send("Invalid id");
                 return;
             }
@@ -124,8 +128,42 @@ const stock = {
                 return;
             }
 
+            let updateValue: any = req.body.updateValue;
+            switch (req.body.field) {
+                case "price":
+                    try {
+                        updateValue = parseFloat(updateValue);
+                    } catch (error) {
+                        console.log("Invalid price");
+                        res.status(400).send("Invalid price");
+                        return;
+                    }
+                    break;
+                case "count":
+                    try {
+                        updateValue = parseInt(updateValue);
+                    } catch (error) {
+                        console.log("Invalid count");
+                        res.status(400).send("Invalid count");
+                        return;
+                    }
+                    break;
+                case "name":
+                    break;
+                case "description":
+                    break;
+                case "image":
+                    break;
+                case "category":
+                    break;
+                default:
+                    console.log("Invalid field");
+                    res.status(400).send("Invalid field");
+                    return;
+            }
+
             const event: ProductUpdatedEvent = new ProductUpdatedEvent(
-                req.param.id,
+                req.params.id,
                 req.body.field,
                 req.body.updateValue
             )
@@ -134,7 +172,7 @@ const stock = {
                 'products',
                 event.toJSON()
             ).then(() => {
-                console.log("Product updated successfully");
+                console.log("Product updated sent successfully");
                 res.send("Product updated successfully");
             }).catch((error: any) => {
                 console.log("Error in update method: ", error);
@@ -163,7 +201,7 @@ const stock = {
                 'products',
                 event.toJSON()
             ).then(() => {
-                console.log("Product deleted successfully");
+                console.log("Product deleted sent successfully");
                 res.send("Product deleted successfully");
             }).catch((error: any) => {
                 console.log("Error in delete method: ", error);

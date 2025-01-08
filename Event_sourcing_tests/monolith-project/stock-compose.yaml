@@ -22,6 +22,8 @@ services:
         condition: service_healthy
       db-stock:
         condition: service_healthy
+      db-stock-init:
+        condition: service_completed_successfully
   db-stock:
     extends:
       file: src/back-end/cassandra-db/docker-compose.yaml

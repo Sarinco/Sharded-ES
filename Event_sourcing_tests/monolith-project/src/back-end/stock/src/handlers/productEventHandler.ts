@@ -22,8 +22,8 @@ export function productEventHandler(cassandra: Cassandra, event: any) {
         case "ProductDeleted":
             const productDeletedEvent = event.data as ProductDeletedEvent;
             const query = `DELETE FROM product WHERE id = ?`;
-            cassandra.client.execute(query, [productDeletedEvent.id]).then(() => {
-                console.log("Product deleted successfully");
+            cassandra.client.execute(query, [productDeletedEvent.id], { prepare: true }).then(() => {
+                console.log("Product deleted successfully in the Database");
             }).catch((error: any) => {
                 console.log("Error in delete method: ", error);
             })
@@ -33,11 +33,40 @@ export function productEventHandler(cassandra: Cassandra, event: any) {
             const productUpdatedEvent = event.data as ProductUpdatedEvent;
             const id = productUpdatedEvent.id;
             const field = productUpdatedEvent.field;
-            const updateValue = productUpdatedEvent.updateValue;
+            let updateValue: any = productUpdatedEvent.updateValue;
+
+            switch (field) {
+                case "name":
+                    break;
+                case "price":
+                    try {
+                        updateValue = parseFloat(updateValue);
+                    } catch (error) {
+                        console.log("Invalid price");
+                        return;
+                    }
+                case "description":
+                    break;
+                case "image":
+                    break;
+                case "category":
+                    break;
+                case "count":
+                    try {
+                        updateValue = parseInt(updateValue);
+                    } catch (error) {
+                        console.log("Invalid count");
+                        return;
+                    }
+                default:
+                    console.log("Invalid field");
+                    return;
+            }
+            console.debug("Updating product with id: ", id, " field: ", field, " value: ", updateValue);
 
             const queryUpdate = `UPDATE product SET ${field} = ? WHERE id = ?`;
-            cassandra.client.execute(queryUpdate, [updateValue, id]).then(() => {
-                console.log("Product updated successfully");
+            cassandra.client.execute(queryUpdate, [updateValue, id], { prepare: true }).then(() => {
+                console.log("Product updated successfully in the Database");
             }).catch((error: any) => {
                 console.log("Error in update method: ", error);
             })

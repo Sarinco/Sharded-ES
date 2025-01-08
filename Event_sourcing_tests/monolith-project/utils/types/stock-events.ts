@@ -76,9 +76,9 @@ export class ProductBoughtEvent {
 export class ProductUpdatedEvent {
     id: string;
     field: string;
-    updateValue: string;
+    updateValue: any;
 
-    constructor(id: string, field: string, updateValue: string) {
+    constructor(id: string, field: string, updateValue: any) {
         this.id = id;
         this.field = field;
         this.updateValue = updateValue;
