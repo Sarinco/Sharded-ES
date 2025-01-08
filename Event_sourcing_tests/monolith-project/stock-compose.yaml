@@ -1,0 +1,49 @@
+services:
+  stock:
+    build:
+      context: ./src/back-end/stock
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/back-end/stock:/app
+      - ./utils/types:/app/src/types
+    ports:
+      - "5000:5000"
+    # The watch command will check for changes in the code and restart the server
+    command: sh boot-in-order.sh 
+    environment:
+      PORT: ${STOCK_PORT} 
+      DB_ADDRESS: ${DB_STOCK_HOST}
+      DB_PORT: ${DB_STOCK_PORT}
+      DB_KEYSPACE: ${DB_STOCK_KEYSPACE} 
+      EVENT_ADDRESS: ${EVENT_HOST} 
+      EVENT_PORT: ${EVENT_PORT} 
+    depends_on:
+      broker:
+        condition: service_healthy
+      db-stock:
+        condition: service_healthy
+  db-stock:
+    extends:
+      file: src/back-end/cassandra-db/docker-compose.yaml
+      service: cassandra
+    ports:
+      - "${DB_STOCK_PORT}:9042" # Expose the default Cassandra CQL port
+    environment:
+      CASSANDRA_CLUSTER_NAME: "stock"
+      CASSANDRA_SEEDS: "db-stock"
+      CASSANDRA_START_RPC: "true" # Remote procedure call
+      CASSANDRA_BROADCAST_ADDRESS: "db-stock"
+      CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
+    volumes:
+      - ./src/back-end/cassandra-db/init-scripts/stock.cql:/docker-entrypoint-initdb.d/init-database.cql
+  db-stock-init:
+    image: cassandra:latest
+    depends_on:
+      db-stock:
+        condition: service_healthy
+    environment:
+      DB_STOCK_HOST: ${DB_STOCK_HOST}
+    volumes:
+      - ./src/back-end/cassandra-db/init-scripts/stock.cql:/schema.cql
+    command: ["/bin/bash", "-c", "sleep 5 && echo loading cassandra keyspace using $DB_STOCK_HOST && cqlsh $DB_STOCK_HOST -f /schema.cql"]
+

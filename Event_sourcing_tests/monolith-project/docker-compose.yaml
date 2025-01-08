@@ -1,5 +1,6 @@
 include:
   - src/back-end/event-pipeline/docker-compose.yaml # Event pipeline service (Kafka)
+  - stock-compose.yaml # Stock services
 
 services:
   frontend:
@@ -19,55 +20,6 @@ services:
     command: npm run dev -- --host
     depends_on:
       - stock 
-
-
-  ## STOCK
-  db-stock:
-    extends:
-      file: src/back-end/cassandra-db/docker-compose.yaml
-      service: cassandra
-    ports:
-      - "5001:9042" # Expose the default Cassandra CQL port
-    environment:
-      CASSANDRA_CLUSTER_NAME: "stock"
-      CASSANDRA_SEEDS: "db-stock"
-      CASSANDRA_START_RPC: "true" # Remote procedure call
-      CASSANDRA_BROADCAST_ADDRESS: "db-stock"
-      CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
-    volumes:
-      - ./src/back-end/cassandra-db/init-scripts/stock.cql:/docker-entrypoint-initdb.d/stock.cql
-
-  # db-stock-init:     
-  #   image: nuvo/docker-cqlsh
-  #   depends_on:
-  #     db-stock:
-  #       condition: service_healthy
-  #   environment:
-  #     - CQLSH_HOST=db-stock
-  #     - CQLSH_PORT=9042
-  #     - CQLSH_VERSION=3.4.6
-  #   volumes:
-  #     - ./src/back-end/cassandra-db/init-scripts/stock.cql:/scripts/data.cql
-
-  stock:
-    build:
-      context: ./src/back-end/stock
-      dockerfile: Dockerfile
-    volumes:
-      - ./src/back-end/stock:/app
-      - ./utils/types:/app/src/types
-    ports:
-      - "5000:5000"
-    # The watch command will check for changes in the code and restart the server
-    command: sh boot-in-order.sh 
-    environment:
-      - PORT=5000
-      - DB_ADDRESS=broker
-      - DB_PORT=9092
-    depends_on:
-      broker:
-        condition: service_healthy
-
   gateway:
     image: nginx:alpine
     volumes:

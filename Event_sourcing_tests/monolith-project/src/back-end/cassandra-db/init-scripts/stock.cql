@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS stock.product (
     id UUID PRIMARY KEY,
     name TEXT,
     price DECIMAL,
-    description TEXT
-    image TEXT
-    category TEXT
+    description TEXT,
+    image TEXT,
+    category TEXT,
     count INT
 );
