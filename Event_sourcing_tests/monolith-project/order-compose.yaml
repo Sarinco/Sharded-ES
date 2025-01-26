@@ -1,7 +1,7 @@
 services:
   orders:
     build:
-      context: ./src/back-end/stock
+      context: ./src/back-end/orders
       dockerfile: Dockerfile
     volumes:
       - ./src/back-end/orders:/app
@@ -9,4 +9,5 @@ services:
     ports:
       - "5050:5050"
     command: 
-      - npm run watch
+      - sh boot-in-roder.sh
+
