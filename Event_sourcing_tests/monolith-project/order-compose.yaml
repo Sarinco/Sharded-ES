@@ -1,0 +1,12 @@
+services:
+  orders:
+    build:
+      context: ./src/back-end/stock
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/back-end/orders:/app
+      - ./utils/types:/app/src/types
+    ports:
+      - "5050:5050"
+    command: 
+      - npm run watch
