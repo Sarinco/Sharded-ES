@@ -1,18 +1,21 @@
 {
-  "name": "orders",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "watch": "nodemon --watch src --exec ts-node src/server.ts"
-  },
-  "dependencies": {
-    "express": "^4.21.2",
-    "nodejs": "^0.0.0",
-    "typescript": "^5.7.3"
-  },
-  "devDependencies": {
-    "@types/express": "^5.0.0",
-    "nodemon": "^3.1.9",
-    "ts-node": "^10.9.2"
-  }
+    "name": "orders",
+    "version": "1.0.0",
+    "main": "server.js",
+    "scripts": {
+        "start": "node dist/server.js",
+        "watch": "nodemon --watch 'src/**/*' --exec 'ts-node' src/server.ts",
+        "build": "tsc"
+    },
+    "dependencies": {
+        "express": "^4.21.2",
+        "nodejs": "^0.0.0",
+        "typescript": "^5.7.3"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.0",
+        "nodemon": "^3.1.9",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.6.3"
+    }
 }

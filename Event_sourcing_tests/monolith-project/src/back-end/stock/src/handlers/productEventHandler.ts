@@ -51,7 +51,7 @@ export function productEventHandler(cassandra: Cassandra, event: any) {
                     break;
                 case "category":
                     break;
-                case "count":
+                case 'count':
                     try {
                         updateValue = parseInt(updateValue);
                     } catch (error) {
@@ -59,7 +59,7 @@ export function productEventHandler(cassandra: Cassandra, event: any) {
                         return;
                     }
                 default:
-                    console.log("Invalid field");
+                    console.log("Invalid field: ", field);
                     return;
             }
             console.debug("Updating product with id: ", id, " field: ", field, " value: ", updateValue);

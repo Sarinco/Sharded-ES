@@ -8,6 +8,8 @@ services:
       - ./utils/types:/app/src/types
     ports:
       - "5050:5050"
-    command: 
-      - sh boot-in-roder.sh
+    command: sh boot-in-order.sh
+    depends_on:
+      broker:
+        condition: service_healthy
 
