@@ -12,4 +12,32 @@ services:
     depends_on:
       broker:
         condition: service_healthy
-
+      db-orders:
+        condition: service_healthy
+      db-orders-init:
+        condition: service_completed_successfully
+  db-orders:
+    extends:
+      file: src/back-end/cassandra-db/docker-compose.yaml
+      service: cassandra
+    ports:
+      - "{DB_ORDERS_PORT}:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "orders"
+      CASSANDRA_SEEDS: "db_orders"
+      CASSANDRA_START_RPC: "true" # Remote procedure call
+      CASSANDRA_BROADCAST_ADDRESS: "db_orders"
+      CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
+    volumes:
+      - ./src/back-end/cassandra-db/init-scripts/orders.cql:/docker-entrypoint-initdb.d/init-database.cql
+    db-stock-init:
+      image: cassandra:latest
+      depends_on:
+        db-orders:
+          condition: service_healthy
+      environment:
+        DB_STOCK_HOST: ${DB_STOCK_HOST}
+      volumes:
+        - ./src/back-end/cassandra-db/init-scripts/orders.cql:/schema.cql
+      command: ["/bin/bash", "-c", "sleep 5 && echo loading cassandra keyspace using $DB_ORDERS_HOST && cqlsh $DB_ORDERS_HOST -f /schema.cql"]
+      
