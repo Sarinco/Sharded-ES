@@ -2,7 +2,7 @@ import { Kafka, EachMessagePayload } from 'kafkajs';
 import { v4 as uuid } from 'uuid';
 import { Product } from "../types/product";
 import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/stock-events";
-import { productEventHandler } from "../handlers/productEventHandler";
+import { productEventHandler } from "../custom-handlers/productEventHandler";
 import { ProducerFactory } from "../handlers/kafkaHandler";
 import { Cassandra } from '../handlers/cassandraHandler';
 

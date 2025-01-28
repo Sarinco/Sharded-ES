@@ -6,6 +6,7 @@ services:
     volumes:
       - ./src/back-end/email-service:/app
       - ./utils/types:/app/src/types
+      - ./utils/handlers:/app/src/handlers
     command: sh boot-in-order.sh
     environment:
       EVENT_ADDRESS: ${EVENT_HOST} 

@@ -1,6 +1,6 @@
 import { Product } from "../types/product";
 import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/stock-events";
-import { Cassandra } from './cassandraHandler';
+import { Cassandra } from '../handlers/cassandraHandler';
 
 // Handle event and update the state of the product list
 export function productEventHandler(cassandra: Cassandra, event: any) {

@@ -6,6 +6,7 @@ services:
     volumes:
       - ./src/back-end/orders:/app
       - ./utils/types:/app/src/types
+      - ./utils/handlers:/app/src/handlers
     ports:
       - "5050:5050"
     command: sh boot-in-order.sh

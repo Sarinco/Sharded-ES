@@ -6,6 +6,7 @@ services:
     volumes:
       - ./src/back-end/stock:/app
       - ./utils/types:/app/src/types
+      - ./utils/handlers:/app/src/handlers
     ports:
       - "5000:5000"
     # The watch command will check for changes in the code and restart the server
@@ -36,8 +37,6 @@ services:
       CASSANDRA_START_RPC: "true" # Remote procedure call
       CASSANDRA_BROADCAST_ADDRESS: "db-stock"
       CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
-    volumes:
-      - ./src/back-end/cassandra-db/init-scripts/stock.cql:/docker-entrypoint-initdb.d/init-database.cql
   db-stock-init:
     image: cassandra:latest
     depends_on:
