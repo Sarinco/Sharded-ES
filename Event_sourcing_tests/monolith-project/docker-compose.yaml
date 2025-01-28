@@ -2,6 +2,7 @@ include:
   - src/back-end/event-pipeline/docker-compose.yaml # Event pipeline service (Kafka)
   - stock-compose.yaml # Stock services
   - order-compose.yaml
+  - email-compose.yaml
 
 services:
   frontend:

@@ -1,0 +1,25 @@
+{
+    "name": "email-service",
+    "version": "1.0.0",
+    "main": "server.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node dist/server.js",
+        "watch": "nodemon --watch 'src/**/*' --exec 'ts-node' src/server.ts",
+        "build": "tsc",
+        "init": "ts-node src/init-db.ts"
+    },
+    "author": "Maxime Delacroix",
+    "license": "ISC",
+    "description": "",
+    "dependencies": {
+        "cassandra-driver": "^4.7.2",
+        "kafkajs": "^1.16.0"
+    },
+    "devDependencies": {
+        "@types/cassandra-driver": "^4.1.1",
+        "nodemon": "^3.1.7",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.6.3"
+    }
+}

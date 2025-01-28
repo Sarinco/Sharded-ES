@@ -1,4 +1,4 @@
-const { Kafka, EachMessagePayload } = require('kafkajs');
+import { Kafka, EachMessagePayload } from 'kafkajs';
 import { v4 as uuid } from 'uuid';
 import { Product } from "../types/product";
 import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/stock-events";
@@ -6,7 +6,7 @@ import { productEventHandler } from "../handlers/productEventHandler";
 import { ProducerFactory } from "../handlers/kafkaHandler";
 import { Cassandra } from '../handlers/cassandraHandler';
 
-// Create a client connected to your local EventStoreDB instance
+// Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
 const EVENT_PORT = process.env.EVENT_PORT || "9092";
 const client = new Kafka({
@@ -25,7 +25,7 @@ const cassandra = new Cassandra(KEYSPACE, [`${DB_ADDRESS}:${DB_PORT}`]);
 cassandra.connect();
 
 
-// const producer = client.producer()
+// PRODUCER
 const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
 producer.start().then(() => {
     console.log("Producer started successfully");
@@ -33,18 +33,32 @@ producer.start().then(() => {
     console.log("Error starting the producer: ", error);
 });
 
+
+
+// CONSUMER
 const consumer = client.consumer({ groupId: 'stock-group' });
-const topic = 'products';
+const topic = ['products'];
 
 const run = async () => {
     await consumer.connect()
-    await consumer.subscribe({ topic, fromBeginning: true })
+    await Promise.all(topic.map(topic => consumer.subscribe({ topic, fromBeginning: true })));
     // Small local equivalent of CQRS for the stock service
     await consumer.run({
-        eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
-            const product: Product = JSON.parse(message.value.toString());
-            console.log("ProductEvent: ", product);
-            productEventHandler(cassandra, product);
+        eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
+            if (message.value === null) {
+                console.log("Message is null");
+                return;
+            }
+            switch (topic) {
+                case 'products':
+                    const product: Product = JSON.parse(message.value.toString());
+                    console.log("ProductEvent: ", product);
+                    productEventHandler(cassandra, product);
+                    break;
+                default:
+                    console.log("Unknown topic: ", topic);
+                    break;
+            }
         },
     });
 }
@@ -52,6 +66,9 @@ const run = async () => {
 run().catch(e => console.error(`[stock/consumer] ${e.message}`, e))
 
 
+
+
+// HTTP
 const stock = {
     // Retrieve all stocks
     findAll: async (req: any, res: any) => {
