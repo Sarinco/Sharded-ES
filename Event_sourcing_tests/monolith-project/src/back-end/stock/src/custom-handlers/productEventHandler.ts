@@ -1,5 +1,5 @@
 import { Product } from "../types/product";
-import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/stock-events";
+import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/events/stock-events";
 import { Cassandra } from '../handlers/cassandraHandler';
 
 // Handle event and update the state of the product list

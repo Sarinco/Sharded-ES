@@ -18,6 +18,7 @@ services:
       DB_KEYSPACE: ${DB_USER_KEYSPACE} 
       EVENT_ADDRESS: ${EVENT_HOST} 
       EVENT_PORT: ${EVENT_PORT} 
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       broker:
         condition: service_healthy

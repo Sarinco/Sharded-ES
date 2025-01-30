@@ -5,10 +5,8 @@ CREATE KEYSPACE IF NOT EXISTS users WITH REPLICATION =
 };
 
 CREATE TABLE IF NOT EXISTS users.user (
-    id UUID PRIMARY KEY,
-    username TEXT,
-    email TEXT,
-    password TEXT,
+    email TEXT PRIMARY KEY,
+    hash TEXT,
     salt TEXT,
     role TEXT
 );
