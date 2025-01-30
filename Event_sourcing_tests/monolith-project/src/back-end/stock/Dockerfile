@@ -13,3 +13,10 @@ RUN npm install
 
 # copy the rest of the files
 COPY . .
+
+# get the port from the environment
+ARG PORT
+
+# health check
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+  CMD curl --fail http://localhost:${PORT} || exit 1

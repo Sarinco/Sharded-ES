@@ -17,10 +17,12 @@ const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
 
 // For the Cassandra database
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
-const DB_PORT = process.env.DB_PORT || "9042";
-const KEYSPACE = process.env.KEYSPACE || "stock";
+const DB_PORT = "9042";
+const KEYSPACE = process.env.DB_KEYSPACE || "stock";
 
-// Connect to the Cassandra database
+
+
+// CASSANDRA
 const cassandra = new Cassandra(KEYSPACE, [`${DB_ADDRESS}:${DB_PORT}`]);
 cassandra.connect();
 

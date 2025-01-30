@@ -3,6 +3,7 @@ include:
   - stock-compose.yaml # Stock services
   - order-compose.yaml
   - email-compose.yaml
+  - users-compose.yaml
 
 services:
   frontend:

@@ -9,6 +9,8 @@ services:
       - ./utils/handlers:/app/src/handlers
     ports:
       - "5050:5050"
+    environment:
+      PORT: ${ORDER_PORT} 
     command: sh boot-in-order.sh
     depends_on:
       broker:

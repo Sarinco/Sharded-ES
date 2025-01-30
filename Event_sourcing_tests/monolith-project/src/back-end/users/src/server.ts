@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import stockRoutes from './routes/stockRoute';
+import usersRoutes from './routes/usersRoute';
 
 const app = express();
 const PORT: number = parseInt(process.env.PORT as string) || 5000;
@@ -12,7 +12,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Use stock routes
-app.use('/api/stock', stockRoutes);
+app.use('/api/users', usersRoutes);
 
 // Start the server
 app.listen(PORT, () => {

@@ -1,0 +1,49 @@
+services:
+  users:
+    build:
+      context: ./src/back-end/users
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/back-end/users:/app
+      - ./utils/types:/app/src/types
+      - ./utils/handlers:/app/src/handlers
+    ports:
+      - "5010:5010"
+    # The watch command will check for changes in the code and restart the server
+    command: sh boot-in-order.sh 
+    environment:
+      PORT: ${USER_PORT} 
+      DB_ADDRESS: ${DB_USER_HOST}
+      DB_PORT: ${DB_USER_PORT}
+      DB_KEYSPACE: ${DB_USER_KEYSPACE} 
+      EVENT_ADDRESS: ${EVENT_HOST} 
+      EVENT_PORT: ${EVENT_PORT} 
+    depends_on:
+      broker:
+        condition: service_healthy
+      db-users:
+        condition: service_healthy
+      db-users-init:
+        condition: service_completed_successfully
+  db-users:
+    extends:
+      file: src/back-end/cassandra-db/docker-compose.yaml
+      service: cassandra
+    ports:
+      - "${DB_USER_PORT}:9042" # Expose the default Cassandra CQL port
+    environment:
+      CASSANDRA_CLUSTER_NAME: "users"
+      CASSANDRA_SEEDS: "db-users"
+      CASSANDRA_START_RPC: "true" # Remote procedure call
+      CASSANDRA_BROADCAST_ADDRESS: "db-users"
+      CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
+  db-users-init:
+    image: cassandra:latest
+    depends_on:
+      db-users:
+        condition: service_healthy
+    environment:
+      DB_USER_HOST: ${DB_USER_HOST}
+    volumes:
+      - ./src/back-end/cassandra-db/init-scripts/users.cql:/schema.cql
+    command: ["/bin/bash", "-c", "sleep 5 && echo loading cassandra keyspace using $DB_USER_HOST && cqlsh $DB_USER_HOST -f /schema.cql"]
