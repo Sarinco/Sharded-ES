@@ -203,9 +203,6 @@ const users = {
             const query = `SELECT * FROM ${KEYSPACE}.user`;
             const result = await cassandra.client.execute(query);
             console.debug("Result: ", result.rows);
-            result.rows.forEach(row => {
-                console.log(row);
-            });
 
             res.send(result.rows);
         } catch (error) {
@@ -215,19 +212,140 @@ const users = {
 
     },
 
-    // Get a user by id
-    getById: async (req: any, res: any) => {
-        res.status(200).send("Get user by id");
+    // Get a user by email
+    getByEmail: async (req: any, res: any) => {
+        const token = req.headers.authorization;
+        const decoded = verifyJWT(token);
+
+        if (decoded === "Invalid token") {
+            return res.status(401).send("Invalid token");
+        }
+
+        const { role, exp } = decoded as any;
+
+        if (exp < Date.now().valueOf() / 1000) {
+            return res.status(401).send("Token has expired");
+        }
+
+        if (role !== "admin") {
+            return res.status(403).send("Unauthorized");
+        }
+
+        try {
+            // Get the user from the Cassandra database
+            const query = `SELECT * FROM ${KEYSPACE}.user WHERE email = ?`;
+            const result = await cassandra.client.execute(query, [req.params.email], { prepare: true });
+
+            if (result.rows.length === 0) {
+                console.log("User not found");
+                return res.status(404).send("User not found");
+            }
+
+            console.log("Result: ", result.rows[0]);
+            res.send(result.rows[0]);
+        } catch (error) {
+            console.log("Error in getById method: ", error);
+            res.status(500).send("Error in getById method");
+        }
     },
 
     // Update a user
     update: async (req: any, res: any) => {
-        res.status(200).send("Update user");
+        const token = req.headers.authorization;
+        const decoded = verifyJWT(token);
+
+        if (decoded === "Invalid token") {
+            return res.status(401).send("Invalid token");
+        }
+
+        const { role, exp } = decoded as any;
+
+        if (exp < Date.now().valueOf() / 1000) {
+            return res.status(401).send("Token has expired");
+        }
+
+        if (role !== "admin") {
+            return res.status(403).send("Unauthorized");
+        }
+
+        try {
+            // Get the user from the database
+            const query = `SELECT * FROM ${KEYSPACE}.user WHERE email = ?`;
+            let result = await cassandra.client.execute(query, [req.params.email], { prepare: true });
+
+            if (result.rows.length === 0) {
+                console.log("User not found");
+                return res.status(404).send("User not found");
+            }
+
+            // const user = result.rows[0];
+
+            // Update the user
+            let updateValue: any = req.body.updateValue;
+            const field = req.body.field;
+            console.debug("email: ", req.params.email);
+
+            switch (field) {
+                case "role":
+                    break;
+                default:
+                    console.log("Invalid field: ", field);
+                    return res.status(400).send("Invalid field");
+            }
+
+            const queryUpdate = `UPDATE ${KEYSPACE}.user SET ${field} = ? WHERE email = ? IF EXISTS`;
+            result = await cassandra.client.execute(queryUpdate, [updateValue, req.params.email], { prepare: true });
+            console.debug("Result: ", result);
+
+            console.log("User updated successfully in the Database");
+            res.status(200).send("User updated successfully");
+
+        } catch (error) {
+            console.log("Error in update method: ", error);
+            res.status(500).send("Error in update method");
+        }
     },
 
     // Delete a user
     delete: async (req: any, res: any) => {
-        res.status(200).send("Delete user");
+        const token = req.headers.authorization;
+        const decoded = verifyJWT(token);
+
+        if (decoded === "Invalid token") {
+            return res.status(401).send("Invalid token");
+        }
+
+        const { role, email, exp } = decoded as any;
+
+        if (exp < Date.now().valueOf() / 1000) {
+            return res.status(401).send("Token has expired");
+        }
+
+        if (role !== "admin" && email !== req.params.email) {
+            return res.status(403).send("Unauthorized");
+        }
+
+        try {
+            // Get the user from the database
+            const query = `SELECT * FROM ${KEYSPACE}.user WHERE email = ?`;
+            const result = await cassandra.client.execute(query, [req.params.email], { prepare: true });
+
+            if (result.rows.length === 0) {
+                console.log("User not found");
+                return res.status(404).send("User not found");
+            }
+
+            // Delete the user
+            const queryDelete = `DELETE FROM ${KEYSPACE}.user WHERE email = ?`;
+            await cassandra.client.execute(queryDelete, [req.params.email], { prepare: true });
+
+            console.log("User deleted successfully in the Database");
+            res.status(200).send("User deleted successfully");
+
+        } catch (error) {
+            console.log("Error in delete method: ", error);
+            res.status(500).send("Error in delete method");
+        }
     }
 }
 

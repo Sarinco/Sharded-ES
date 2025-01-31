@@ -13,13 +13,13 @@ router.post('/login', users.login);
 router.get('/', users.getAll);
 
 // Retrieve a single user with id
-router.get('/:id', users.getById);
+router.get('/:email', users.getByEmail);
 
 // Make a user an admin
-router.put('/:id', users.update);
+router.put('/:email', users.update);
 
 // Delete a user
-router.delete('/:id', users.delete);
+router.delete('/:email', users.delete);
 
 
 export default router;

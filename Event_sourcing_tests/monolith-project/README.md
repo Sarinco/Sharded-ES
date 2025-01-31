@@ -58,6 +58,8 @@ The user service is a service that is responsible for managing the users of the 
 - `POST /register`: Register a user
 - `POST /login`: Login a user
 - `GET /`: Get all the users (need to be admin)
+- `GET /:email`: Get a user by email (need to be admin or the user itself)
+- `DELETE /:email`: Delete a user by email (need to be admin or the user itself)
 
 
 To test it you can use the following curl commands:
@@ -72,5 +74,11 @@ curl -v http://localhost:80/api/users/login \
 curl http://localhost:80/api/users/ \
    -H "authorization: jwt_token" | jq
 
+curl http://localhost:80/api/users/example@example.com \
+    -H "authorization: jwt_token" | jq
+
+curl http://localhost:80/api/users/ \
+   -H "authorization: jwt_token"
 ```
+
 The jwt_token is the token that you get when you login in the header, you need to add -v in the login command to have the header !!. You can use the token to get all the users. 
