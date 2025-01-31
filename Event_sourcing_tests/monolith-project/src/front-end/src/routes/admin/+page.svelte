@@ -16,8 +16,9 @@
 
 	import { products, productsMerged } from '@stores/products';
 	import Modal from '@interfaces/misc/Modal.svelte';
+    import { Product } from '@types/product';
 
-	let modalProduct = null;
+	let modalProduct = new Product();
 	let searchTerm = '';
 	$: filteredItems = $productsMerged.filter(
 		(product) => product.name.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1
@@ -31,7 +32,7 @@
 	}
 
 	function displayCreateModal() {
-		modalProduct = { name: '', price: 0, category: '', image: '' };
+        modalProduct = new Product();
 		showCreateModal = true;
 	}
 
@@ -39,13 +40,13 @@
 		// Sanitize input
 		let index = $products[modalProduct.category].findIndex((prod) => prod.id == modalProduct.id);
 		$products[modalProduct.category][index] = modalProduct;
-		modalProduct = null;
+		modalProduct = new Product();
 		showUpdateModal = false;
 	}
 
 	function createProduct() {
-		products.__addProduct(modalProduct);
-		modalProduct = null;
+		products.createProduct(modalProduct);
+		modalProduct = new Product();
 		showCreateModal = false;
 	}
 
@@ -59,7 +60,9 @@
 		if (index == -1) return;
 		$products[product.category].splice(index, 1);
 		$products = $products; // This line is needed because Svelte's reactivity is triggered by assignment. Deleting an element of the array is not an assignment so we trigger one manually.
-		modalProduct = null;
+		// modalProduct = null;
+        console.log('Product:', product);
+        products.deleteProduct(product.id);
 		showUpdateModal = false;
 	}
 </script>
@@ -79,6 +82,7 @@
 			<TableHeadCell>Product name</TableHeadCell>
 			<TableHeadCell>Category</TableHeadCell>
 			<TableHeadCell>Price</TableHeadCell>
+            <TableHeadCell>Count</TableHeadCell>
 			<TableHeadCell>
 				<span class="sr-only"> Edit </span>
 			</TableHeadCell>
@@ -89,6 +93,7 @@
 					<TableBodyCell>{item.name}</TableBodyCell>
 					<TableBodyCell>{item.category}</TableBodyCell>
 					<TableBodyCell>${item.price}</TableBodyCell>
+                    <TableBodyCell>{item.count}</TableBodyCell>
 					<TableBodyCell>
 						<ButtonGroup>
 							<Button color="yellow" on:click={displayUpdateModal(item)}>Edit</Button>
@@ -143,6 +148,16 @@
 				<span>Product category</span>
 				<Input type="text" class="text-xl" bind:value={modalProduct.category} required />
 			</Label>
+			<br />
+            <Label class="space-y-2">
+                <span>Product count</span>
+                <Input type="number" class="text-xl" bind:value={modalProduct.count} required />
+            </Label>
+			<br />
+            <Label class="space-y-2">
+                <span>Product description</span>
+                <Input type="text" class="text-xl" bind:value={modalProduct.description} required />
+            </Label>
 			<br />
 			<Label class="space-y-2">
 				<span>Product price</span>

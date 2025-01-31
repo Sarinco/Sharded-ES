@@ -5,6 +5,7 @@ import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../
 import { productEventHandler } from "../custom-handlers/productEventHandler";
 import { ProducerFactory } from "../handlers/kafkaHandler";
 import { Cassandra } from '../handlers/cassandraHandler';
+import { verifyJWT } from '../middleware/token';
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
@@ -93,6 +94,30 @@ const stock = {
     // Add a new product
     add: async (req: any, res: any) => {
         try {
+
+            const token = req.headers.authorization;
+            console.debug('Token:', token);
+            
+            if (!token) {
+                throw new Error('No token provided');
+            }
+
+            const decoded = token; //verifyJWT(token); TODO: 
+
+            if (decoded === "Invalid token") {
+                return res.status(401).send("Invalid token");
+            }
+
+            const { role, email: addedBy, exp } = decoded as any;
+
+            if (exp < Date.now().valueOf() / 1000) {
+                return res.status(401).send("Token has expired");
+            }
+
+            if (role !== "admin") {
+                return res.status(403).send("Unauthorized");
+            }
+
             if (req.body.name === undefined || req.body.name === "") {
                 res.status(400).send("Invalid name");
                 return;
@@ -110,14 +135,15 @@ const stock = {
                 req.body.description,
                 req.body.image,
                 req.body.category,
-                req.body.count
+                req.body.count,
+                addedBy
             );
 
             producer.send(
                 'products',
                 event.toJSON()
             ).then(() => {
-                console.log("Product added successfully");
+                console.log("Product added successfully by ", addedBy);
                 res.send("Product added successfully");
             }).catch((error: any) => {
                 console.log("Error in add method: ", error);

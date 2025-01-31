@@ -2,7 +2,7 @@
 	import { user } from '@stores/auth';
 	import { goto } from '$app/navigation';
 	import { addToast } from '@stores/toasts';
-    import jwtDecode from 'jwt-decode'; // Library to decode JWT tokens
+    import { jwtDecode } from 'jwt-decode'; // Library to decode JWT tokens
 
 	let email = '';
 	let password = '';

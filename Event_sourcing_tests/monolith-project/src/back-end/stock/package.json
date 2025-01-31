@@ -15,12 +15,14 @@
     "dependencies": {
         "cassandra-driver": "^4.7.2",
         "express": "^4.16.4",
+        "jsonwebtoken": "^9.0.2",
         "kafkajs": "^1.16.0",
         "uuid": "^8.3.2"
     },
     "devDependencies": {
         "@types/cassandra-driver": "^4.1.1",
         "@types/express": "^5.0.0",
+        "@types/jsonwebtoken": "^9.0.8",
         "@types/uuid": "^10.0.0",
         "nodemon": "^3.1.7",
         "ts-node": "^10.9.2",
