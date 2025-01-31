@@ -8,8 +8,9 @@ export class ProductAddedEvent {
     image: string;
     category: string;
     count: number;
+    addedBy: string;
 
-    constructor(id: string, name: string, price: number, description: string, image: string, category: string, count: number) {
+    constructor(id: string, name: string, price: number, description: string, image: string, category: string, count: number, addedBy: string) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -17,10 +18,11 @@ export class ProductAddedEvent {
         this.image = image;
         this.category = category;
         this.count = count;
+        this.addedBy = addedBy;
     }
 
     static fromJSON(json: any): ProductAddedEvent {
-        return new ProductAddedEvent(json.id, json.name, json.price, json.description, json.image, json.category, json.count);
+        return new ProductAddedEvent(json.id, json.name, json.price, json.description, json.image, json.category, json.count, json.addedBy);
     }
 
     toJSON(): any {
@@ -36,7 +38,8 @@ export class ProductAddedEvent {
                     description: this.description,
                     image: this.image,
                     category: this.category,
-                    count: this.count
+                    count: this.count,
+                    addedBy: this.addedBy
                 }
             })
         }

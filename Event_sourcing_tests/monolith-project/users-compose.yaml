@@ -7,6 +7,7 @@ services:
       - ./src/back-end/users:/app
       - ./utils/types:/app/src/types
       - ./utils/handlers:/app/src/handlers
+      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
     ports:
       - "5010:5010"
     # The watch command will check for changes in the code and restart the server
