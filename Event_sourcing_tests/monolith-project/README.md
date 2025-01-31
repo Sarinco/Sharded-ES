@@ -49,3 +49,28 @@ curl +PUT "http://localhost:80/api/stock/2f75b6cc-00d1-4c84-aaca-adbcd7cf8166" \
 -d '{"field": "name", "updateValue": "banana1"}'
 ```
 This command updates the product with the id `2f75b6cc-00d1-4c84-aaca-adbcd7cf8166` with the new name `banana1`. !! NOT WORKING YET !!
+
+
+### User service
+
+The user service is a service that is responsible for managing the users of the project. It has the following endpoints:
+
+- `POST /register`: Register a user
+- `POST /login`: Login a user
+- `GET /`: Get all the users (need to be admin)
+
+
+To test it you can use the following curl commands:
+
+```bash
+curl http://localhost:80/api/users/register \
+   -H "Content-Type: application/json" \-d '{"email": "admin@test.be", "password":"admin"}'
+
+curl -v http://localhost:80/api/users/login \
+   -H "Content-Type: application/json" \-d '{"email": "admin@test.be", "password":"admin"}'
+
+curl http://localhost:80/api/users/ \
+   -H "authorization: jwt_token" | jq
+
+```
+The jwt_token is the token that you get when you login in the header, you need to add -v in the login command to have the header !!. You can use the token to get all the users. 

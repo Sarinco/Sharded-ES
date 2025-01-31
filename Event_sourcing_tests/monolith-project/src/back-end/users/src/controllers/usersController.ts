@@ -77,9 +77,9 @@ run().catch(e => console.error(`[users/consumer] ${e.message}`, e))
 
 // HTTP Controller
 const users = {
-    // Add a user
 
-    add: async (req: any, res: any) => {
+    // Add a user
+    register: async (req: any, res: any) => {
         const { email, password } = req.body;
 
         try {
@@ -115,8 +115,8 @@ const users = {
             const userAddedEvent = new UserAddedEvent(user.email, user.hash, user.salt, user.role);
             producer.send("users", userAddedEvent.toJSON());
         } catch (error) {
-            console.log("Error in add method: ", error);
-            res.status(500).send(error);
+            console.log("Error in login method: ", error);
+            res.status(500).send("Error in login method");
         }
     },
 
@@ -140,10 +140,11 @@ const users = {
             }
 
             const user = result.rows[0];
-            const storedHash = `${user.salt}:${user.hash}`;
+            const storedHash = user.hash;
+            const storedSalt = user.salt;
 
             // Verify the password
-            const valid = await verifyPassword(password, storedHash);
+            const valid = await verifyPassword(password, storedSalt, storedHash);
 
             if (valid) {
                 console.log("User authenticated successfully");
@@ -174,13 +175,44 @@ const users = {
             const userFailedAuthenticationEvent = new UserFailedAuthenticationEvent(email);
             producer.send("users", userFailedAuthenticationEvent.toJSON());
 
-            res.status(500).send(error);
+            res.status(500).send("Error in login method");
         }
     },
 
     // Get all users
     getAll: async (req: any, res: any) => {
-        res.status(200).send("Get all users");
+        const token = req.headers.authorization;
+        const decoded = verifyJWT(token);
+
+        if (decoded === "Invalid token") {
+            return res.status(401).send("Invalid token");
+        }
+
+        const { role, exp } = decoded as any; 
+
+        if (exp < Date.now().valueOf() / 1000) {
+            return res.status(401).send("Token has expired");
+        }
+
+        if (role !== "admin") {
+            return res.status(403).send("Unauthorized");
+        }
+
+        try {
+            // Get the users from the Cassandra database
+            const query = `SELECT * FROM ${KEYSPACE}.user`;
+            const result = await cassandra.client.execute(query);
+            console.debug("Result: ", result.rows);
+            result.rows.forEach(row => {
+                console.log(row);
+            });
+
+            res.send(result.rows);
+        } catch (error) {
+            console.debug("Error in findAll method: ", error);
+            res.status(500).send("Error in findAll method");
+        }
+
     },
 
     // Get a user by id

@@ -14,20 +14,18 @@ export function hashPassword(password: string, salt: Buffer): Promise<string> {
     return new Promise((resolve, reject) => {
         pbkdf2(password, salt, ITERATIONS, KEY_LENGTH, DIGEST, (err, derivedKey) => {
             if (err) reject(err);
-            else resolve(`${salt.toString('hex')}:${derivedKey.toString('hex')}`);
+            else resolve(derivedKey.toString('hex'));
         });
     });
 }
 
 // Verify a password against a stored hash
-export function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+export function verifyPassword(password: string, salt: string, storedHash: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-        const [saltHex, keyHex] = storedHash.split(':');
-        const salt = Buffer.from(saltHex, 'hex');
 
-        pbkdf2(password, salt, ITERATIONS, KEY_LENGTH, DIGEST, (err, derivedKey) => {
+        pbkdf2(password, Buffer.from(salt, 'hex'), ITERATIONS, KEY_LENGTH, DIGEST, (err, derivedKey) => {
             if (err) reject(err);
-            else resolve(derivedKey.toString('hex') === keyHex);
+            else resolve(storedHash === derivedKey.toString('hex'));
         });
     });
 }

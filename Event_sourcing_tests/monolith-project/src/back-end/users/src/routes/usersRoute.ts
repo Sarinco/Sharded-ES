@@ -4,7 +4,10 @@ import users from '../controllers/usersController';
 const router = Router();
 
 // Create a new user
-router.post('/', users.add);
+router.post('/register', users.register);
+
+// Authenticate a user
+router.post('/login', users.login);
 
 // Retrieve all users
 router.get('/', users.getAll);
