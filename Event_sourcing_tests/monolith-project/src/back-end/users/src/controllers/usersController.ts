@@ -7,6 +7,8 @@ import {
     UserAddedEvent, 
     UserFailedAuthenticationEvent,
     UserAuthenticatedEvent,
+    UserDeletedEvent,
+    UserUpdatedEvent,
 } from '../types/events/users-events';
 
 // Import the password middleware
@@ -108,7 +110,11 @@ const users = {
             query = `INSERT INTO ${KEYSPACE}.user (email, hash, salt, role) VALUES (?, ?, ?, ?)`;
             await cassandra.client.execute(query, [user.email, user.hash, user.salt, user.role], { prepare: true });
 
-            console.log("User added successfully in the Database");
+            console.debug("User added successfully in the Database");
+            
+            const token = generateJWT(user.email, user.role);
+            res.setHeader('Authorization', token);
+
             res.status(201).send("User added successfully");
 
             // Send an event to Kafka
@@ -258,7 +264,7 @@ const users = {
             return res.status(401).send("Invalid token");
         }
 
-        const { role, exp } = decoded as any;
+        const { role, email: modifiedBy, exp } = decoded as any;
 
         if (exp < Date.now().valueOf() / 1000) {
             return res.status(401).send("Token has expired");
@@ -300,6 +306,10 @@ const users = {
             console.log("User updated successfully in the Database");
             res.status(200).send("User updated successfully");
 
+            // Send an event to Kafka
+            const userUpdatedEvent = new UserUpdatedEvent(req.params.email, modifiedBy, field, updateValue);
+            producer.send("users", userUpdatedEvent.toJSON());
+
         } catch (error) {
             console.log("Error in update method: ", error);
             res.status(500).send("Error in update method");
@@ -315,13 +325,13 @@ const users = {
             return res.status(401).send("Invalid token");
         }
 
-        const { role, email, exp } = decoded as any;
+        const { role, email: modifiedBy, exp } = decoded as any;
 
         if (exp < Date.now().valueOf() / 1000) {
             return res.status(401).send("Token has expired");
         }
 
-        if (role !== "admin" && email !== req.params.email) {
+        if (role !== "admin" && modifiedBy !== req.params.email) {
             return res.status(403).send("Unauthorized");
         }
 
@@ -341,6 +351,10 @@ const users = {
 
             console.log("User deleted successfully in the Database");
             res.status(200).send("User deleted successfully");
+
+            // Send an event to Kafka
+            const userDeletedEvent = new UserDeletedEvent(req.params.email, modifiedBy);
+            producer.send("users", userDeletedEvent.toJSON());
 
         } catch (error) {
             console.log("Error in delete method: ", error);

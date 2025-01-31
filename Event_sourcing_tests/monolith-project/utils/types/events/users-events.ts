@@ -83,3 +83,66 @@ export class UserAuthenticatedEvent {
         }
     }
 }
+
+export class UserDeletedEvent {
+    email: string;
+    modifiedBy: string;
+
+    constructor(email: string, modifiedBy: string) {
+        this.email = email;
+        this.modifiedBy = modifiedBy;
+    }
+
+    static fromJSON(json: any): UserDeletedEvent {
+        return new UserDeletedEvent(json.email, json.modifiedBy);
+    }
+
+    toJSON(): any {
+        // Return a JSON representation for KafkaJS
+        return {
+            key: this.email,
+            value: JSON.stringify({
+                type: "UserDeleted",
+                data: {
+                    email: this.email,
+                    modifiedBy: this.modifiedBy
+                }
+            })
+        }
+    }
+}
+
+export class UserUpdatedEvent {
+    email: string;
+    field: string;
+    updateValue: any;
+    modifiedBy: string;
+
+    constructor(email: string, field: string, updateValue: any, modifiedBy: string) {
+        this.email = email;
+        this.field = field;
+        this.updateValue = updateValue;
+        this.modifiedBy = modifiedBy;
+    }
+
+    static fromJSON(json: any): UserUpdatedEvent {
+        return new UserUpdatedEvent(json.email, json.field, json.updateValue, json.modifiedBy);
+    }
+
+    toJSON(): any {
+        // Return a JSON representation for KafkaJS
+        return {
+            key: this.email,
+            value: JSON.stringify({
+                type: "UserUpdated",
+                data: {
+                    email: this.email,
+                    field: this.field,
+                    updateValue: this.updateValue,
+                    modifiedBy: this.modifiedBy
+                }
+            })
+        }
+    }
+}
+
