@@ -15,7 +15,7 @@ export function productEventHandler(cassandra: Cassandra, event: any) {
                 productAddedEvent.image,
                 productAddedEvent.category,
                 productAddedEvent.count
-            );  
+            );
             cassandra.insert('product', Product.getColumsList(), newProduct.createCQL());
 
             break;
@@ -32,47 +32,23 @@ export function productEventHandler(cassandra: Cassandra, event: any) {
         case "ProductUpdated":
             const productUpdatedEvent = event.data as ProductUpdatedEvent;
             const id = productUpdatedEvent.id;
-            const field = productUpdatedEvent.field;
-            let updateValue: any = productUpdatedEvent.updateValue;
-
-            switch (field) {
-                case "name":
-                    break;
-                case "price":
-                    try {
-                        updateValue = parseFloat(updateValue);
-                    } catch (error) {
-                        console.log("Invalid price");
-                        return;
-                    }
-                case "description":
-                    break;
-                case "image":
-                    break;
-                case "category":
-                    break;
-                case 'count':
-                    try {
-                        updateValue = parseInt(updateValue);
-                    } catch (error) {
-                        console.log("Invalid count");
-                        return;
-                    }
-                default:
-                    console.log("Invalid field: ", field);
-                    return;
-            }
-            console.debug("Updating product with id: ", id, " field: ", field, " value: ", updateValue);
-
-            const queryUpdate = `UPDATE product SET ${field} = ? WHERE id = ?`;
-            cassandra.client.execute(queryUpdate, [updateValue, id], { prepare: true }).then(() => {
+            const queryUpdate = `UPDATE product SET name = ?, price = ?, description = ?, image = ?, category = ?, count = ? WHERE id = ?`;
+            cassandra.client.execute(queryUpdate, [
+                productUpdatedEvent.name, 
+                productUpdatedEvent.price, 
+                productUpdatedEvent.description, 
+                productUpdatedEvent.image, 
+                productUpdatedEvent.category, 
+                productUpdatedEvent.count, 
+                id], 
+                { prepare: true }
+            ).then(() => {
                 console.log("Product updated successfully in the Database");
             }).catch((error: any) => {
                 console.log("Error in update method: ", error);
             })
-
             break;
-            
+
         default:
             console.log("Invalid event type");
             break;

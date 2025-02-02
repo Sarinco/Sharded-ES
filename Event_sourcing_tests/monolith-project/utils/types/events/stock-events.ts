@@ -50,14 +50,16 @@ export class ProductAddedEvent {
 export class ProductBoughtEvent {
     id: string;
     count: number;
+    boughtBy: string;
 
-    constructor(id: string, count: number) {
+    constructor(id: string, count: number, boughtBy: string) {
         this.id = id;
         this.count = count;
+        this.boughtBy = boughtBy;
     }
 
     static fromJSON(json: any): ProductBoughtEvent {
-        return new ProductBoughtEvent(json.id, json.count);
+        return new ProductBoughtEvent(json.id, json.count, json.boughtBy);
     }
 
     toJSON(): any {
@@ -68,7 +70,8 @@ export class ProductBoughtEvent {
                 type: "ProductBought",
                 data: {
                     id: this.id,
-                    count: this.count
+                    count: this.count,
+                    boughtBy: this.boughtBy
                 }
             })
         }
@@ -78,17 +81,28 @@ export class ProductBoughtEvent {
 // Updating a product event
 export class ProductUpdatedEvent {
     id: string;
-    field: string;
-    updateValue: any;
+    name: string;
+    price: number;
+    description: string;
+    image: string;
+    category: string;
+    count: number;
+    updatedBy: string;
 
-    constructor(id: string, field: string, updateValue: any) {
+
+    constructor(id: string, name: string, price: number, description: string, image: string, category: string, count: number, updatedBy: string) {
         this.id = id;
-        this.field = field;
-        this.updateValue = updateValue;
+        this.name = name;
+        this.price = price;
+        this.description = description;
+        this.image = image;
+        this.category = category;
+        this.count = count;
+        this.updatedBy = updatedBy;
     }
 
     static fromJSON(json: any): ProductUpdatedEvent {
-        return new ProductUpdatedEvent(json.id, json.field, json.updateValue);
+        return new ProductUpdatedEvent(json.id, json.name, json.price, json.description, json.image, json.category, json.count, json.updatedBy);
     }
 
     toJSON(): any {
@@ -99,24 +113,30 @@ export class ProductUpdatedEvent {
                 type: "ProductUpdated",
                 data: {
                     id: this.id,
-                    field: this.field,
-                    updateValue: this.updateValue
+                    name: this.name,
+                    price: this.price,
+                    description: this.description,
+                    image: this.image,
+                    category: this.category,
+                    count: this.count,
+                    updatedBy: this.updatedBy
                 }
             })
         }
     }
-
 };
 
 export class ProductDeletedEvent {
     id: string;
+    deletedBy: string;
 
-    constructor(id: string) {
+    constructor(id: string, deletedBy: string) {
         this.id = id;
+        this.deletedBy = deletedBy;
     }
 
     static fromJSON(json: any): ProductDeletedEvent {
-        return new ProductDeletedEvent(json.id);
+        return new ProductDeletedEvent(json.id, json.deletedBy);
     }
 
     toJSON(): any {
@@ -126,7 +146,8 @@ export class ProductDeletedEvent {
             value: JSON.stringify({
                 type: "ProductDeleted",
                 data: {
-                    id: this.id
+                    id: this.id,
+                    deletedBy: this.deletedBy
                 }
             })
         }

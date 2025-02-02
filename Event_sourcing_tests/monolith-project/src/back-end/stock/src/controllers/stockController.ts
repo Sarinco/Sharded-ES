@@ -94,15 +94,14 @@ const stock = {
     // Add a new product
     add: async (req: any, res: any) => {
         try {
-
             const token = req.headers.authorization;
             console.debug('Token:', token);
-            
+
             if (!token) {
                 throw new Error('No token provided');
             }
 
-            const decoded = token; //verifyJWT(token); TODO: 
+            const decoded = verifyJWT(token); TODO:
 
             if (decoded === "Invalid token") {
                 return res.status(401).send("Invalid token");
@@ -158,60 +157,46 @@ const stock = {
     // Update a product
     update: async (req: any, res: any) => {
         try {
+            const token = req.headers.authorization;
+            console.debug('Token:', token);
+
+            if (!token) {
+                throw new Error('No token provided');
+            }
+
+            const decoded = verifyJWT(token); TODO:
+
+            if (decoded === "Invalid token") {
+                return res.status(401).send("Invalid token");
+            }
+
+            const { role, email: updatedBy, exp } = decoded as any;
+
+            if (exp < Date.now().valueOf() / 1000) {
+                return res.status(401).send("Token has expired");
+            }
+
+            if (role !== "admin") {
+                return res.status(403).send("Unauthorized");
+            }
+
             console.log("req.body: ", req.body);
-            console.log("Calling the update method with id: ", req.params.id, " and field: ", req.body.field, " and updateValue: ", req.body.updateValue);
+
             if (req.params.id === undefined || req.params.id === "") {
                 res.status(400).send("Invalid id");
                 return;
             }
-            if (req.body.field === undefined || req.body.field === "") {
-                res.status(400).send("Invalid field");
-                return;
-            }
-            if (req.body.updateValue === undefined || req.body.updateValue === "") {
-                res.status(400).send("Invalid updateValue");
-                return;
-            }
-
-            let updateValue: any = req.body.updateValue;
-            switch (req.body.field) {
-                case "price":
-                    try {
-                        updateValue = parseFloat(updateValue);
-                    } catch (error) {
-                        console.log("Invalid price");
-                        res.status(400).send("Invalid price");
-                        return;
-                    }
-                    break;
-                case "count":
-                    try {
-                        updateValue = parseInt(updateValue);
-                    } catch (error) {
-                        console.log("Invalid count");
-                        res.status(400).send("Invalid count");
-                        return;
-                    }
-                    break;
-                case "name":
-                    break;
-                case "description":
-                    break;
-                case "image":
-                    break;
-                case "category":
-                    break;
-                default:
-                    console.log("Invalid field");
-                    res.status(400).send("Invalid field");
-                    return;
-            }
 
             const event: ProductUpdatedEvent = new ProductUpdatedEvent(
                 req.params.id,
-                req.body.field,
-                req.body.updateValue
-            )
+                req.body.name,
+                req.body.price,
+                req.body.description,
+                req.body.image,
+                req.body.category,
+                req.body.count,
+                updatedBy
+            );
 
             producer.send(
                 'products',
@@ -234,13 +219,36 @@ const stock = {
     // Delete a product
     delete: async (req: any, res: any) => {
         try {
+            const token = req.headers.authorization;
+            console.debug('Token:', token);
+
+            if (!token) {
+                throw new Error('No token provided');
+            }
+
+            const decoded = verifyJWT(token); TODO:
+
+            if (decoded === "Invalid token") {
+                return res.status(401).send("Invalid token");
+            }
+
+            const { role, email: deletedBy, exp } = decoded as any;
+
+            if (exp < Date.now().valueOf() / 1000) {
+                return res.status(401).send("Token has expired");
+            }
+
+            if (role !== "admin") {
+                return res.status(403).send("Unauthorized");
+            }
+
             console.log("Calling the delete method with id: ", req.params.id);
             if (req.params.id === undefined || req.params.id === "") {
                 res.status(400).send("Invalid id");
                 return;
             }
 
-            const event: ProductDeletedEvent = new ProductDeletedEvent(req.params.id);
+            const event: ProductDeletedEvent = new ProductDeletedEvent(req.params.id, deletedBy);
 
             producer.send(
                 'products',

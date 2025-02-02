@@ -7,7 +7,8 @@ services:
       - ./src/back-end/orders:/app
       - ./utils/types:/app/src/types
       - ./utils/handlers:/app/src/handlers
-      - ./utils/middleware/token.ts:/app/src/middleware/token.ts
+      #- ./utils/middleware/token.ts:/app/src/middleware/token.ts
+      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
     ports:
       - "5050:5050"
     environment:

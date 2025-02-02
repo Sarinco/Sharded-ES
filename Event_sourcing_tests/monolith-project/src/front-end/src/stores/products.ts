@@ -1,5 +1,4 @@
 import { derived, writable } from 'svelte/store';
-import axios from 'axios';
 import { addToast } from '@stores/toasts';
 import { env } from '$env/dynamic/public';
 import { Product } from '../types/product';
@@ -9,7 +8,7 @@ console.log('PRODUCT_URL:', PRODUCT_URL);
 
 const headers = {
     'Content-Type': 'application/json',
-    'authorization': null,
+    'authorization': "",
 };
 
 function createProducts() {
@@ -27,8 +26,15 @@ function createProducts() {
 
     const getProducts = async () => {
         try {
-            const response = await axios.get(PRODUCT_URL, { headers });
-            const data = response.data;
+            const response = await fetch(PRODUCT_URL, { 
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get products');
+            }
+            const data = await response.json();
+
             const categorizedProducts = categorizeProducts(data);
             set(categorizedProducts);
             console.log('categorizedProducts:', categorizedProducts);
@@ -55,8 +61,17 @@ function createProducts() {
 
     const createProduct = async (product: Product) => {
         try {
-            const response = await axios.post(PRODUCT_URL, product, { headers });
-            const data = response.data;
+            const response = await fetch(PRODUCT_URL, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(product),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create product');
+            }
+
+            const data = await response.json();
             console.log('created product:', data);
             getProducts();
         } catch (error) {
@@ -64,10 +79,20 @@ function createProducts() {
         }
     };
 
-    const updateProduct = async (id: string, field: string, updateValue: any) => {
+    const updateProduct = async (product: Product) => {
         try {
-            const response = await axios.put(`${PRODUCT_URL}/${id}`, { field, updateValue }, { headers });
-            console.log('updated product:', response.data);
+            const response = await fetch(`${PRODUCT_URL}/${product.id}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify(product),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update product');
+            }
+
+            const data = await response.json();
+            console.log('updated product:', data);
             getProducts();
         } catch (error) {
             handleError(error, 'update product');
@@ -76,8 +101,17 @@ function createProducts() {
 
     const deleteProduct = async (id: string) => {
         try {
-            const response = await axios.delete(`${PRODUCT_URL}/${id}`, { headers });
-            console.log('deleted product:', response.data);
+            const response = await fetch(`${PRODUCT_URL}/${id}`, {
+                method: 'DELETE',
+                headers,
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete product');
+            }
+
+            const data = await response.json();
+            console.log('deleted product:', data);
             getProducts();
         } catch (error) {
             handleError(error, 'delete product');
@@ -94,10 +128,10 @@ function createProducts() {
         updateProduct,
         deleteProduct,
         updateHeaders: (token: string) => {
-            headers.Authorization = `${token}`;
+            headers.authorization = `${token}`;
         },
         clearHeaders: () => {
-            headers.Authorization = null;
+            headers.authorization = null;
         },
     };
 }
