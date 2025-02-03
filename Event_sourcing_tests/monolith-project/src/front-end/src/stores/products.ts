@@ -71,8 +71,6 @@ function createProducts() {
                 throw new Error('Failed to create product');
             }
 
-            const data = await response.json();
-            console.log('created product:', data);
             getProducts();
         } catch (error) {
             handleError(error, 'create product');
@@ -91,8 +89,6 @@ function createProducts() {
                 throw new Error('Failed to update product');
             }
 
-            const data = await response.json();
-            console.log('updated product:', data);
             getProducts();
         } catch (error) {
             handleError(error, 'update product');
@@ -110,8 +106,6 @@ function createProducts() {
                 throw new Error('Failed to delete product');
             }
 
-            const data = await response.json();
-            console.log('deleted product:', data);
             getProducts();
         } catch (error) {
             handleError(error, 'delete product');
@@ -131,7 +125,7 @@ function createProducts() {
             headers.authorization = `${token}`;
         },
         clearHeaders: () => {
-            headers.authorization = null;
+            headers.authorization = "";
         },
     };
 }

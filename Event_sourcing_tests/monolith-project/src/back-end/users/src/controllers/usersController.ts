@@ -77,7 +77,7 @@ const consumer = client.consumer({ groupId: 'users-group' });
 
 const run = async () => {
     await consumer.connect()
-    await Promise.all(topics.map(topic => consumer.subscribe({ topic, fromBeginning: true })));
+    await Promise.all(topic.map(top => consumer.subscribe({ topic: top, fromBeginning: true })));
     await consumer.run({
         eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
             if (message.value === null) {
