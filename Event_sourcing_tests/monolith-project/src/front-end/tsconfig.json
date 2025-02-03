@@ -13,7 +13,8 @@
 		"paths": {
 			"@stores/*": ["stores/*"],
 			"@interfaces/*": ["interfaces/*"],
-			"@misc/*": ["misc/*"]
+			"@misc/*": ["misc/*"],
+            "@types/*": ["types/*"]
 		}
 	}
 	// Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias

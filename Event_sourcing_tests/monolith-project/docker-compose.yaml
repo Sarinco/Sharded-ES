@@ -1,3 +1,11 @@
+include:
+  - src/back-end/event-pipeline/docker-compose.yaml # Event pipeline service (Kafka)
+  - src/back-end/event-pipeline/viewer-compose.yaml # Event pipeline service (Kafka)
+  - stock-compose.yaml # Stock services
+  - order-compose.yaml
+  - email-compose.yaml
+  - users-compose.yaml
+
 services:
   frontend:
     build: 
@@ -15,32 +23,7 @@ services:
       - VITE_GATEWAY_URL=http://localhost:80
     command: npm run dev -- --host
     depends_on:
-      - product
-
-  product:
-    build:
-      context: ./src/back-end/product
-      dockerfile: Dockerfile
-    volumes:
-      - ./src/back-end/product:/app
-      - ./utils/types:/app/src/types
-    ports:
-      - "5000:5000"
-    # The watch command will check for changes in the code and restart the server
-    command: sh boot-in-order.sh 
-    environment:
-      - PORT=5000
-      - DB_ADDRESS=event-store
-      - DB_PORT=2113
-    depends_on:
-      event-store:
-        condition: service_healthy
-
-  event-store:
-    extends:
-      file: src/back-end/event_store_db/docker-compose.yaml
-      service: event-store
-
+      - stock 
   gateway:
     image: nginx:alpine
     volumes:
@@ -50,7 +33,8 @@ services:
       - "80:80"
     depends_on:
       - frontend
-      - product
+      - stock
+      - orders
     environment:
       - FRONTEND_URL=http://frontend:3000
 

@@ -1,0 +1,10 @@
+version: '3.9'
+services:
+  cassandra:
+    image: cassandra:4.0
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh --execute 'DESCRIBE keyspaces;'"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+

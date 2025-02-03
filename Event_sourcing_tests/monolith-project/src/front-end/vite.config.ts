@@ -6,7 +6,8 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'@stores': path.resolve('./src/stores/'),
-			'@interfaces': path.resolve('./src/interfaces')
+			'@interfaces': path.resolve('./src/interfaces'),
+            '@types': path.resolve('./src/types')
 		}
 	},
 	plugins: [sveltekit()],

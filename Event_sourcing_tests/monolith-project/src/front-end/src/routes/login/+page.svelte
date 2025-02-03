@@ -1,60 +1,68 @@
 <script>
 	import { user } from '@stores/auth';
 	import { goto } from '$app/navigation';
-
 	import { addToast } from '@stores/toasts';
+    import { jwtDecode } from 'jwt-decode'; // Library to decode JWT tokens
 
-	let username = '';
+	let email = '';
 	let password = '';
 
-	function handleOnSubmit() {
-		if (username === 'admin' && password === 'admin') {
-			window.localStorage.setItem('username', 'admin');
-			window.localStorage.setItem('password', 'admin');
-			$user.isLogged = true;
-			$user.isAdmin = true;
-			window.localStorage.setItem('auth', JSON.stringify($user));
-			addToast({
-				message: `Welcome back ${username}!`,
-				type: 'success',
-				dismissible: true,
-				timeout: 3000
-			});
-			goto('/');
-			return;
-		}
-		let localUser = window.localStorage.getItem('username');
-		if (localUser && localUser === username) {
-			let localPassw = window.localStorage.getItem('password');
-			if (localPassw === password) {
-				$user.isLogged = true;
-				$user.isAdmin = false;
-				window.localStorage.setItem('auth', JSON.stringify($user));
-				addToast({
-					message: `Welcome back ${username}!`,
-					type: 'success',
-					dismissible: true,
-					timeout: 3000
-				});
-				goto('/');
-				return;
-			} else {
-				addToast({
-					message: 'Login error: wrong password',
-					type: 'error',
-					dismissible: true,
-					timeout: 3000
-				});
-			}
-		} else {
-			addToast({
-				message: 'Login error: unknown username',
-				type: 'error',
-				dismissible: true,
-				timeout: 3000
-			});
-		}
-	}
+    async function handleOnSubmit() {
+        try {
+            // Send a POST request to the login API
+            const response = await fetch('/api/users/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password }) // Include email and password in the body
+            });
+
+            // Check if the response is successful
+            if (!response.ok) {
+                throw new Error('Login failed');
+            }
+
+            // Extract the token from the response headers
+            const token = response.headers.get('Authorization');
+
+            if (!token) {
+                throw new Error('Token not found');
+            }
+            
+            // Decode the JWT token to extract the role
+            const decodedToken = jwtDecode(token); 
+            const role = decodedToken.role; 
+
+            // Update the user store and localStorage
+            $user.isLogged = true;
+            $user.isAdmin = role === 'admin';
+            $user.token = token; // Store the token in the user store
+            window.localStorage.setItem('auth', JSON.stringify($user));
+            window.localStorage.setItem('email', email);
+            window.localStorage.setItem('token', token); // Store the token in localStorage
+
+            // Show a success toast
+            addToast({
+                message: 'Login succeeded: Welcome!',
+                type: 'success',
+                dismissible: true,
+                timeout: 3000
+            });
+
+            // Redirect to the home page
+            goto('/');
+        } catch (err) {
+            // Show an error toast if login fails
+            addToast({
+                message: `Login failed: ${err}`,
+                type: 'error',
+                dismissible: true,
+                timeout: 3000
+            });
+        }
+    }
+
 </script>
 
 <form method="POST" on:submit|preventDefault={handleOnSubmit}>
@@ -66,8 +74,8 @@
 						<h3 class="mb-5">Sign in</h3>
 
 						<div class="form-outline mb-4">
-							<input id="username" class="form-control form-control-lg" bind:value={username} />
-							<label class="form-label" for="username">Username</label>
+							<input id="email" class="form-control form-control-lg" bind:value={email} />
+							<label class="form-label" for="email">Email</label>
 						</div>
 
 						<div class="form-outline mb-4">
