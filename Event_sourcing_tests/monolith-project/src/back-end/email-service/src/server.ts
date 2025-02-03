@@ -11,8 +11,31 @@ const client = new Kafka({
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "email-service";
+const topic = ['emails'];
 
 
+// ADMIN TOPIC CREATION
+const setup = async () => {
+    const admin = client.admin();
+    await admin.connect();
+
+    // Create the topics if they don't exist
+    await admin.listTopics().then(async (topics) => {
+        for (let i = 0; i < topic.length; i++) {
+            if (!topics.includes(topic[i])) {
+                console.log("Creating topic: ", topic[i]);
+                await admin.createTopics({
+                    topics: [{ topic: topic[i] }],
+                });
+            } else {
+                console.log("Topic already exists: ", topic[i]);
+            }
+        }
+    }).catch((error: any) => {
+        console.log("Error in listTopics method: ", error);
+    });
+    await admin.disconnect();
+}
 
 
 // PRODUCER
@@ -26,11 +49,10 @@ producer.start().then(() => {
 
 // CONSUMER
 const consumer = client.consumer({ groupId: 'email-group' });
-const topics = ['emails'];
 
 const run = async () => {
     await consumer.connect()
-    await Promise.all(topics.map(topic => consumer.subscribe({ topic, fromBeginning: true })));
+    await Promise.all(topic.map(top => consumer.subscribe({ topic: top, fromBeginning: true })));
     await consumer.run({
         eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
             if (message.value === null) {
@@ -49,6 +71,14 @@ const run = async () => {
     });
 }
 
-run().catch(e => console.error(`[email/consumer] ${e.message}`, e))
+setup()
+    .catch(e => {
+        console.error(`[email/admin] ${e.message}`, e)
+        return;
+    })
+    .then(() => 
+        run()
+            .catch(e => console.error(`[email/consumer] ${e.message}`, e))
+    );
 
 

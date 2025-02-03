@@ -21,12 +21,36 @@ const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
 const DB_PORT = "9042";
 const KEYSPACE = process.env.DB_KEYSPACE || "stock";
 
+const topic = ['products'];
 
 
 // CASSANDRA
 const cassandra = new Cassandra(KEYSPACE, [`${DB_ADDRESS}:${DB_PORT}`]);
 cassandra.connect();
 
+
+// ADMIN TOPIC CREATION
+const setup = async () => {
+    const admin = client.admin();
+    await admin.connect();
+
+    // Create the topics if they don't exist
+    await admin.listTopics().then(async (topics) => {
+        for (let i = 0; i < topic.length; i++) {
+            if (!topics.includes(topic[i])) {
+                console.log("Creating topic: ", topic[i]);
+                await admin.createTopics({
+                    topics: [{ topic: topic[i] }],
+                });
+            } else {
+                console.log("Topic already exists: ", topic[i]);
+            }
+        }
+    }).catch((error: any) => {
+        console.log("Error in listTopics method: ", error);
+    });
+    await admin.disconnect();
+}
 
 // PRODUCER
 const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
@@ -37,10 +61,10 @@ producer.start().then(() => {
 });
 
 
-
 // CONSUMER
 const consumer = client.consumer({ groupId: 'stock-group' });
-const topic = ['products'];
+
+
 
 const run = async () => {
     await consumer.connect()
@@ -66,10 +90,15 @@ const run = async () => {
     });
 }
 
-run().catch(e => console.error(`[stock/consumer] ${e.message}`, e))
-
-
-
+setup()
+    .catch(e => {
+        console.error(`[stock/admin] ${e.message}`, e);
+        return;
+    })
+    .then(() => 
+        run()
+            .catch(e => console.error(`[stock/consumer] ${e.message}`, e))
+    );
 
 // HTTP
 const stock = {
