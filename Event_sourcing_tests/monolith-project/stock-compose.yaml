@@ -16,7 +16,6 @@ services:
     environment:
       PORT: ${STOCK_PORT} 
       DB_ADDRESS: ${DB_STOCK_HOST}
-      DB_PORT: ${DB_STOCK_PORT}
       DB_KEYSPACE: ${DB_STOCK_KEYSPACE} 
       EVENT_ADDRESS: ${EVENT_HOST} 
       EVENT_PORT: ${EVENT_PORT} 
@@ -26,28 +25,14 @@ services:
         condition: service_healthy
       db-stock:
         condition: service_healthy
-      db-stock-init:
-        condition: service_completed_successfully
+      # db-stock-init:
+      #   condition: service_completed_successfully
   db-stock:
-    extends:
-      file: src/back-end/cassandra-db/docker-compose.yaml
-      service: cassandra
+    image: redis:alpine
     ports:
-      - "${DB_STOCK_PORT}:9042" # Expose the default Cassandra CQL port
-    environment:
-      CASSANDRA_CLUSTER_NAME: "stock"
-      CASSANDRA_SEEDS: "db-stock"
-      CASSANDRA_START_RPC: "true" # Remote procedure call
-      CASSANDRA_BROADCAST_ADDRESS: "db-stock"
-      CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
-  db-stock-init:
-    image: cassandra:latest
-    depends_on:
-      db-stock:
-        condition: service_healthy
-    environment:
-      DB_STOCK_HOST: ${DB_STOCK_HOST}
-    volumes:
-      - ./src/back-end/cassandra-db/init-scripts/stock.cql:/schema.cql
-    command: ["/bin/bash", "-c", "sleep 5 && echo loading cassandra keyspace using $DB_STOCK_HOST && cqlsh $DB_STOCK_HOST -f /schema.cql"]
-
+      - "${DB_STOCK_PORT}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
