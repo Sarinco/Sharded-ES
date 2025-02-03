@@ -9,6 +9,13 @@ services:
     ports:
       - "5050:5050"
     command: sh boot-in-order.sh
+    environment:
+      PORT: ${ORDERS_PORT} 
+      DB_ADDRESS: ${DB_ORDERS_HOST}
+      DB_PORT: ${DB_ORDERS_PORT}
+      DB_KEYSPACE: ${DB_ORDERS_KEYSPACE} 
+      EVENT_ADDRESS: ${EVENT_HOST} 
+      EVENT_PORT: ${EVENT_PORT} 
     depends_on:
       broker:
         condition: service_healthy
@@ -21,16 +28,14 @@ services:
       file: src/back-end/cassandra-db/docker-compose.yaml
       service: cassandra
     ports:
-      - "{DB_ORDERS_PORT}:9042"
+      - "${DB_ORDERS_PORT}:9042"
     environment:
       CASSANDRA_CLUSTER_NAME: "orders"
-      CASSANDRA_SEEDS: "db_orders"
+      CASSANDRA_SEEDS: "db-orders"
       CASSANDRA_START_RPC: "true" # Remote procedure call
-      CASSANDRA_BROADCAST_ADDRESS: "db_orders"
+      CASSANDRA_BROADCAST_ADDRESS: "db-orders"
       CASSANDRA_ENDPOINT_SNITCH: "SimpleSnitch" # Distribution of the nodes
-    volumes:
-      - ./src/back-end/cassandra-db/init-scripts/orders.cql:/docker-entrypoint-initdb.d/init-database.cql
-    db-stock-init:
+  db-orders-init:
       image: cassandra:latest
       depends_on:
         db-orders:

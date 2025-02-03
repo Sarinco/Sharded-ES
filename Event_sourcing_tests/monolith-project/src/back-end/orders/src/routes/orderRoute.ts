@@ -1,17 +1,18 @@
 import { Router } from 'express';
+import orders from '../controllers/orderController';
 
 const router = Router();
 
 router.get('/', (req, res) => {
-    res.send("TODO")
+    orders.findAll;
 });
 
 router.post('/', (req, res) => {
-    res.send("TODO")
+    orders.add;
 });
 
 router.put('/', (req, res) => {
-    res.send("TODO")
+    res.send("TODO");
 });
 
 export default router;

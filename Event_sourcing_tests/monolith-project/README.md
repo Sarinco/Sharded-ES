@@ -49,3 +49,10 @@ curl +PUT "http://localhost:80/api/stock/2f75b6cc-00d1-4c84-aaca-adbcd7cf8166" \
 -d '{"field": "name", "updateValue": "banana1"}'
 ```
 This command updates the product with the id `2f75b6cc-00d1-4c84-aaca-adbcd7cf8166` with the new name `banana1`. !! NOT WORKING YET !!
+
+
+Example for orders
+```bash
+curl http://localhost:80/api/orders/ \
+   -H "Content-Type: application/json" \-d '{"customer": "012345", "location": "Belgium", "product": "456789", "count": "10"}'
+```

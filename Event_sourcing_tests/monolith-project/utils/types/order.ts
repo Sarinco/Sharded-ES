@@ -1,5 +1,5 @@
 // Orders class
-export default class Orders {
+export default class Order {
     id: string;
     customer: string;
     location: string;
