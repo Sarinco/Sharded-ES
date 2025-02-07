@@ -1,9 +1,9 @@
 require('module-alias/register');
-import { client, topic } from '@src/controllers/stockController';
+import { client, topic } from '@src/controllers/usersController';
 import { MemberDescription } from 'kafkajs';
 
 const PORT: number = parseInt(process.env.PORT as string);
-const group = 'stock-group';
+const group = 'users-group';
 
 const initDB = async () => {
     try {
@@ -27,6 +27,7 @@ const initDB = async () => {
         }).catch((error: any) => {
             console.log("Error in listTopics method: ", error);
         });
+
 
         // Reset offset to start from the beginning
         // ALL THE CONSUMER HAVE TO BE DISCONNECTED

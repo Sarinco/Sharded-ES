@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { consumer, consumerConnect } from '@src/controllers/stockController';
+import { consumer, consumerConnect } from '@src/controllers/usersController';
 
 const router = Router();
 

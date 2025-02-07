@@ -1,6 +1,13 @@
-import { Product } from "../types/product";
-import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/events/stock-events";
 import { RedisClientType } from "redis";
+
+// Custom imports
+import { Product } from "@src/types/product";
+import {
+    ProductAddedEvent,
+    ProductDeletedEvent,
+    ProductUpdatedEvent
+} from "@src/types/events/stock-events";
+
 
 // Handle event and update the state of the product list
 export function productEventHandler(redis: RedisClientType, event: any) {
@@ -17,7 +24,7 @@ export function productEventHandler(redis: RedisClientType, event: any) {
                 productAddedEvent.count
             );
             redis.set(
-                productAddedEvent.id, 
+                productAddedEvent.id,
                 JSON.stringify(newProduct)
             ).catch((error: any) => {
                 console.log("Error in set method: ", error);
@@ -56,7 +63,7 @@ export function productEventHandler(redis: RedisClientType, event: any) {
                     productUpdatedEvent.count
                 );
                 redis.set(
-                    productUpdatedEvent.id, 
+                    productUpdatedEvent.id,
                     JSON.stringify(updatedProduct)
                 ).catch((error: any) => {
                     console.log("Error in set method: ", error);
@@ -72,7 +79,7 @@ export function productEventHandler(redis: RedisClientType, event: any) {
             break;
 
         default:
-            console.log("Invalid event type");
+            console.log("Unknown event type");
             break;
     }
 }

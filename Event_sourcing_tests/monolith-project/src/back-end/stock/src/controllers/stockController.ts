@@ -1,11 +1,17 @@
 import { Kafka, EachMessagePayload } from 'kafkajs';
 import { v4 as uuid } from 'uuid';
+import { createClient, RedisClientType } from 'redis';
+
+// Custom imports
 import { Product } from "@src/types/product";
-import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "@src/types/events/stock-events";
 import { productEventHandler } from "@src/custom-handlers/productEventHandler";
 import { ProducerFactory } from "@src/handlers/kafkaHandler";
-import { createClient, RedisClientType } from 'redis';
 import { verifyJWT } from '@src/middleware/token';
+import {
+    ProductAddedEvent, 
+    ProductDeletedEvent, 
+    ProductUpdatedEvent
+} from "@src/types/events/stock-events";
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -16,10 +22,9 @@ const client = new Kafka({
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
 
-// For the Cassandra database
-const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
+// For the database
+const DB_ADDRESS = process.env.DB_ADDRESS;
 const DB_PORT = "6379";
-const KEYSPACE = process.env.DB_KEYSPACE || "stock";
 
 const topic = ['products'];
 
@@ -41,7 +46,7 @@ producer.start().then(() => {
 
 
 // CONSUMER
-const consumer = client.consumer({ 
+const consumer = client.consumer({
     groupId: 'stock-group',
 });
 
@@ -56,33 +61,6 @@ const redisSetup = async () => {
         console.log("Error connecting to Redis: ", error);
     });
 }
-const topicCreation = async () => {
-
-    // ADMIN TOPIC CREATION
-    const admin = client.admin();
-    await admin.connect();
-
-
-    // Create the topics if they don't exist
-    await admin.listTopics().then(async (topics) => {
-        for (let i = 0; i < topic.length; i++) {
-            if (!topics.includes(topic[i])) {
-                console.log("Creating topic: ", topic[i]);
-                await admin.createTopics({
-                    topics: [{ topic: topic[i] }],
-                });
-            } else {
-                console.log("Topic already exists: ", topic[i]);
-            }
-        }
-    }).catch((error: any) => {
-        console.log("Error in listTopics method: ", error);
-    });
-    await admin.disconnect();
-
-    return;
-}
-
 
 
 // INFO: ONLY FOR CONSUMER CONNECT
@@ -319,6 +297,6 @@ const stock = {
 }
 
 export { client, topic, consumer, producer, redis };
-export { redisSetup, topicCreation, consumerConnect };
+export { redisSetup, consumerConnect };
 
 export default stock;

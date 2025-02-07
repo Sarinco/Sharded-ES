@@ -4,7 +4,7 @@ require('module-alias/register');
 
 import stockRoutes from '@src/routes/stockRoute';
 import kafkaRoutes from '@src/routes/kafkaRoute';
-import { consumerConnect, redisSetup, topicCreation } from '@src/controllers/stockController';
+import { consumerConnect, redisSetup } from '@src/controllers/stockController';
 
 const app = express();
 const PORT: number = parseInt(process.env.PORT as string) || 5000;
@@ -35,9 +35,6 @@ redisSetup()
     console.error(`[stock/redisSetup] ${e.message}`, e);
     return;
 }).then(() =>
-    topicCreation()
-        .catch(e => console.error(`[stock/topicCreation] ${e.message}`, e))
-).then(() =>
     consumerConnect()
         .catch(e => console.error(`[stock/consumer] ${e.message}`, e))
 );

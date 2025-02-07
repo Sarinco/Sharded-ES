@@ -114,19 +114,21 @@ export class UserDeletedEvent {
 
 export class UserUpdatedEvent {
     email: string;
-    field: string;
-    updateValue: any;
+    hash: string;
+    salt: string;
+    role: string;
     modifiedBy: string;
 
-    constructor(email: string, field: string, updateValue: any, modifiedBy: string) {
+    constructor(email: string, hash: string, salt: string, role: string, modifiedBy: string) {
         this.email = email;
-        this.field = field;
-        this.updateValue = updateValue;
+        this.hash = hash;
+        this.salt = salt;
+        this.role = role;
         this.modifiedBy = modifiedBy;
     }
-
+    
     static fromJSON(json: any): UserUpdatedEvent {
-        return new UserUpdatedEvent(json.email, json.field, json.updateValue, json.modifiedBy);
+        return new UserUpdatedEvent(json.email, json.hash, json.salt, json.role, json.modifiedBy);
     }
 
     toJSON(): any {
@@ -137,12 +139,12 @@ export class UserUpdatedEvent {
                 type: "UserUpdated",
                 data: {
                     email: this.email,
-                    field: this.field,
-                    updateValue: this.updateValue,
+                    hash: this.hash,
+                    salt: this.salt,
+                    role: this.role,
                     modifiedBy: this.modifiedBy
                 }
             })
         }
     }
 }
-
