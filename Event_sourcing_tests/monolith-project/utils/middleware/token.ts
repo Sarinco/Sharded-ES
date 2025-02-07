@@ -6,7 +6,6 @@ console.log("JWT_SECRET: ", JWT_SECRET);
 
 if (JWT_SECRET === '') {
     console.error("JWT_SECRET is not set");
-    process.exit(1);
 }
 
 // Generate a JWT token

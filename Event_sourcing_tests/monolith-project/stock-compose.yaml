@@ -25,8 +25,28 @@ services:
         condition: service_healthy
       db-stock:
         condition: service_healthy
-      # db-stock-init:
-      #   condition: service_completed_successfully
+      db-stock-init:
+        condition: service_completed_successfully
+  db-stock-init:
+    build:
+      context: ./src/back-end/stock
+      dockerfile: Dockerfile.init-db
+    volumes:
+      - ./src/back-end/stock:/app
+      - ./utils/types:/app/src/types
+      - ./utils/handlers:/app/src/handlers
+      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+    environment:
+      PORT: ${STOCK_PORT}
+      EVENT_ADDRESS: ${EVENT_HOST}
+      EVENT_PORT: ${EVENT_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      broker:
+        condition: service_healthy
+      db-stock:
+        condition: service_healthy
+
   db-stock:
     image: redis:alpine
     ports:

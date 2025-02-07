@@ -1,14 +1,14 @@
 import { Kafka, EachMessagePayload } from 'kafkajs';
 import { v4 as uuid } from 'uuid';
-import { Product } from "../types/product";
-import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/events/stock-events";
-import { productEventHandler } from "../custom-handlers/productEventHandler";
-import { ProducerFactory } from "../handlers/kafkaHandler";
+import { Product } from "@src/types/product";
+import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "@src/types/events/stock-events";
+import { productEventHandler } from "@src/custom-handlers/productEventHandler";
+import { ProducerFactory } from "@src/handlers/kafkaHandler";
 import { createClient, RedisClientType } from 'redis';
-import { verifyJWT } from '../middleware/token';
+import { verifyJWT } from '@src/middleware/token';
 
 // Setup environment variables
-const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
+const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
 const EVENT_PORT = process.env.EVENT_PORT || "9092";
 const client = new Kafka({
     clientId: 'event-pipeline',
@@ -31,19 +31,37 @@ const redis: RedisClientType = createClient({
 });
 
 
+// PRODUCER
+const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
+producer.start().then(() => {
+    console.log("Producer started successfully");
+}).catch((error: any) => {
+    console.log("Error starting the producer: ", error);
+});
+
+
+// CONSUMER
+const consumer = client.consumer({ 
+    groupId: 'stock-group',
+});
+
 // SETUP
-const setup = async () => {
+const redisSetup = async () => {
+    // REDIS
+    await redis.on('error', (error: any) => {
+        console.log("Error in Redis: ", error);
+    }).connect().then(() => {
+        console.log("Connected to Redis");
+    }).catch((error: any) => {
+        console.log("Error connecting to Redis: ", error);
+    });
+}
+const topicCreation = async () => {
+
     // ADMIN TOPIC CREATION
     const admin = client.admin();
     await admin.connect();
 
-    // Reset offset to start from the beginning
-    // ALL THE CONSUMER HAVE TO BE DISCONNECTED
-    // await admin.resetOffsets({
-    //     groupId: 'stock-group',
-    //     topic: topic[0],
-    //     earliest: true
-    // });
 
     // Create the topics if they don't exist
     await admin.listTopics().then(async (topics) => {
@@ -62,34 +80,19 @@ const setup = async () => {
     });
     await admin.disconnect();
 
-
-
-    // REDIS
-    await redis.on('error', (error: any) => {
-        console.log("Error in Redis: ", error);
-    }).connect().then(() => {
-        console.log("Connected to Redis");
-    }).catch((error: any) => {
-        console.log("Error connecting to Redis: ", error);
-    });
+    return;
 }
 
-// PRODUCER
-const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
-producer.start().then(() => {
-    console.log("Producer started successfully");
-}).catch((error: any) => {
-    console.log("Error starting the producer: ", error);
-});
 
 
-// CONSUMER
-const consumer = client.consumer({ groupId: 'stock-group' });
+// INFO: ONLY FOR CONSUMER CONNECT
+const consumerConnect = async () => {
+    await consumer.connect().then(() => {
+        console.log("Consumer connected successfully");
+    }).catch((error: any) => {
+        console.log("Error in connect method: ", error);
+    });
 
-
-
-const run = async () => {
-    await consumer.connect()
     await Promise.all(topic.map(topic => consumer.subscribe({ topic, fromBeginning: true })));
     // Small local equivalent of CQRS for the stock service
     await consumer.run({
@@ -111,16 +114,6 @@ const run = async () => {
         },
     });
 }
-
-setup()
-    .catch(e => {
-        console.error(`[stock/admin] ${e.message}`, e);
-        return;
-    })
-    .then(() =>
-        run()
-            .catch(e => console.error(`[stock/consumer] ${e.message}`, e))
-    );
 
 // HTTP
 const stock = {
@@ -324,5 +317,8 @@ const stock = {
         }
     }
 }
+
+export { client, topic, consumer, producer, redis };
+export { redisSetup, topicCreation, consumerConnect };
 
 export default stock;

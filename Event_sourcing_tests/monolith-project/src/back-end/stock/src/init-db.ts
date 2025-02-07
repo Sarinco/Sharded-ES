@@ -1,109 +1,111 @@
-import { Kafka } from "kafkajs";
-import { v4 as uuid } from 'uuid';
-import { Product } from "./types/product";
-import { ProductAddedEvent } from "./types/stock-events";
+require('module-alias/register');
+import { client, topic } from '@src/controllers/stockController';
+import { MemberDescription } from 'kafkajs';
 
-// Create a client connected to your local EventStoreDB instance
-const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
-const DB_PORT = process.env.DB_PORT || "9092";
+const PORT: number = parseInt(process.env.PORT as string);
+const group = 'stock-group';
 
-const client = new Kafka({
-    clientId: 'event-pipeline',
-    brokers: [`${DB_ADDRESS}:${DB_PORT}`],
+const initDB = async () => {
+    try {
+
+        // ADMIN TOPIC CREATION
+        const admin = client.admin();
+        await admin.connect();
+
+        // Reset offset to start from the beginning
+        // ALL THE CONSUMER HAVE TO BE DISCONNECTED
+        let members: MemberDescription[] = [];
+        let memberToReconnect: MemberDescription[] = [];
+        let waitToStable = false;
+
+        let groupList = await admin.describeGroups(['stock-group']);
+        for (let i = 0; i < groupList.groups.length; i++) {
+            if (groupList.groups[i].groupId !== group) {
+                continue;
+            }
+
+            members = groupList.groups[i].members;
+            let memberDisconnected: MemberDescription[] = [];
+            for (let j = 0; j < groupList.groups[i].members.length; j++) {
+                const clientIP = groupList.groups[i].members[j].clientHost;
+
+                const alreadyDisconnected = memberDisconnected.find((member) => member.clientHost === clientIP);
+                if (alreadyDisconnected) {
+                    continue;
+                }
+
+                console.log("Disconnecting consumer: ", clientIP);
+                await fetch(`http://${clientIP}:${PORT}/kafka/disconnect`, {
+                    method: 'POST',
+                }).then((response) => {
+                    console.log("Response: ", response);
+                    memberDisconnected.push(groupList.groups[i].members[j]);
+                    memberToReconnect.push(groupList.groups[i].members[j]);
+                }).catch((error) => {
+                    console.log("Error in fetch: ", error);
+                    waitToStable = true;
+                });
+            }
+        }
+
+        const maxWait = 15;
+        let waitCount = 0;
+        while (waitToStable && waitCount < maxWait) {
+            console.log("Waiting for kafka to stabilize");
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            waitCount++;
+
+            groupList = await admin.describeGroups(['stock-group']);
+            for (let i = 0; i < groupList.groups.length; i++) {
+                if (groupList.groups[i].groupId !== group) {
+                    continue;
+                }
+
+                members = groupList.groups[i].members;
+                console.log("Members: ", members);
+                if (members.length === 0) {
+                    console.log("All consumers disconnected");
+                    waitToStable = false;
+                    break;
+                }
+            }
+        }
+
+        await admin.resetOffsets({
+            groupId: 'stock-group',
+            topic: topic[0],
+            earliest: true
+        }).then(() => {
+            console.log("Offset reset successfully");
+        }).catch((error: any) => {
+            console.log("Error in resetOffsets method: ", error);
+            process.exit(1);
+        });
+
+        // Re-subscribe to the previous hosts
+        for (let i = 0; i < memberToReconnect.length; i++) {
+            const clientIP = memberToReconnect[i].clientHost;
+            await fetch(`http://${clientIP}:${PORT}/kafka/subscribe`, {
+                method: 'POST',
+            }).then((response) => {
+                console.log("Response: ", response);
+            }).catch((error) => {
+                console.log("Error in fetch: ", error);
+            });
+        }
+
+
+        process.exit(0);
+    } catch (error) {
+        console.log("Error in initDB: ", error);
+        process.exit(1);
+    }
+}
+
+initDB().then(() => {
+    console.log("DB initialized");
+    process.exit(0);
+}).catch((error) => {
+    console.log("Error: ", error);
 });
 
-const producer = client.producer()
-
-async function addProduct(product: Product) {
-    console.log("Adding new product: ", product.name);
-    const event = new ProductAddedEvent(
-        product.id,
-        product.name,
-        product.price,
-        product.description,
-        product.image,
-        product.category,
-        product.count
-    );
-    await producer.send({
-        topic: 'products',
-        messages: [event.toJSON()]
-    });
-}
-
-async function checkProductStream(products: any[]) {
-    await producer.connect();
-    products.forEach(product => {
-        addProduct(new Product(uuid(), product.name, product.price, "", product.image, product.category, 10));
-    });
-}
-
-const products = [
-    {
-        id: 1,
-        name: 'Brocolli',
-        price: 2.73,
-        image:
-            'https://res.cloudinary.com/sivadass/image/upload/v1493620046/dummy-products/broccoli.jpg',
-        category: 'Vegetables',
-    },
-    {
-        id: 2,
-        name: 'Cauliflower',
-        price: 6.3,
-        image:
-            'https://res.cloudinary.com/sivadass/image/upload/v1493620046/dummy-products/cauliflower.jpg',
-        category: 'Vegetables'
-    },
-    {
-        id: 3,
-        name: 'Cucumber',
-        price: 5.6,
-        image:
-            'https://res.cloudinary.com/sivadass/image/upload/v1493620046/dummy-products/cucumber.jpg',
-        category: 'Vegetables'
-    },
-    {
-        id: 4,
-        name: 'Beetroot',
-        price: 8.7,
-        image:
-            'https://res.cloudinary.com/sivadass/image/upload/v1493620045/dummy-products/beetroot.jpg',
-        category: 'Vegetables'
-    },
-    {
-        id: 5,
-        name: 'Apple',
-        price: 2.34,
-        image:
-            'https://res.cloudinary.com/sivadass/image/upload/v1493620045/dummy-products/apple.jpg',
-        category: 'Fruits'
-    },
-    {
-        id: 6,
-        name: 'Banana',
-        price: 1.69,
-        image:
-            'https://res.cloudinary.com/sivadass/image/upload/v1493620045/dummy-products/banana.jpg',
-        category: 'Fruits'
-    },
-    {
-        id: 7,
-        name: 'Grapes',
-        price: 5.98,
-        image:
-            'https://res.cloudinary.com/sivadass/image/upload/v1493620045/dummy-products/grapes.jpg',
-        category: 'Fruits'
-    },
-    {
-        id: 8,
-        name: 'Mango',
-        price: 6.8,
-        image:
-            'https://res.cloudinary.com/sivadass/image/upload/v1493620045/dummy-products/mango.jpg',
-        category: 'Fruits'
-    }
-]
-
-checkProductStream(products);
-console.log("Product sent");
