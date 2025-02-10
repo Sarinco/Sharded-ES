@@ -3,13 +3,9 @@ import orders from '../controllers/orderController';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-    orders.findAll;
-});
+router.get('/', orders.findAll);
 
-router.post('/', (req, res) => {
-    orders.add;
-});
+router.post('/', orders.add);
 
 router.put('/', (req, res) => {
     res.send("TODO");

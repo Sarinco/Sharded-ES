@@ -7,7 +7,7 @@ const PORT: number = 5050;
 app.use(express.json());
 
 app.get('/', (req: Request, res: Response) => {
-    res.send('Hello World!');
+    res.send('Debug message');
 });
 
 app.use('/api/orders', orderRoute);

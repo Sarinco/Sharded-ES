@@ -1,8 +1,8 @@
 import Order from  "../types/order"
 import { OrderAddedEvent } from "../types/order-events";
-import { Cassandra } from "./cassandraHandler"
+import { RedisClientType } from "redis";
 
-export function ordersEventHandler(cassandra: Cassandra, event: any) {
+export function ordersEventHandler(redis: RedisClientType, event: any) {
     switch (event.type) {
         case "OrderAdded":
             const orderAddedEvent = event.data as OrderAddedEvent;
@@ -13,7 +13,15 @@ export function ordersEventHandler(cassandra: Cassandra, event: any) {
                 orderAddedEvent.product,
                 orderAddedEvent.count
             );
-            cassandra.insert('entry', newOrder.getColumnList(), newOrder.getOrder());
+            redis.set(
+                orderAddedEvent.id,
+                JSON.stringify(newOrder)
+            ).catch((error: any) => {
+                console.log("Error in set method ", error);
+                throw error;
+            }).then(() => {
+                console.log("Product added successfully in the Redis");
+            });
 
         break;
         default:
