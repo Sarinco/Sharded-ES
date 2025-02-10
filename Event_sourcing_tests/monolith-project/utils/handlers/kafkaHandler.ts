@@ -27,6 +27,6 @@ export class ProducerFactory {
         await this.producer.send({
             topic,
             messages: [message],
-        })
+        })        
     }
 }

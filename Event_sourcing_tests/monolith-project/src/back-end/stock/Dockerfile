@@ -1,5 +1,5 @@
 # this image relies on the nodejs image
-FROM node:20-alpine
+FROM node:22-alpine
 # set working directory
 WORKDIR /app
 # we need CURL to verify that the key-value storage is running (see boot-in-order.sh)

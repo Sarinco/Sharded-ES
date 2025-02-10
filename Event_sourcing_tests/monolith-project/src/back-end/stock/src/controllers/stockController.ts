@@ -5,11 +5,10 @@ import { createClient, RedisClientType } from 'redis';
 // Custom imports
 import { Product } from "@src/types/product";
 import { productEventHandler } from "@src/custom-handlers/productEventHandler";
-import { ProducerFactory } from "@src/handlers/kafkaHandler";
 import { verifyJWT } from '@src/middleware/token';
 import {
-    ProductAddedEvent, 
-    ProductDeletedEvent, 
+    ProductAddedEvent,
+    ProductDeletedEvent,
     ProductUpdatedEvent
 } from "@src/types/events/stock-events";
 
@@ -21,6 +20,8 @@ const client = new Kafka({
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
+
+const PROXY = 'http://internal-gateway/proxy';
 
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;
@@ -37,13 +38,23 @@ const redis: RedisClientType = createClient({
 
 
 // PRODUCER
-const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
-producer.start().then(() => {
-    console.log("Producer started successfully");
-}).catch((error: any) => {
-    console.log("Error starting the producer: ", error);
-});
+const producer = {
+    send: async (topic: string, message: any) => {
+        const body = {
+            topic,
+            region: 'eu-west-1',
+            message
+        }
 
+        const result = await fetch(PROXY, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        })
+    }
+}
 
 // CONSUMER
 const consumer = client.consumer({
