@@ -2,7 +2,7 @@ const { Kafka, EachMessagePayload } = require('kafkajs');
 import { v4 as uuid } from 'uuid';
 import Order from "../types/order";
 import { OrderAddedEvent } from '../types/order-events'; 
-import { ordersEventHandler } from "../handlers/ordersEventHandler";
+import { ordersEventHandler } from "../custom-handlers/ordersEventHandler";
 import { ProducerFactory } from '../handlers/kafkaHandler';
 import { createClient, RedisClientType } from 'redis';
 import { verifyJWT } from '../middleware/token';
