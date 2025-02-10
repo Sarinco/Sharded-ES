@@ -14,7 +14,25 @@ services:
     environment:
       PORT: ${ORDER_PORT} 
     command: sh boot-in-order.sh
+    environment:
+      PORT: ${ORDERS_PORT} 
+      DB_ADDRESS: ${DB_ORDERS_HOST}
+      DB_PORT: ${DB_ORDERS_PORT}
+      DB_KEYSPACE: ${DB_ORDERS_KEYSPACE} 
+      EVENT_ADDRESS: ${EVENT_HOST} 
+      EVENT_PORT: ${EVENT_PORT} 
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       broker:
         condition: service_healthy
-
+      db-orders:
+        condition: service_healthy
+  db-orders:
+    image: redis:alpine
+    ports:
+      - "${DB_ORDERS_PORT}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5 

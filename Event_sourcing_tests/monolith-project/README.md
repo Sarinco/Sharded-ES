@@ -79,3 +79,9 @@ curl http://localhost:80/api/users/ \
 ```
 
 The jwt_token is the token that you get when you login in the header, you need to add -v in the login command to have the header !!. You can use the token to get all the users. 
+
+Example for orders
+```bash
+curl http://localhost:80/api/orders/ \
+   -H "Content-Type: application/json" \-d '{"customer": "012345", "location": "Belgium", "product": "456789", "count": "10"}'
+```
