@@ -16,9 +16,10 @@ services:
     environment:
       PORT: ${STOCK_PORT} 
       DB_ADDRESS: ${DB_STOCK_HOST}
-      DB_KEYSPACE: ${DB_STOCK_KEYSPACE} 
       EVENT_ADDRESS: ${EVENT_HOST} 
       EVENT_PORT: ${EVENT_PORT} 
+      PROXY_ADDRESS: ${PROXY_HOST}
+      PROXY_PORT: ${PROXY_PORT}
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
       broker:
