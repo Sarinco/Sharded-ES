@@ -1,19 +1,23 @@
 import { Kafka, EachMessagePayload } from 'kafkajs';
-import { ProducerFactory } from '../handlers/kafkaHandler';
-import { Cassandra } from '../handlers/cassandraHandler';
+import { createClient, RedisClientType } from 'redis';
+
+// Custom imports
+import { ProducerFactory } from '@src/handlers/kafkaHandler';
+import { Cassandra } from '@src/handlers/cassandraHandler';
 import { v4 as uuid } from 'uuid';
-import { User } from '../types/user';
-import { 
-    UserAddedEvent, 
+import { User } from '@src/types/user';
+import {
+    UserAddedEvent,
     UserFailedAuthenticationEvent,
     UserAuthenticatedEvent,
     UserDeletedEvent,
     UserUpdatedEvent,
-} from '../types/events/users-events';
+} from '@src/types/events/users-events';
+import { userEventHandler } from '@src/custom-handlers/usersEventHandler';
 
 // Import the password middleware
-import { generateSalt, hashPassword, verifyPassword } from '../middleware/password';
-import { generateJWT, verifyJWT } from '../middleware/token';
+import { generateSalt, hashPassword, verifyPassword } from '@src/middleware/password';
+import { generateJWT, verifyJWT } from '@src/middleware/token';
 
 
 // Setup environment variables
@@ -26,41 +30,18 @@ const client = new Kafka({
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "users-service";
 
-// For the Cassandra database
-const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
-const DB_PORT = "9042";
-const KEYSPACE = process.env.DB_KEYSPACE || "users";
+// For the database
+const DB_ADDRESS = process.env.DB_ADDRESS;
+const DB_PORT = "6379";
 
 const topic = ['users'];
 
-// CASSANDRA
-const cassandra = new Cassandra(KEYSPACE, [`${DB_ADDRESS}:${DB_PORT}`]);
-cassandra.connect();
 
-
-// ADMIN TOPIC CREATION
-const setup = async () => {
-    const admin = client.admin();
-    await admin.connect();
-
-    // Create the topics if they don't exist
-    await admin.listTopics().then(async (topics) => {
-        for (let i = 0; i < topic.length; i++) {
-            if (!topics.includes(topic[i])) {
-                console.log("Creating topic: ", topic[i]);
-                await admin.createTopics({
-                    topics: [{ topic: topic[i] }],
-                });
-            } else {
-                console.log("Topic already exists: ", topic[i]);
-            }
-        }
-    }).catch((error: any) => {
-        console.log("Error in listTopics method: ", error);
-    });
-    await admin.disconnect();
-}
-
+// REDIS
+const redisUrl = "redis://" + DB_ADDRESS + ":" + DB_PORT;
+const redis: RedisClientType = createClient({
+    url: redisUrl,
+});
 
 
 // PRODUCER
@@ -73,9 +54,24 @@ producer.start().then(() => {
 
 
 // CONSUMER
-const consumer = client.consumer({ groupId: 'users-group' });
+const consumer = client.consumer({
+    groupId: 'users-group'
+});
 
-const run = async () => {
+// SETUP
+const redisSetup = async () => {
+    // REDIS
+    await redis.on('error', (error: any) => {
+        console.log("Error in Redis: ", error);
+    }).connect().then(() => {
+        console.log("Connected to Redis");
+    }).catch((error: any) => {
+        console.log("Error connecting to Redis: ", error);
+    });
+}
+
+
+const consumerConnect = async () => {
     await consumer.connect()
     await Promise.all(topic.map(top => consumer.subscribe({ topic: top, fromBeginning: true })));
     await consumer.run({
@@ -88,6 +84,7 @@ const run = async () => {
                 case 'users':
                     const user: User = JSON.parse(message.value.toString());
                     console.log("UserEvent: ", user);
+                    userEventHandler(redis, user);
                     break;
                 default:
                     console.log("Unknown topic: ", topic);
@@ -96,17 +93,6 @@ const run = async () => {
         },
     });
 }
-
-
-setup()
-    .catch(e => {
-        console.error(`[users/admin] ${e.message}`, e)
-        return;
-    })
-    .then(() => 
-        run()
-            .catch(e => console.error(`[users/consumer] ${e.message}`, e))
-    );
 
 
 // HTTP Controller
@@ -118,12 +104,10 @@ const users = {
 
         try {
             // Check if the user already exists
-            let query = `SELECT * FROM ${KEYSPACE}.user WHERE email = ?`;
-            const result = await cassandra.client.execute(query, [email], { prepare: true });
-
-            if (result.rows.length > 0) {
+            let response = await redis.get(email);
+            if (response) {
                 console.log("User already exists");
-                return res.status(409).send("User already exists"); // Return here
+                return res.status(409).send("User already exists");
             }
 
             // Hash the password
@@ -138,20 +122,18 @@ const users = {
                 role: "user"
             };
 
-            // Add the user to the database
-            query = `INSERT INTO ${KEYSPACE}.user (email, hash, salt, role) VALUES (?, ?, ?, ?)`;
-            await cassandra.client.execute(query, [user.email, user.hash, user.salt, user.role], { prepare: true });
-
-            console.debug("User added successfully in the Database");
-            
-            const token = generateJWT(user.email, user.role);
-            res.setHeader('Authorization', token);
-
-            res.status(201).send("User added successfully");
-
             // Send an event to Kafka
             const userAddedEvent = new UserAddedEvent(user.email, user.hash, user.salt, user.role);
-            producer.send("users", userAddedEvent.toJSON());
+            producer.send("users", userAddedEvent.toJSON()).then(() => {
+                console.log("User added event sent successfully");
+                const token = generateJWT(user.email, user.role);
+
+                res.setHeader('Authorization', token);
+                res.status(201).send("User added successfully");
+            }).catch((error: any) => {
+                console.log("Error sending user added event: ", error);
+            })
+
         } catch (error) {
             console.log("Error in login method: ", error);
             res.status(500).send("Error in login method");
@@ -164,10 +146,8 @@ const users = {
 
         try {
             // Get the user from the database
-            const query = `SELECT * FROM ${KEYSPACE}.user WHERE email = ?`;
-            const result = await cassandra.client.execute(query, [email], { prepare: true });
-
-            if (result.rows.length === 0) {
+            const response = await redis.get(email);
+            if (!response) {
                 console.log("User not found");
 
                 // Send an event to Kafka
@@ -177,7 +157,7 @@ const users = {
                 return res.status(404).send("User not found");
             }
 
-            const user = result.rows[0];
+            const user = JSON.parse(response);
             const storedHash = user.hash;
             const storedSalt = user.salt;
 
@@ -186,11 +166,11 @@ const users = {
 
             if (valid) {
                 console.log("User authenticated successfully");
-                
+
                 // Generate a JWT token
                 const token = generateJWT(email, user.role);
                 res.setHeader('Authorization', token);
-                
+
                 res.status(200).send("User authenticated successfully");
 
                 // Send an event to Kafka
@@ -226,7 +206,7 @@ const users = {
             return res.status(401).send("Invalid token");
         }
 
-        const { role, exp } = decoded as any; 
+        const { role, exp } = decoded as any;
 
         if (exp < Date.now().valueOf() / 1000) {
             return res.status(401).send("Token has expired");
@@ -238,11 +218,19 @@ const users = {
 
         try {
             // Get the users from the Cassandra database
-            const query = `SELECT * FROM ${KEYSPACE}.user`;
-            const result = await cassandra.client.execute(query);
-            console.debug("Result: ", result.rows);
+            const users: User[] = [];
+            for await (const email of redis.scanIterator()) {
+                const response = await redis.get(email);
+                if (!response) {
+                    console.log("User not found");
+                    return res.status(404).send("User not found");
+                }
+                const user = JSON.parse(response);
+                users.push(user);
+            }
 
-            res.send(result.rows);
+            console.debug("Users: ", users);
+            res.status(200).send(users);
         } catch (error) {
             console.debug("Error in findAll method: ", error);
             res.status(500).send("Error in findAll method");
@@ -271,16 +259,16 @@ const users = {
 
         try {
             // Get the user from the Cassandra database
-            const query = `SELECT * FROM ${KEYSPACE}.user WHERE email = ?`;
-            const result = await cassandra.client.execute(query, [req.params.email], { prepare: true });
-
-            if (result.rows.length === 0) {
+            const response = await redis.get(req.params.email);
+            if (!response) {
                 console.log("User not found");
                 return res.status(404).send("User not found");
             }
 
-            console.log("Result: ", result.rows[0]);
-            res.send(result.rows[0]);
+            const user = JSON.parse(response);
+            console.debug("User: ", user);
+            res.status(200).send(user);
+
         } catch (error) {
             console.log("Error in getById method: ", error);
             res.status(500).send("Error in getById method");
@@ -308,39 +296,28 @@ const users = {
 
         try {
             // Get the user from the database
-            const query = `SELECT * FROM ${KEYSPACE}.user WHERE email = ?`;
-            let result = await cassandra.client.execute(query, [req.params.email], { prepare: true });
-
-            if (result.rows.length === 0) {
+            const response = await redis.get(req.params.email);
+            if (!response) {
                 console.log("User not found");
                 return res.status(404).send("User not found");
             }
 
-            // const user = result.rows[0];
-
-            // Update the user
-            let updateValue: any = req.body.updateValue;
-            const field = req.body.field;
-            console.debug("email: ", req.params.email);
-
-            switch (field) {
-                case "role":
-                    break;
-                default:
-                    console.log("Invalid field: ", field);
-                    return res.status(400).send("Invalid field");
-            }
-
-            const queryUpdate = `UPDATE ${KEYSPACE}.user SET ${field} = ? WHERE email = ? IF EXISTS`;
-            result = await cassandra.client.execute(queryUpdate, [updateValue, req.params.email], { prepare: true });
-            console.debug("Result: ", result);
-
-            console.log("User updated successfully in the Database");
-            res.status(200).send("User updated successfully");
+            const user = JSON.parse(response);
 
             // Send an event to Kafka
-            const userUpdatedEvent = new UserUpdatedEvent(req.params.email, modifiedBy, field, updateValue);
-            producer.send("users", userUpdatedEvent.toJSON());
+            const userUpdatedEvent = new UserUpdatedEvent(
+                req.params.email,
+                user.hash,
+                user.salt,
+                user.role,
+                modifiedBy
+            );
+            producer.send("users", userUpdatedEvent.toJSON()).then(() => {
+                console.log("User updated event sent successfully");
+                res.status(200).send("User updated successfully");
+            }).catch((error: any) => {
+                console.log("Error sending user updated event: ", error);
+            });
 
         } catch (error) {
             console.log("Error in update method: ", error);
@@ -369,24 +346,22 @@ const users = {
 
         try {
             // Get the user from the database
-            const query = `SELECT * FROM ${KEYSPACE}.user WHERE email = ?`;
-            const result = await cassandra.client.execute(query, [req.params.email], { prepare: true });
-
-            if (result.rows.length === 0) {
+            const response = await redis.get(req.params.email);
+            if (!response) {
                 console.log("User not found");
                 return res.status(404).send("User not found");
             }
 
-            // Delete the user
-            const queryDelete = `DELETE FROM ${KEYSPACE}.user WHERE email = ?`;
-            await cassandra.client.execute(queryDelete, [req.params.email], { prepare: true });
-
-            console.log("User deleted successfully in the Database");
-            res.status(200).send("User deleted successfully");
+            const user = JSON.parse(response);
 
             // Send an event to Kafka
             const userDeletedEvent = new UserDeletedEvent(req.params.email, modifiedBy);
-            producer.send("users", userDeletedEvent.toJSON());
+            producer.send("users", userDeletedEvent.toJSON()).then(() => {
+                console.log("User deleted event sent successfully");
+                res.status(200).send("User deleted successfully");
+            }).catch((error: any) => {
+                console.log("Error sending user deleted event: ", error);
+            });
 
         } catch (error) {
             console.log("Error in delete method: ", error);
@@ -395,5 +370,41 @@ const users = {
     }
 }
 
+// Add the first admin user
+const addAdminUser = async () => {
+    const email = "admin@test.be";
+    const password = "admin";
+
+    redis.get(email).then((response) => {
+        if (response) {
+            console.log("Admin user already exists");
+            return;
+        }
+
+        // Hash the password
+        const salt = generateSalt();
+        hashPassword(password, salt).then((hash) => {
+            const user: User = {
+                email,
+                hash,
+                salt: salt.toString('hex'),
+                role: "admin"
+            };
+
+            redis.set(email, JSON.stringify(user)).then(() => {
+                console.log("Admin user added successfully");
+            }).catch((error) => {
+                console.log("Error adding admin user: ", error);
+            });
+        }).catch((error) => {
+            console.log("Error hashing password: ", error);
+        });
+    }).catch((error) => {
+        console.log("Error getting admin user: ", error);
+    });
+}
+
+export { client, topic, consumer, producer, redis };
+export { redisSetup, consumerConnect, addAdminUser };
 
 export default users;

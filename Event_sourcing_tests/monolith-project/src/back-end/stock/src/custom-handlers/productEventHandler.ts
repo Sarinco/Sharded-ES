@@ -1,9 +1,16 @@
-import { Product } from "../types/product";
-import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/events/stock-events";
-import { Cassandra } from '../handlers/cassandraHandler';
+import { RedisClientType } from "redis";
+
+// Custom imports
+import { Product } from "@src/types/product";
+import {
+    ProductAddedEvent,
+    ProductDeletedEvent,
+    ProductUpdatedEvent
+} from "@src/types/events/stock-events";
+
 
 // Handle event and update the state of the product list
-export function productEventHandler(cassandra: Cassandra, event: any) {
+export function productEventHandler(redis: RedisClientType, event: any) {
     switch (event.type) {
         case "ProductAdded":
             const productAddedEvent = event.data as ProductAddedEvent;
@@ -16,41 +23,63 @@ export function productEventHandler(cassandra: Cassandra, event: any) {
                 productAddedEvent.category,
                 productAddedEvent.count
             );
-            cassandra.insert('product', Product.getColumsList(), newProduct.createCQL());
+            redis.set(
+                productAddedEvent.id,
+                JSON.stringify(newProduct)
+            ).catch((error: any) => {
+                console.log("Error in set method: ", error);
+                throw error;
+            }).then(() => {
+                console.log("Product added successfully in the Redis");
+            });
 
             break;
         case "ProductDeleted":
             const productDeletedEvent = event.data as ProductDeletedEvent;
-            const query = `DELETE FROM product WHERE id = ?`;
-            cassandra.client.execute(query, [productDeletedEvent.id], { prepare: true }).then(() => {
-                console.log("Product deleted successfully in the Database");
-            }).catch((error: any) => {
+
+            redis.del(productDeletedEvent.id).catch((error: any) => {
                 console.log("Error in delete method: ", error);
-            })
+                throw error;
+            }).then(() => {
+                console.log("Product deleted successfully in the Redis");
+            });
 
             break;
         case "ProductUpdated":
             const productUpdatedEvent = event.data as ProductUpdatedEvent;
-            const id = productUpdatedEvent.id;
-            const queryUpdate = `UPDATE product SET name = ?, price = ?, description = ?, image = ?, category = ?, count = ? WHERE id = ?`;
-            cassandra.client.execute(queryUpdate, [
-                productUpdatedEvent.name, 
-                productUpdatedEvent.price, 
-                productUpdatedEvent.description, 
-                productUpdatedEvent.image, 
-                productUpdatedEvent.category, 
-                productUpdatedEvent.count, 
-                id], 
-                { prepare: true }
-            ).then(() => {
-                console.log("Product updated successfully in the Database");
+
+            redis.get(productUpdatedEvent.id).then((product: any) => {
+                if (product === null) {
+                    console.log("Product not found in the Redis");
+                    return;
+                }
+                const updatedProduct = new Product(
+                    productUpdatedEvent.id,
+                    productUpdatedEvent.name,
+                    productUpdatedEvent.price,
+                    productUpdatedEvent.description,
+                    productUpdatedEvent.image,
+                    productUpdatedEvent.category,
+                    productUpdatedEvent.count
+                );
+                redis.set(
+                    productUpdatedEvent.id,
+                    JSON.stringify(updatedProduct)
+                ).catch((error: any) => {
+                    console.log("Error in set method: ", error);
+                    throw error;
+                }).then(() => {
+                    console.log("Product updated successfully in the Redis");
+                });
             }).catch((error: any) => {
-                console.log("Error in update method: ", error);
-            })
+                console.log("Error in get method: ", error);
+                throw error;
+            });
+
             break;
 
         default:
-            console.log("Invalid event type");
+            console.log("Unknown event type");
             break;
     }
 }

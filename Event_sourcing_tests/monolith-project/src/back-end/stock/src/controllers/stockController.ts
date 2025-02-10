@@ -1,14 +1,20 @@
 import { Kafka, EachMessagePayload } from 'kafkajs';
 import { v4 as uuid } from 'uuid';
-import { Product } from "../types/product";
-import { ProductAddedEvent, ProductDeletedEvent, ProductUpdatedEvent } from "../types/events/stock-events";
-import { productEventHandler } from "../custom-handlers/productEventHandler";
-import { ProducerFactory } from "../handlers/kafkaHandler";
-import { Cassandra } from '../handlers/cassandraHandler';
-import { verifyJWT } from '../middleware/token';
+import { createClient, RedisClientType } from 'redis';
+
+// Custom imports
+import { Product } from "@src/types/product";
+import { productEventHandler } from "@src/custom-handlers/productEventHandler";
+import { ProducerFactory } from "@src/handlers/kafkaHandler";
+import { verifyJWT } from '@src/middleware/token';
+import {
+    ProductAddedEvent, 
+    ProductDeletedEvent, 
+    ProductUpdatedEvent
+} from "@src/types/events/stock-events";
 
 // Setup environment variables
-const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
+const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
 const EVENT_PORT = process.env.EVENT_PORT || "9092";
 const client = new Kafka({
     clientId: 'event-pipeline',
@@ -16,41 +22,19 @@ const client = new Kafka({
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
 
-// For the Cassandra database
-const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
-const DB_PORT = "9042";
-const KEYSPACE = process.env.DB_KEYSPACE || "stock";
+// For the database
+const DB_ADDRESS = process.env.DB_ADDRESS;
+const DB_PORT = "6379";
 
 const topic = ['products'];
 
 
-// CASSANDRA
-const cassandra = new Cassandra(KEYSPACE, [`${DB_ADDRESS}:${DB_PORT}`]);
-cassandra.connect();
+// REDIS 
+const redisUrl = "redis://" + DB_ADDRESS + ":" + DB_PORT;
+const redis: RedisClientType = createClient({
+    url: redisUrl
+});
 
-
-// ADMIN TOPIC CREATION
-const setup = async () => {
-    const admin = client.admin();
-    await admin.connect();
-
-    // Create the topics if they don't exist
-    await admin.listTopics().then(async (topics) => {
-        for (let i = 0; i < topic.length; i++) {
-            if (!topics.includes(topic[i])) {
-                console.log("Creating topic: ", topic[i]);
-                await admin.createTopics({
-                    topics: [{ topic: topic[i] }],
-                });
-            } else {
-                console.log("Topic already exists: ", topic[i]);
-            }
-        }
-    }).catch((error: any) => {
-        console.log("Error in listTopics method: ", error);
-    });
-    await admin.disconnect();
-}
 
 // PRODUCER
 const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
@@ -62,12 +46,31 @@ producer.start().then(() => {
 
 
 // CONSUMER
-const consumer = client.consumer({ groupId: 'stock-group' });
+const consumer = client.consumer({
+    groupId: 'stock-group',
+});
+
+// SETUP
+const redisSetup = async () => {
+    // REDIS
+    await redis.on('error', (error: any) => {
+        console.log("Error in Redis: ", error);
+    }).connect().then(() => {
+        console.log("Connected to Redis");
+    }).catch((error: any) => {
+        console.log("Error connecting to Redis: ", error);
+    });
+}
 
 
+// INFO: ONLY FOR CONSUMER CONNECT
+const consumerConnect = async () => {
+    await consumer.connect().then(() => {
+        console.log("Consumer connected successfully");
+    }).catch((error: any) => {
+        console.log("Error in connect method: ", error);
+    });
 
-const run = async () => {
-    await consumer.connect()
     await Promise.all(topic.map(topic => consumer.subscribe({ topic, fromBeginning: true })));
     // Small local equivalent of CQRS for the stock service
     await consumer.run({
@@ -80,7 +83,7 @@ const run = async () => {
                 case 'products':
                     const product: Product = JSON.parse(message.value.toString());
                     console.log("ProductEvent: ", product);
-                    productEventHandler(cassandra, product);
+                    productEventHandler(redis, product);
                     break;
                 default:
                     console.log("Unknown topic: ", topic);
@@ -90,30 +93,26 @@ const run = async () => {
     });
 }
 
-setup()
-    .catch(e => {
-        console.error(`[stock/admin] ${e.message}`, e);
-        return;
-    })
-    .then(() => 
-        run()
-            .catch(e => console.error(`[stock/consumer] ${e.message}`, e))
-    );
-
 // HTTP
 const stock = {
     // Retrieve all stocks
     findAll: async (req: any, res: any) => {
         try {
             // Get the products from the Cassandra database
-            const query = `SELECT * FROM ${KEYSPACE}.product`;
-            const result = await cassandra.client.execute(query);
-            console.log("Result: ", result.rows);
-            result.rows.forEach(row => {
-                console.log(row);
-            });
+            const products: Product[] = [];
+            for await (const id of redis.scanIterator()) {
+                const value = await redis.get(id);
+                console.log("Value: ", value);
+                if (value === null) {
+                    console.log("Value is null");
+                    continue;
+                }
+                const product = JSON.parse(value);
+                products.push(product);
+            }
 
-            res.send(result.rows);
+            res.status(200).send(products);
+
         } catch (error) {
             console.log("Error in findAll method: ", error);
             res.status(500).send(error);
@@ -296,5 +295,8 @@ const stock = {
         }
     }
 }
+
+export { client, topic, consumer, producer, redis };
+export { redisSetup, consumerConnect };
 
 export default stock;
