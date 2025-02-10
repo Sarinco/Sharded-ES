@@ -5,6 +5,7 @@ include:
   - order-compose.yaml
   - email-compose.yaml
   - users-compose.yaml
+  - proxy-compose.yaml
 
 services:
   frontend:

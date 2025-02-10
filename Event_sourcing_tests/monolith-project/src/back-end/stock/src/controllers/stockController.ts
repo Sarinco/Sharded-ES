@@ -15,7 +15,7 @@ import {
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
-const EVENT_PORT = process.env.EVENT_PORT || "9092";
+const EVENT_PORT = process.env.EVENT_PORT;
 const client = new Kafka({
     clientId: 'event-pipeline',
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
