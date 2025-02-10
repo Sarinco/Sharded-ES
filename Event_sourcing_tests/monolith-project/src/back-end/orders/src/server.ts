@@ -3,7 +3,8 @@ import orderRoute from './routes/orderRoute';
 import { databaseSetup, brokerConsumerConnect } from './controllers/orderController'
 
 const app = express()
-const PORT: number = 5050;
+console.log("PORT: ", process.env.PORT);
+const PORT: number = parseInt(process.env.PORT as string);
 
 app.use(express.json());
 

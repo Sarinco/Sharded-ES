@@ -8,7 +8,7 @@ import {
     UserUpdatedEvent
 } from "@src/types/events/users-events";
 
-export function userEventHandler(redis: RedisClientType, event: any) {
+export async function userEventHandler(redis: RedisClientType, event: any) {
     switch (event.type) {
         case "UserAdded":
             const userAddedEvent = event.data as UserAddedEvent;
@@ -18,7 +18,7 @@ export function userEventHandler(redis: RedisClientType, event: any) {
                 userAddedEvent.salt,
                 userAddedEvent.role
             );
-            redis.set(
+            await redis.set(
                 userAddedEvent.email,
                 JSON.stringify(newUser)
             ).catch((error: any) => {
@@ -32,7 +32,7 @@ export function userEventHandler(redis: RedisClientType, event: any) {
         case "UserDeleted":
             const userDeletedEvent = event.data as UserDeletedEvent;
 
-            redis.del(userDeletedEvent.email).catch((error: any) => {
+            await redis.del(userDeletedEvent.email).catch((error: any) => {
                 console.log("Error in delete method: ", error);
                 throw error;
             }).then(() => {
@@ -43,7 +43,7 @@ export function userEventHandler(redis: RedisClientType, event: any) {
         case "UserUpdated":
             const userUpdatedEvent = event.data as UserUpdatedEvent;
 
-            redis.get(userUpdatedEvent.email).then((user: any) => {
+            await redis.get(userUpdatedEvent.email).then(async (user: any) => {
                 if (user === null) {
                     console.log("User not found in the Redis");
                     return;
@@ -54,7 +54,7 @@ export function userEventHandler(redis: RedisClientType, event: any) {
                     userUpdatedEvent.salt,
                     userUpdatedEvent.role
                 );
-                redis.set(
+                await redis.set(
                     userUpdatedEvent.email,
                     JSON.stringify(updatedUser)
                 ).catch((error: any) => {

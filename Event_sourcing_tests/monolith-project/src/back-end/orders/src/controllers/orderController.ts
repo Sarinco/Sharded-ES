@@ -65,7 +65,7 @@ export const brokerConsumerConnect = async () => {
                 case 'orders':
                     const order: Order = JSON.parse(message.value.toString());
                     console.log("OrderEvent: ", order);
-                    ordersEventHandler(redis, order);
+                    await ordersEventHandler(redis, order);
                     break;
                 default:
                     console.log("Unknown topic: ", topic);

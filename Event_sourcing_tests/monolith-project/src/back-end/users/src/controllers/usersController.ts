@@ -3,7 +3,6 @@ import { createClient, RedisClientType } from 'redis';
 
 // Custom imports
 import { ProducerFactory } from '@src/handlers/kafkaHandler';
-import { Cassandra } from '@src/handlers/cassandraHandler';
 import { v4 as uuid } from 'uuid';
 import { User } from '@src/types/user';
 import {
@@ -84,7 +83,7 @@ const consumerConnect = async () => {
                 case 'users':
                     const user: User = JSON.parse(message.value.toString());
                     console.log("UserEvent: ", user);
-                    userEventHandler(redis, user);
+                    await userEventHandler(redis, user);
                     break;
                 default:
                     console.log("Unknown topic: ", topic);

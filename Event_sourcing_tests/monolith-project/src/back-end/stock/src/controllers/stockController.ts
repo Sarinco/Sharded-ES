@@ -83,7 +83,7 @@ const consumerConnect = async () => {
                 case 'products':
                     const product: Product = JSON.parse(message.value.toString());
                     console.log("ProductEvent: ", product);
-                    productEventHandler(redis, product);
+                    await productEventHandler(redis, product);
                     break;
                 default:
                     console.log("Unknown topic: ", topic);

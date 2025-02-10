@@ -10,7 +10,7 @@ import {
 
 
 // Handle event and update the state of the product list
-export function productEventHandler(redis: RedisClientType, event: any) {
+export async function productEventHandler(redis: RedisClientType, event: any) {
     switch (event.type) {
         case "ProductAdded":
             const productAddedEvent = event.data as ProductAddedEvent;
@@ -23,7 +23,7 @@ export function productEventHandler(redis: RedisClientType, event: any) {
                 productAddedEvent.category,
                 productAddedEvent.count
             );
-            redis.set(
+            await redis.set(
                 productAddedEvent.id,
                 JSON.stringify(newProduct)
             ).catch((error: any) => {
@@ -37,7 +37,7 @@ export function productEventHandler(redis: RedisClientType, event: any) {
         case "ProductDeleted":
             const productDeletedEvent = event.data as ProductDeletedEvent;
 
-            redis.del(productDeletedEvent.id).catch((error: any) => {
+            await redis.del(productDeletedEvent.id).catch((error: any) => {
                 console.log("Error in delete method: ", error);
                 throw error;
             }).then(() => {
@@ -48,7 +48,7 @@ export function productEventHandler(redis: RedisClientType, event: any) {
         case "ProductUpdated":
             const productUpdatedEvent = event.data as ProductUpdatedEvent;
 
-            redis.get(productUpdatedEvent.id).then((product: any) => {
+            await redis.get(productUpdatedEvent.id).then(async (product: any) => {
                 if (product === null) {
                     console.log("Product not found in the Redis");
                     return;
@@ -62,7 +62,7 @@ export function productEventHandler(redis: RedisClientType, event: any) {
                     productUpdatedEvent.category,
                     productUpdatedEvent.count
                 );
-                redis.set(
+                await redis.set(
                     productUpdatedEvent.id,
                     JSON.stringify(updatedProduct)
                 ).catch((error: any) => {

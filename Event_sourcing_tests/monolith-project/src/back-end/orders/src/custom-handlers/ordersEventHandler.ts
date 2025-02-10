@@ -2,7 +2,7 @@ import Order from  "../types/order"
 import { OrderAddedEvent } from "../types/order-events";
 import { RedisClientType } from "redis";
 
-export function ordersEventHandler(redis: RedisClientType, event: any) {
+export async function ordersEventHandler(redis: RedisClientType, event: any) {
     switch (event.type) {
         case "OrderAdded":
             const orderAddedEvent = event.data as OrderAddedEvent;
@@ -13,7 +13,7 @@ export function ordersEventHandler(redis: RedisClientType, event: any) {
                 orderAddedEvent.product,
                 orderAddedEvent.count
             );
-            redis.set(
+            await redis.set(
                 orderAddedEvent.id,
                 JSON.stringify(newOrder)
             ).catch((error: any) => {

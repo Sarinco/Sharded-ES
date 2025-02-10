@@ -48,6 +48,7 @@ const initDB = async () => {
 
                 const alreadyDisconnected = memberDisconnected.find((member) => member.clientHost === clientIP);
                 if (alreadyDisconnected) {
+                    waitToStable = true;
                     continue;
                 }
 
