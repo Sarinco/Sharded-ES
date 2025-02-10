@@ -29,7 +29,7 @@ const redis: RedisClientType = createClient({
 });
 
 //setup fct
-const setup = async () => {
+export const databaseSetup = async () => {
     
 
     // REDIS
@@ -52,7 +52,7 @@ producer.start().then(() => {
 
 const consumer = client.consumer({ groupId: 'orders-group' });
 
-const run = async () => {
+export const brokerConsumerConnect = async () => {
     await consumer.connect()
     await consumer.subscribe({ topic, fromBeginning: true })
     await consumer.run({
@@ -61,10 +61,6 @@ const run = async () => {
                 console.log("Message is null");
                 return;
             }
-            // ## Old cassandra code ##
-            //const order: Order = JSON.parse(message.value.toString());
-            //console.log("ProductEvent: ", order);
-            //ordersEventHandler(cassandra, order);
             switch (topic) {
                 case 'orders':
                     const order: Order = JSON.parse(message.value.toString());
@@ -78,9 +74,6 @@ const run = async () => {
         },
     });
 }
-
-setup().catch(e => console.error(`[order/consumer] ${e.message}`, e))
-run().catch(e => console.error(`[order/consumer] ${e.message}`, e))
 
 
 const orders = {
@@ -109,6 +102,8 @@ const orders = {
     // Add a new product
     add: async (req: any, res: any) => {
         try {
+            // ## COMMENTED CODE FOR TOKEN VERIFICATION ## //
+
             //const token = req.headers.authorization;
             //console.debug('Token:', token);
 
