@@ -54,7 +54,9 @@ const consumer = client.consumer({ groupId: 'orders-group' });
 
 export const brokerConsumerConnect = async () => {
     await consumer.connect()
-    await consumer.subscribe({ topic:topicList[0], fromBeginning: true })
+
+    await Promise.all(topicList.map(topic => consumer.subscribe({ topic, fromBeginning: true })));
+
     await consumer.run({
         eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
             if (message.value == null ) {

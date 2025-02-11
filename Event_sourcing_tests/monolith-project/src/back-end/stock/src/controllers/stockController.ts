@@ -26,7 +26,7 @@ const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
 const DB_ADDRESS = process.env.DB_ADDRESS;
 const DB_PORT = "6379";
 
-const topic = ['products'];
+const topic = ['products', 'orders'];
 
 
 // REDIS 
@@ -84,6 +84,9 @@ const consumerConnect = async () => {
                     const product: Product = JSON.parse(message.value.toString());
                     console.log("ProductEvent: ", product);
                     await productEventHandler(redis, product);
+                    break;
+                case 'orders':
+                    console.log("ORDERS handling not yet implemented");
                     break;
                 default:
                     console.log("Unknown topic: ", topic);
