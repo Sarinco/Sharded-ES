@@ -27,6 +27,7 @@ services:
         condition: service_healthy
       db-stock-init:
         condition: service_completed_successfully
+
   db-stock-init:
     build:
       context: ./src/back-end/stock

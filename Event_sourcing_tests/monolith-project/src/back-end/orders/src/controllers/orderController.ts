@@ -10,7 +10,7 @@ import { verifyJWT } from '../middleware/token';
 // create a client connected to your local kafka instance
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
 const EVENT_PORT    = process.env.EVENT_PORT    || "9092";
-const client        = new Kafka({
+export const client        = new Kafka({
     clientId: 'event-pipeline',
     brokers:  [`${EVENT_ADDRESS}:${EVENT_PORT}`]
 });
@@ -21,7 +21,7 @@ const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
 const DB_PORT    = "6379";
 const KEYSPACE   = process.env.KEYSPACE   || "orders";
 
-const topic = 'orders';
+export const topicList = ['orders'];
 
 const redisUrl = "redis://" + DB_ADDRESS + ":" + DB_PORT;
 const redis: RedisClientType = createClient({
@@ -54,7 +54,7 @@ const consumer = client.consumer({ groupId: 'orders-group' });
 
 export const brokerConsumerConnect = async () => {
     await consumer.connect()
-    await consumer.subscribe({ topic, fromBeginning: true })
+    await consumer.subscribe({ topic:topicList[0], fromBeginning: true })
     await consumer.run({
         eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
             if (message.value == null ) {

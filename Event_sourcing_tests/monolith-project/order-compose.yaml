@@ -25,10 +25,36 @@ services:
         condition: service_healthy
       db-orders:
         condition: service_healthy
+      db-orders-init:
+        condition: service_healthy
+
+  db-orders-init:
+    build:
+      context: ./src/back-end/orders
+      dockerfile: Dockerfile.init-db
+    volumes:
+      - ./src/back-end/orders:/app
+      - ./utils/types:/app/src/types
+      - ./utils/handlers:/app/src/handlers
+      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+    environment:
+      PORT: ${ORDERS_PORT}
+      EVENT_ADDRESS: ${EVENT_HOST}
+      EVENT_PORT: ${EVENT_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      broker:
+        condition: service_healthy
+      db-orders:
+        condition: service_healthy
+
   db-orders:
     image: redis:alpine
     ports:
       - "${DB_ORDERS_PORT}:6379"
+    volumes:
+      - ./src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       interval: 1s
