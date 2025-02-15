@@ -55,6 +55,11 @@ const producer = {
             },
             body: JSON.stringify(body),
         })
+
+        if (result.status !== 200) {
+            console.debug(result);
+            throw new Error('Error forwarding the message');
+        }
     }
 }
 

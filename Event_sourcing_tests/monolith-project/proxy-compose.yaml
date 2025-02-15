@@ -15,7 +15,7 @@ services:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
     ports:
-      - "${PROXY_PORT}:${PROXY_PORT}"
+      - "${PROXY_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server
     command: sh -c "npm run watch"
     environment:
