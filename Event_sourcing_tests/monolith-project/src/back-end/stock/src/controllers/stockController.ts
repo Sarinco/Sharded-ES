@@ -5,22 +5,25 @@ import { createClient, RedisClientType } from 'redis';
 // Custom imports
 import { Product } from "@src/types/product";
 import { productEventHandler } from "@src/custom-handlers/productEventHandler";
-import { ProducerFactory } from "@src/handlers/kafkaHandler";
 import { verifyJWT } from '@src/middleware/token';
 import {
-    ProductAddedEvent, 
-    ProductDeletedEvent, 
+    ProductAddedEvent,
+    ProductDeletedEvent,
     ProductUpdatedEvent
 } from "@src/types/events/stock-events";
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
-const EVENT_PORT = process.env.EVENT_PORT || "9092";
+const EVENT_PORT = process.env.EVENT_PORT;
 const client = new Kafka({
     clientId: 'event-pipeline',
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
+
+const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
+const PROXY_PORT = process.env.PROXY_PORT;
+const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/proxy`;
 
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;
@@ -37,13 +40,23 @@ const redis: RedisClientType = createClient({
 
 
 // PRODUCER
-const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
-producer.start().then(() => {
-    console.log("Producer started successfully");
-}).catch((error: any) => {
-    console.log("Error starting the producer: ", error);
-});
+const producer = {
+    send: async (topic: string, message: any) => {
+        const body = {
+            topic,
+            region: 'eu-west-1',
+            message
+        }
 
+        const result = await fetch(PROXY, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        })
+    }
+}
 
 // CONSUMER
 const consumer = client.consumer({
@@ -83,7 +96,9 @@ const consumerConnect = async () => {
                 case 'products':
                     const product: Product = JSON.parse(message.value.toString());
                     console.log("ProductEvent: ", product);
-                    await productEventHandler(redis, product);
+                    await productEventHandler(redis, product).catch((error: any) => {
+                        console.log("Error in productEventHandler: ", error);
+                    });
                     break;
                 default:
                     console.log("Unknown topic: ", topic);

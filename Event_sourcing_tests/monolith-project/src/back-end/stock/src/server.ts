@@ -7,7 +7,7 @@ import kafkaRoutes from '@src/routes/kafkaRoute';
 import { consumerConnect, redisSetup } from '@src/controllers/stockController';
 
 const app = express();
-const PORT: number = parseInt(process.env.PORT as string) || 5000;
+const PORT: number = parseInt(process.env.PORT as string);
 
 // Middleware to parse JSON bodies
 app.use(express.json());
