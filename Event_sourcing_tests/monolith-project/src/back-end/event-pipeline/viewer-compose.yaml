@@ -5,8 +5,6 @@ services:
       - 8080:8080
     environment:
       DYNAMIC_CONFIG_ENABLED: 'true'
-      KAFKA_CLUSTERS_0_NAME: broker
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:9092
     volumes:
       - ./viewer/config.yaml:/etc/kafkaui/dynamic_config.yaml
 

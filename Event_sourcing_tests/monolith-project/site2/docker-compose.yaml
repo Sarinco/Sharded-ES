@@ -38,5 +38,5 @@ services:
 
 networks:
   default:
-    name: site1
+    name: site2
     driver: bridge

@@ -1,4 +1,16 @@
 services:
+  kafka-ui:
+    extends:
+      file: ./src/back-end/event-pipeline/viewer-compose.yaml
+      service: kafka-ui
+    networks:
+      - site1
+      - site2
+    environment:
+      KAFKA_CLUSTERS_0_NAME: ${EVENT_HOST_SITE_1}
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_1}:${EVENT_PORT_SITE_1}
+      KAFKA_CLUSTERS_1_NAME: ${EVENT_HOST_SITE_2}
+      KAFKA_CLUSTERS_1_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_2}:${EVENT_PORT_SITE_2}
   proxy-1:
     container_name: proxy-1
     build:
@@ -16,13 +28,34 @@ services:
       EVENT_ADDRESS: ${EVENT_HOST_SITE_1}
       EVENT_PORT: ${EVENT_PORT_SITE_1}
       EVENT_CLIENT_ID: "proxy-1"
-    # depends_on:
-    #   broker:
-    #     condition: service_healthy
     networks:
       - site1
+      - site2
+  proxy-2:
+    container_name: proxy-2
+    build:
+      context: ./src/proxy/base-proxy
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/proxy/base-proxy:/app
+      - ./utils/handlers:/app/src/handlers
+    ports:
+      - "${PROXY_2_EXTERNAL_PORT}:${PROXY_PORT}"
+    # The watch command will check for changes in the code and restart the server
+    command: sh -c "npm run watch"
+    environment:
+      PORT: ${PROXY_PORT} 
+      EVENT_ADDRESS: ${EVENT_HOST_SITE_2}
+      EVENT_PORT: ${EVENT_PORT_SITE_2}
+      EVENT_CLIENT_ID: "proxy-2"
+    networks:
+      - site1
+      - site2
 
 networks:
   site1:
     name: site1
+    external: true
+  site2:
+    name: site2
     external: true
