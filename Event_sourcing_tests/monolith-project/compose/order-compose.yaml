@@ -1,16 +1,16 @@
 services:
   orders:
     build:
-      context: ./src/back-end/orders
+      context: ../src/back-end/orders
       dockerfile: Dockerfile
     volumes:
-      - ./src/back-end/orders:/app
-      - ./utils/types:/app/src/types
-      - ./utils/handlers:/app/src/handlers
-      #- ./utils/middleware/token.ts:/app/src/middleware/token.ts
-      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+      - ../src/back-end/orders:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      #- ../utils/middleware/token.ts:/app/src/middleware/token.ts
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
     ports:
-      - "5050:5050"
+      - "${ORDERS_EXTERNAL_PORT}:${ORDERS_PORT}"
     environment:
       PORT: ${ORDERS_PORT} 
       DB_ADDRESS: ${DB_ORDERS_HOST}
@@ -28,7 +28,7 @@ services:
   db-orders:
     image: redis:alpine
     ports:
-      - "${DB_ORDERS_PORT}:6379"
+      - "${DB_ORDERS_EXTERNAL_PORT}:${DB_ORDERS_PORT}"
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       interval: 1s

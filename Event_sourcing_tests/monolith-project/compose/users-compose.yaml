@@ -1,15 +1,15 @@
 services:
   users:
     build:
-      context: ./src/back-end/users
+      context: ../src/back-end/users
       dockerfile: Dockerfile
     volumes:
-      - ./src/back-end/users:/app
-      - ./utils/types:/app/src/types
-      - ./utils/handlers:/app/src/handlers
-      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+      - ../src/back-end/users:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
     ports:
-      - "5010:5010"
+      - "${USER_EXTERNAL_PORT}:${USER_PORT}"
     # The watch command will check for changes in the code and restart the server
     command: sh boot-in-order.sh 
     environment:
@@ -29,13 +29,13 @@ services:
         condition: service_completed_successfully
   db-users-init:
     build:
-      context: ./src/back-end/users
+      context: ../src/back-end/users
       dockerfile: Dockerfile.init-db
     volumes:
-      - ./src/back-end/users:/app
-      - ./utils/types:/app/src/types
-      - ./utils/handlers:/app/src/handlers
-      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+      - ../src/back-end/users:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
     environment:
       PORT: ${USER_PORT}
       EVENT_ADDRESS: ${EVENT_HOST}
@@ -50,9 +50,9 @@ services:
   db-users:
     image: redis:alpine
     ports:
-      - "${DB_USER_PORT}:6379"
+      - "${DB_USER_EXTERNAL_PORT}:${DB_USER_PORT}"
     volumes:
-      - ./src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ../src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]

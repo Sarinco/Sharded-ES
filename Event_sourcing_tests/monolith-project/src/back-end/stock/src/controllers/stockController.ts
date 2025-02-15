@@ -23,7 +23,7 @@ const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
 
 const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
 const PROXY_PORT = process.env.PROXY_PORT;
-const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/proxy`;
+const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
 
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;
@@ -44,7 +44,7 @@ const producer = {
     send: async (topic: string, message: any) => {
         const body = {
             topic,
-            region: 'eu-west-1',
+            region: 'site1',
             message
         }
 
