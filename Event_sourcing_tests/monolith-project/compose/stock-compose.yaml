@@ -21,6 +21,7 @@ services:
       PROXY_ADDRESS: ${PROXY_HOST}
       PROXY_PORT: ${PROXY_PORT}
       JWT_SECRET: ${JWT_SECRET}
+      REGION: ${REGION}
     depends_on:
       broker:
         condition: service_healthy

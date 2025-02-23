@@ -28,9 +28,10 @@ services:
       EVENT_ADDRESS: ${EVENT_HOST_SITE_1}
       EVENT_PORT: ${EVENT_PORT_SITE_1}
       EVENT_CLIENT_ID: "proxy-1"
+      REGION: "site1"
     networks:
+      - proxy
       - site1
-      - site2
   proxy-2:
     container_name: proxy-2
     build:
@@ -48,8 +49,9 @@ services:
       EVENT_ADDRESS: ${EVENT_HOST_SITE_2}
       EVENT_PORT: ${EVENT_PORT_SITE_2}
       EVENT_CLIENT_ID: "proxy-2"
+      REGION: "site2"
     networks:
-      - site1
+      - proxy
       - site2
 
 networks:
@@ -59,3 +61,6 @@ networks:
   site2:
     name: site2
     external: true
+  proxy:
+    name: proxy
+    driver: bridge

@@ -18,7 +18,7 @@ services:
     environment:
       - PUBLIC_AUTH_SERVICE_URL=http://localhost:80
       # Because running on host machine 
-      - VITE_GATEWAY_URL=http://localhost:80
+      - VITE_GATEWAY_URL=http://localhost:${GATEWAY_PORT}
     command: npm run dev -- --host
     depends_on:
       - stock 

@@ -31,6 +31,8 @@ const DB_PORT = "6379";
 
 const topic = ['products'];
 
+const DEFAULT_REGION = process.env.REGION;
+
 
 // REDIS 
 const redisUrl = "redis://" + DB_ADDRESS + ":" + DB_PORT;
@@ -41,10 +43,10 @@ const redis: RedisClientType = createClient({
 
 // PRODUCER
 const producer = {
-    send: async (topic: string, message: any) => {
+    send: async (topic: string, message: any, region: string) => {
         const body = {
             topic,
-            region: 'site1',
+            region: region,
             message
         }
 
@@ -165,6 +167,8 @@ const stock = {
                 return res.status(403).send("Unauthorized");
             }
 
+            const region = req.headers.region || DEFAULT_REGION;
+
             if (req.body.name === undefined || req.body.name === "") {
                 res.status(400).send("Invalid name");
                 return;
@@ -188,7 +192,8 @@ const stock = {
 
             producer.send(
                 'products',
-                event.toJSON()
+                event.toJSON(),
+                region
             ).then(() => {
                 console.log("Product added successfully by ", addedBy);
                 res.send("Product added successfully");
@@ -246,9 +251,12 @@ const stock = {
                 updatedBy
             );
 
+            const region = req.headers.region || DEFAULT_REGION;
+
             producer.send(
                 'products',
-                event.toJSON()
+                event.toJSON(),
+                region
             ).then(() => {
                 console.log("Product updated sent successfully");
                 res.send("Product updated successfully");
@@ -298,9 +306,12 @@ const stock = {
 
             const event: ProductDeletedEvent = new ProductDeletedEvent(req.params.id, deletedBy);
 
+            const region = req.headers.region || DEFAULT_REGION;
+
             producer.send(
                 'products',
-                event.toJSON()
+                event.toJSON(),
+                region
             ).then(() => {
                 console.log("Product deleted sent successfully");
                 res.send("Product deleted successfully");

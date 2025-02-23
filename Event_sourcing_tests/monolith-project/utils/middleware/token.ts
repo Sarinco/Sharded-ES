@@ -13,7 +13,7 @@ export function generateJWT(email: string, role: string): string {
     let token = sign({
         email: email,
         role: role
-    }, JWT_SECRET, { expiresIn: '24h' });
+    }, JWT_SECRET, { expiresIn: '180d' });
     return token;
 }
 
