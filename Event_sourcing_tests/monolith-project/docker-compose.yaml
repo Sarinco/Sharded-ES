@@ -12,7 +12,6 @@ services:
       KAFKA_CLUSTERS_1_NAME: ${EVENT_HOST_SITE_2}
       KAFKA_CLUSTERS_1_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_2}:${EVENT_PORT_SITE_2}
   proxy-1:
-    container_name: proxy-1
     build:
       context: ./src/proxy/base-proxy
       dockerfile: Dockerfile
@@ -29,11 +28,13 @@ services:
       EVENT_PORT: ${EVENT_PORT_SITE_1}
       EVENT_CLIENT_ID: "proxy-1"
       REGION: "site1"
+      MASTER: "${MASTER}"
+      CONTROL_PORT: "${CONTROL_PORT}"
+      IS_MASTER: "true"
     networks:
       - proxy
       - site1
   proxy-2:
-    container_name: proxy-2
     build:
       context: ./src/proxy/base-proxy
       dockerfile: Dockerfile
@@ -50,6 +51,8 @@ services:
       EVENT_PORT: ${EVENT_PORT_SITE_2}
       EVENT_CLIENT_ID: "proxy-2"
       REGION: "site2"
+      MASTER: "${MASTER}"
+      CONTROL_PORT: "${CONTROL_PORT}"
     networks:
       - proxy
       - site2
@@ -63,4 +66,4 @@ networks:
     external: true
   proxy:
     name: proxy
-    driver: bridge
+    external: true

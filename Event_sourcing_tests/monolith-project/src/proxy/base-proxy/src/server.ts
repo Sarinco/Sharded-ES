@@ -4,6 +4,9 @@ require('module-alias/register');
 
 // Custom imports
 import { ProducerFactory } from '@src/handlers/kafkaHandler';
+import { ControlPlaneServer } from '@src/control-plane/server';
+import { ControlPlaneClient } from '@src/control-plane/client';
+import { CallbackFunctions } from '@src/control-plane/callbackFunctions';
 
 
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -15,6 +18,10 @@ if (!EVENT_ADDRESS || !EVENT_PORT || !EVENT_CLIENT_ID) {
     console.log('Please provide the event address, port and client id');
     process.exit(1);
 }
+
+const MASTER = process.env.MASTER || 'proxy-1';
+const CONTROL_PORT = parseInt(process.env.CONTROL_PORT as string) || 6000;
+const IS_MASTER = process.env.IS_MASTER || 'false';
 
 // PRODUCER
 const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
@@ -80,3 +87,34 @@ app.post('/', (req: Request, res: Response) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+
+// CONTROL PLANE SERVER
+const callbackFunctionsServer = new CallbackFunctions();
+const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, callbackFunctionsServer);
+
+// Set the onConnection callback
+// TODO:
+
+
+// Start server
+controlPlaneServer.start().catch((error: any) => {
+    console.log('Error starting the Control Plane server: ', error);
+}).then(() => {
+    controlPlaneServer.onConnection()
+});
+
+
+// CONTROL PLANE CLIENT
+if (IS_MASTER === 'false') {
+    const callbackFunctionsClient = new CallbackFunctions();
+    const controlPlaneClient = new ControlPlaneClient(MASTER, CONTROL_PORT, callbackFunctionsClient);
+
+    // Connect to the server
+    const seconds = 5;
+    setTimeout(() => {
+        controlPlaneClient.connect().catch((error: any) => {
+            console.log('Error connecting to the Control Plane server: ', error);
+        });
+    }, seconds * 1000);
+}
