@@ -1,0 +1,9 @@
+[
+    {
+        "name": "filter",
+        "proxy_address": "SET BY CONTROL PLANE",
+        "region": "site1",
+        "topic": "*", 
+        "filters": []
+    }
+]

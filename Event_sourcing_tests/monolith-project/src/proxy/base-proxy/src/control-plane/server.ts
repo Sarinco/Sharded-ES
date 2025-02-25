@@ -1,17 +1,21 @@
 import net from 'net';
-import { CallbackFunctions } from './callbackFunctions';
+import { replaceAddress } from "@src/custom-handler/filterHandler";
 
 export class ControlPlaneServer {
     private server: net.Server;
     private port: number;
     private clients: Map<string, net.Socket>; // Store active connections
-    private callbackFunctions: CallbackFunctions;
+    private filter_map: Map<string, string>;
+    private connections: Map<string, net.Socket>;
+    private own_filter: string;
 
-    constructor(port: number, callbackFunctions: CallbackFunctions) {
+    constructor(port: number, own_filter: string) {
         this.port = port;
         this.server = net.createServer();
         this.clients = new Map();
-        this.callbackFunctions = callbackFunctions;
+        this.connections = new Map();
+        this.filter_map = new Map();
+        this.own_filter = own_filter;
     }
 
     // Start the server
@@ -48,34 +52,62 @@ export class ControlPlaneServer {
             const clientId = `${socket.remoteAddress}:${socket.remotePort}`;
             console.log(`New client connected: ${clientId}`);
 
-            this.callbackFunctions.onConnection(socket, clientId);
+            this.onConnectionFunction(socket, clientId);
 
             // Store the socket in the clients map
             this.clients.set(clientId, socket);
 
             // Attach event listeners to the socket
             socket.on('data', (data) => {
-                this.callbackFunctions.onData(data, clientId);
+                this.onDataFunction(data, clientId);
             });
 
             socket.on('close', () => {
                 console.log(`Client disconnected: ${clientId}`);
                 this.clients.delete(clientId);
-                this.callbackFunctions.onClose(clientId);
+                // this.callbackFunctions.onClose(clientId);
             });
 
             socket.on('timeout', () => {
                 console.log(`Client timed out: ${clientId}`);
                 this.clients.delete(clientId);
-                this.callbackFunctions.onTimeout(clientId);
+                // this.callbackFunctions.onTimeout(clientId);
             });
 
             socket.on('error', (err) => {
                 console.log(`Client error: ${clientId}`);
                 this.clients.delete(clientId);
-                this.callbackFunctions.onError(err, clientId);
+                // this.callbackFunctions.onError(err, clientId);
             });
         });
+    }
+
+    onConnectionFunction(socket: net.Socket, clientId: string) {
+        // Send filter to the client
+        const ipAddress = socket.remoteAddress;
+        const port = socket.remotePort;
+        if (!ipAddress || !port) {
+            console.log('Error getting the IP address or port');
+            return;
+        }
+        console.log("Ip address: ", ipAddress);
+        const modifiedFilter = replaceAddress(this.own_filter, ipAddress)
+        socket.write(modifiedFilter);
+
+        // Send all filters to the client
+        for (const [key, value] of this.filter_map.entries()) {
+            socket.write(value);
+        }
+
+        // Add client to active connections
+        this.connections.set(clientId, socket);
+    }
+
+    onDataFunction(data: Buffer, clientId: string) {
+        // Broadcast the message to all connected clients
+        this.broadcast(data.toString(), clientId);
+
+        this.filter_map.set(clientId, data.toString());
     }
 
     // Broadcast a message to all connected clients

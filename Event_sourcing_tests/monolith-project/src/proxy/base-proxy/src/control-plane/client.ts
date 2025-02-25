@@ -1,19 +1,16 @@
 import net from 'net';
-import { CallbackFunctions } from './callbackFunctions';
 
 export class ControlPlaneClient {
     private socket: net.Socket;
     private port: number;
     private host: string;
-    private clients: Map<string, net.Socket>; // Store active connections
-    private callbackFunctions: CallbackFunctions;
+    private filter_map: Map<string, string>;
 
-    constructor(host: string, port: number, callbackFunctions: CallbackFunctions) {
+    constructor(host: string, port: number) {
         this.port = port;
         this.host = host;
         this.socket = new net.Socket();
-        this.clients = new Map();
-        this.callbackFunctions = callbackFunctions;
+        this.filter_map = new Map();
     }
 
     // Connect to the server
@@ -25,10 +22,26 @@ export class ControlPlaneClient {
                 resolve();
             });
 
+            this.socket.on('data', (data) => {
+               this.onDataFunction(data); 
+            });
+
+            this.socket.on('close', () => {
+            });
+
+            this.socket.on('timeout', () => {
+            });
+
             this.socket.on('error', (err) => {
                 reject(err);
             });
         });
+    }
+
+    onDataFunction(data: Buffer) {
+        const dataJson = JSON.parse(data.toString());
+        console.log("Recieved data: ", dataJson);
+        // TODO: Manage filter
     }
 
     // Disconnect from the server
@@ -37,6 +50,19 @@ export class ControlPlaneClient {
             this.socket.end(() => {
                 console.log('Control Plane client disconnected');
                 resolve();
+            });
+        });
+    }
+
+    // Send data to the server
+    send(data: Buffer): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.socket.write(data, (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
             });
         });
     }

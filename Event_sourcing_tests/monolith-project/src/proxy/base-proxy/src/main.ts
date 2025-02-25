@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { readFileSync } from 'node:fs';
 // For module aliasing
 require('module-alias/register');
 
@@ -6,9 +7,8 @@ require('module-alias/register');
 import { ProducerFactory } from '@src/handlers/kafkaHandler';
 import { ControlPlaneServer } from '@src/control-plane/server';
 import { ControlPlaneClient } from '@src/control-plane/client';
-import { CallbackFunctions } from '@src/control-plane/callbackFunctions';
 
-
+//Connection variables setup
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
 const EVENT_PORT = process.env.EVENT_PORT;
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID;
@@ -22,6 +22,9 @@ if (!EVENT_ADDRESS || !EVENT_PORT || !EVENT_CLIENT_ID) {
 const MASTER = process.env.MASTER || 'proxy-1';
 const CONTROL_PORT = parseInt(process.env.CONTROL_PORT as string) || 6000;
 const IS_MASTER = process.env.IS_MASTER || 'false';
+
+// Hashmap to store filters
+const filters = new Map<string, JSON>();
 
 // PRODUCER
 const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
@@ -88,33 +91,31 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
+// CONTROL PLANE
+// Retrive json filters 
+const filter = readFileSync('./src/filters/filter.json', 'utf-8');
+
 
 // CONTROL PLANE SERVER
-const callbackFunctionsServer = new CallbackFunctions();
-const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, callbackFunctionsServer);
-
-// Set the onConnection callback
-// TODO:
-
-
-// Start server
-controlPlaneServer.start().catch((error: any) => {
-    console.log('Error starting the Control Plane server: ', error);
-}).then(() => {
-    controlPlaneServer.onConnection()
-});
-
-
-// CONTROL PLANE CLIENT
-if (IS_MASTER === 'false') {
-    const callbackFunctionsClient = new CallbackFunctions();
-    const controlPlaneClient = new ControlPlaneClient(MASTER, CONTROL_PORT, callbackFunctionsClient);
+if (IS_MASTER == "true") {
+    const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, filter);
+    // Start server
+    controlPlaneServer.start().catch((error: any) => {
+        console.log('Error starting the Control Plane server: ', error);
+    }).then(() => {
+        controlPlaneServer.onConnection()
+    });
+} else {
+    // CONTROL PLANE CLIENT
+    const controlPlaneClient = new ControlPlaneClient(MASTER, CONTROL_PORT);
 
     // Connect to the server
-    const seconds = 5;
+    const seconds = 1;
     setTimeout(() => {
         controlPlaneClient.connect().catch((error: any) => {
             console.log('Error connecting to the Control Plane server: ', error);
+        }).then(() => {
+            controlPlaneClient.send(Buffer.from(filter));
         });
     }, seconds * 1000);
 }
