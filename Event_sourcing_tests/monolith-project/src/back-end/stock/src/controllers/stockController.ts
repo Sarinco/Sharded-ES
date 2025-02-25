@@ -4,7 +4,10 @@ import { createClient, RedisClientType } from 'redis';
 
 // Custom imports
 import { Product } from "@src/types/product";
+import Order from "@src/types/order";
 import { productEventHandler } from "@src/custom-handlers/productEventHandler";
+import { orderEventHandler } from "@src/custom-handlers/orderEventHandler";
+import { ProducerFactory } from "@src/handlers/kafkaHandler";
 import { verifyJWT } from '@src/middleware/token';
 import {
     ProductAddedEvent,
@@ -29,7 +32,7 @@ const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/proxy`;
 const DB_ADDRESS = process.env.DB_ADDRESS;
 const DB_PORT = "6379";
 
-const topic = ['products'];
+const topic = ['products', 'orders'];
 
 
 // REDIS 
@@ -105,6 +108,13 @@ const consumerConnect = async () => {
                         console.log("Error in productEventHandler: ", error);
                     });
                     break;
+
+                case 'orders':
+                    const orderEvent = JSON.parse(message.value.toString());
+                    console.log("Order event : ", orderEvent);
+                    await orderEventHandler(redis, orderEvent);
+                    break;
+
                 default:
                     console.log("Unknown topic: ", topic);
                     break;
@@ -149,7 +159,7 @@ const stock = {
                 throw new Error('No token provided');
             }
 
-            const decoded = verifyJWT(token); TODO:
+            const decoded = verifyJWT(token);
 
             if (decoded === "Invalid token") {
                 return res.status(401).send("Invalid token");

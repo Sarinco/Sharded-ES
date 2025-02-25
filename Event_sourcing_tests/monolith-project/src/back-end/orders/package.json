@@ -5,7 +5,8 @@
     "scripts": {
         "start": "node dist/server.js",
         "watch": "nodemon --watch 'src/**/*' --exec 'ts-node' src/server.ts",
-        "build": "tsc"
+        "build": "tsc",
+        "init-db": "ts-node src/init-db.ts"
     },
     "dependencies": {
         "@types/jsonwebtoken": "^9.0.8",
