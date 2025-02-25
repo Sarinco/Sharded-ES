@@ -4,7 +4,9 @@ import { createClient, RedisClientType } from 'redis';
 
 // Custom imports
 import { Product } from "@src/types/product";
+import Order from "@src/types/order";
 import { productEventHandler } from "@src/custom-handlers/productEventHandler";
+import { orderEventHandler } from "@src/custom-handlers/orderEventHandler";
 import { ProducerFactory } from "@src/handlers/kafkaHandler";
 import { verifyJWT } from '@src/middleware/token';
 import {
@@ -81,12 +83,14 @@ const consumerConnect = async () => {
             }
             switch (topic) {
                 case 'products':
-                    const product: Product = JSON.parse(message.value.toString());
-                    console.log("ProductEvent: ", product);
-                    await productEventHandler(redis, product);
+                    const productEvent = JSON.parse(message.value.toString());
+                    console.log("ProductEvent: ", productEvent);
+                    await productEventHandler(redis, productEvent);
                     break;
                 case 'orders':
-                    console.log("ORDERS handling not yet implemented");
+                    const orderEvent = JSON.parse(message.value.toString());
+                    console.log("Order event : ", orderEvent);
+                    await orderEventHandler(redis, orderEvent);
                     break;
                 default:
                     console.log("Unknown topic: ", topic);
@@ -132,7 +136,7 @@ const stock = {
                 throw new Error('No token provided');
             }
 
-            const decoded = verifyJWT(token); TODO:
+            const decoded = verifyJWT(token);
 
             if (decoded === "Invalid token") {
                 return res.status(401).send("Invalid token");

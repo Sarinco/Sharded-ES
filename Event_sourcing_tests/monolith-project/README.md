@@ -65,6 +65,7 @@ To test it you can use the following curl commands:
 curl http://localhost:80/api/users/register \
    -H "Content-Type: application/json" \-d '{"email": "admin@test.be", "password":"admin"}'
 
+#Use the following command to get the token
 curl -v http://localhost:80/api/users/login \
    -H "Content-Type: application/json" \-d '{"email": "admin@test.be", "password":"admin"}'
 

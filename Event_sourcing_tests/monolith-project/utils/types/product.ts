@@ -25,4 +25,8 @@ export class Product {
     createCQL(): string {
         return `(${this.id}, '${this.name}', ${this.price}, '${this.description}', '${this.image}', '${this.category}', ${this.count})`;
     }
+
+    static fromJSON(json: any): Product {
+        return new Product(json.id, json.name, json.price, json.description, json.image, json.category, json.count);
+    }
 }
