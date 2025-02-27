@@ -1,0 +1,16 @@
+[
+    {
+        "name": "filter",
+        "proxy_address": "SET BY CONTROL PLANE",
+        "region": "site3",
+        "topic": "stock",
+        "filters": []
+    },
+    {
+        "name": "filter",
+        "proxy_address": "SET BY CONTROL PLANE",
+        "region": "test-site",
+        "topic": "stock",
+        "filters": []
+    }
+]

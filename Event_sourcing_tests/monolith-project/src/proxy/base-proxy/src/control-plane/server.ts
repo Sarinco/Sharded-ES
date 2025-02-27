@@ -2,6 +2,19 @@ import net from 'net';
 import { replaceAddress, FilterManager } from "@src/custom-handler/filterHandler";
 
 
+function getSimpleIPAddress(remoteAddress: string | undefined): string | null {
+    if (!remoteAddress) {
+        return null;
+    }
+
+    // Check if the address is an IPv4 address mapped to IPv6
+    if (remoteAddress.startsWith('::ffff:')) {
+        return remoteAddress.substring(7); // Remove the '::ffff:' prefix
+    }
+
+    return remoteAddress; // Return the original address if it's IPv6 or already simple
+}
+
 export class ControlPlaneServer {
     private server: net.Server;
     private port: number;
@@ -48,7 +61,8 @@ export class ControlPlaneServer {
     // Handle incoming connections
     onConnection() {
         this.server.on('connection', (socket) => {
-            const clientId = `${socket.remoteAddress}:${socket.remotePort}`;
+            const remoteAddress = getSimpleIPAddress(socket.remoteAddress);
+            const clientId = `${remoteAddress}:${socket.remotePort}`;
             console.log(`New client connected: ${clientId}`);
 
             this.onConnectionFunction(socket, clientId);
@@ -83,13 +97,13 @@ export class ControlPlaneServer {
 
     onConnectionFunction(socket: net.Socket, clientId: string) {
         // Send filter to the client
-        const ipAddress = socket.remoteAddress;
+        const ipAddress = getSimpleIPAddress(socket.localAddress);
         const port = socket.remotePort;
         if (!ipAddress || !port) {
             console.log('Error getting the IP address or port');
             return;
         }
-        console.log("Ip address: ", ipAddress);
+        console.log("My IP address: ", ipAddress);
         const modifiedFilter = replaceAddress(this.own_filter, ipAddress)
         socket.write(JSON.stringify(modifiedFilter));
 

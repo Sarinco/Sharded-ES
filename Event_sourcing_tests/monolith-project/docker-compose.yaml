@@ -6,11 +6,14 @@ services:
     networks:
       - site1
       - site2
+      - site3
     environment:
       KAFKA_CLUSTERS_0_NAME: ${EVENT_HOST_SITE_1}
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_1}:${EVENT_PORT_SITE_1}
       KAFKA_CLUSTERS_1_NAME: ${EVENT_HOST_SITE_2}
       KAFKA_CLUSTERS_1_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_2}:${EVENT_PORT_SITE_2}
+      KAFKA_CLUSTERS_2_NAME: ${EVENT_HOST_SITE_3}
+      KAFKA_CLUSTERS_2_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_3}:${EVENT_PORT_SITE_3}
   proxy-1:
     build:
       context: ./src/proxy/base-proxy
@@ -22,7 +25,7 @@ services:
     ports:
       - "${PROXY_1_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server
-    command: sh -c "npm run watch"
+    command: sh -c "npm install && npm run watch"
     environment:
       PORT: ${PROXY_PORT} 
       EVENT_ADDRESS: ${EVENT_HOST_SITE_1}
@@ -46,7 +49,7 @@ services:
     ports:
       - "${PROXY_2_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server
-    command: sh -c "npm run watch"
+    command: sh -c "npm install && npm run watch"
     environment:
       PORT: ${PROXY_PORT} 
       EVENT_ADDRESS: ${EVENT_HOST_SITE_2}
@@ -58,6 +61,29 @@ services:
     networks:
       - proxy
       - site2
+  proxy-3:
+    build:
+      context: ./src/proxy/base-proxy
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/proxy/base-proxy:/app
+      - ./utils/handlers:/app/src/handlers
+      - ./site3/filter.json:/app/src/filters/filter.json
+    ports:
+      - "${PROXY_3_EXTERNAL_PORT}:${PROXY_PORT}"
+    # The watch command will check for changes in the code and restart the server
+    command: sh -c "npm install && npm run watch"
+    environment:
+      PORT: ${PROXY_PORT} 
+      EVENT_ADDRESS: ${EVENT_HOST_SITE_3}
+      EVENT_PORT: ${EVENT_PORT_SITE_3}
+      EVENT_CLIENT_ID: "proxy-3"
+      REGION: "site1"
+      MASTER: "${MASTER}"
+      CONTROL_PORT: "${CONTROL_PORT}"
+    networks:
+      - proxy
+      - site3
 
 networks:
   site1:
@@ -65,6 +91,9 @@ networks:
     external: true
   site2:
     name: site2
+    external: true
+  site3:
+    name: site3
     external: true
   proxy:
     name: proxy
