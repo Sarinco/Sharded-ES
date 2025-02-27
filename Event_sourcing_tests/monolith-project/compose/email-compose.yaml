@@ -7,7 +7,7 @@ services:
       - ../src/back-end/email-service:/app
       - ../utils/types:/app/src/types
       - ../utils/handlers:/app/src/handlers
-    command: sh boot-in-order.sh
+    command: sh -c "npm install && npm run watch"
     environment:
       EVENT_ADDRESS: ${EVENT_HOST} 
       EVENT_PORT: ${EVENT_PORT} 
