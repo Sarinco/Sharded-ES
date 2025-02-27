@@ -98,13 +98,13 @@ export class ControlPlaneServer {
 
     onConnectionFunction(socket: net.Socket, clientId: string) {
         // Send filter to the client
-        const ipAddress = getSimpleIPAddress(socket.remoteAddress);
+        const ipAddress = getSimpleIPAddress(socket.localAddress);
         const port = socket.remotePort;
         if (!ipAddress || !port) {
             console.log('Error getting the IP address or port');
             return;
         }
-        console.log("Ip address: ", ipAddress);
+        console.log("My IP address: ", ipAddress);
         const modifiedFilter = replaceAddress(this.own_filter, ipAddress)
         socket.write(modifiedFilter);
 
