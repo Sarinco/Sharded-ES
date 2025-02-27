@@ -1,21 +1,20 @@
 import net from 'net';
-import { replaceAddress } from "@src/custom-handler/filterHandler";
+import { replaceAddress, FilterManager } from "@src/custom-handler/filterHandler";
+
 
 export class ControlPlaneServer {
     private server: net.Server;
     private port: number;
-    private clients: Map<string, net.Socket>; // Store active connections
-    private filter_map: Map<string, string>;
     private connections: Map<string, net.Socket>;
     private own_filter: string;
+    public filter_manager: FilterManager
 
     constructor(port: number, own_filter: string) {
         this.port = port;
         this.server = net.createServer();
-        this.clients = new Map();
         this.connections = new Map();
-        this.filter_map = new Map();
         this.own_filter = own_filter;
+        this.filter_manager = new FilterManager();
     }
 
     // Start the server
@@ -41,8 +40,8 @@ export class ControlPlaneServer {
             });
 
             // Close all active client connections
-            this.clients.forEach((socket) => socket.destroy());
-            this.clients.clear();
+            this.connections.forEach((socket) => socket.destroy());
+            this.connections.clear();
         });
     }
 
@@ -54,8 +53,8 @@ export class ControlPlaneServer {
 
             this.onConnectionFunction(socket, clientId);
 
-            // Store the socket in the clients map
-            this.clients.set(clientId, socket);
+            // Store the socket in the connections map
+            this.connections.set(clientId, socket);
 
             // Attach event listeners to the socket
             socket.on('data', (data) => {
@@ -64,19 +63,19 @@ export class ControlPlaneServer {
 
             socket.on('close', () => {
                 console.log(`Client disconnected: ${clientId}`);
-                this.clients.delete(clientId);
+                this.connections.delete(clientId);
                 // this.callbackFunctions.onClose(clientId);
             });
 
             socket.on('timeout', () => {
                 console.log(`Client timed out: ${clientId}`);
-                this.clients.delete(clientId);
+                this.connections.delete(clientId);
                 // this.callbackFunctions.onTimeout(clientId);
             });
 
             socket.on('error', (err) => {
                 console.log(`Client error: ${clientId}`);
-                this.clients.delete(clientId);
+                this.connections.delete(clientId);
                 // this.callbackFunctions.onError(err, clientId);
             });
         });
@@ -92,27 +91,33 @@ export class ControlPlaneServer {
         }
         console.log("Ip address: ", ipAddress);
         const modifiedFilter = replaceAddress(this.own_filter, ipAddress)
-        socket.write(modifiedFilter);
+        socket.write(JSON.stringify(modifiedFilter));
 
         // Send all filters to the client
-        for (const [key, value] of this.filter_map.entries()) {
-            socket.write(value);
-        }
+        //for (const [key, value] of this.filter_map.entries()) {
+            //socket.write(value);
+        //}
 
         // Add client to active connections
         this.connections.set(clientId, socket);
     }
 
     onDataFunction(data: Buffer, clientId: string) {
-        // Broadcast the message to all connected clients
+        // Broadcast the message to all connected connections
         this.broadcast(data.toString(), clientId);
 
-        this.filter_map.set(clientId, data.toString());
+        const ipAddress = this.connections.get(clientId)?.remoteAddress;
+        if (!ipAddress) {
+            console.log('Error getting the IP address');
+            return;
+        }
+        const parsedFilter = replaceAddress(data.toString(), ipAddress);
+        this.filter_manager.addFilter(parsedFilter);
     }
 
-    // Broadcast a message to all connected clients
+    // Broadcast a message to all connected connections
     broadcast(message: string, excludeClientId?: string) {
-        this.clients.forEach((socket, clientId) => {
+        this.connections.forEach((socket, clientId) => {
             if (clientId !== excludeClientId) {
                 socket.write(message);
             }
@@ -121,7 +126,7 @@ export class ControlPlaneServer {
 
     // Send a message to a specific client
     sendToClient(clientId: string, message: string) {
-        const socket = this.clients.get(clientId);
+        const socket = this.connections.get(clientId);
         if (socket) {
             socket.write(message);
         } else {
@@ -130,7 +135,7 @@ export class ControlPlaneServer {
     }
 
     // Get all connected client IDs
-    getConnectedClients(): string[] {
-        return Array.from(this.clients.keys());
+    getConnectedconnections(): string[] {
+        return Array.from(this.connections.keys());
     }
 }

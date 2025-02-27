@@ -1,16 +1,17 @@
 import net from 'net';
+import { FilterManager } from "@src/custom-handler/filterHandler";
 
 export class ControlPlaneClient {
     private socket: net.Socket;
     private port: number;
     private host: string;
-    private filter_map: Map<string, string>;
+    public filter_manager: FilterManager;
 
     constructor(host: string, port: number) {
         this.port = port;
         this.host = host;
         this.socket = new net.Socket();
-        this.filter_map = new Map();
+        this.filter_manager = new FilterManager();
     }
 
     // Connect to the server
@@ -42,6 +43,7 @@ export class ControlPlaneClient {
         const dataJson = JSON.parse(data.toString());
         console.log("Recieved data: ", dataJson);
         // TODO: Manage filter
+        this.filter_manager.addFilter(dataJson);
     }
 
     // Disconnect from the server

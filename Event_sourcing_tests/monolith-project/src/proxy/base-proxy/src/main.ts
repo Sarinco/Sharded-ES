@@ -7,6 +7,7 @@ require('module-alias/register');
 import { ProducerFactory } from '@src/handlers/kafkaHandler';
 import { ControlPlaneServer } from '@src/control-plane/server';
 import { ControlPlaneClient } from '@src/control-plane/client';
+import { FilterManager } from '@src/custom-handler/filterHandler';
 
 //Connection variables setup
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -23,8 +24,38 @@ const MASTER = process.env.MASTER || 'proxy-1';
 const CONTROL_PORT = parseInt(process.env.CONTROL_PORT as string) || 6000;
 const IS_MASTER = process.env.IS_MASTER || 'false';
 
-// Hashmap to store filters
-const filters = new Map<string, JSON>();
+let filter_manager: FilterManager
+
+// CONTROL PLANE
+// Retrive json filters 
+const filter = readFileSync('./src/filters/filter.json', 'utf-8');
+
+
+// CONTROL PLANE SERVER
+if (IS_MASTER == "true") {
+    const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, filter);
+    // Start server
+    controlPlaneServer.start().catch((error: any) => {
+        console.log('Error starting the Control Plane server: ', error);
+    }).then(() => {
+        controlPlaneServer.onConnection()
+        filter_manager = controlPlaneServer.filter_manager;
+    });
+} else {
+    // CONTROL PLANE CLIENT
+    const controlPlaneClient = new ControlPlaneClient(MASTER, CONTROL_PORT);
+
+    // Connect to the server
+    const seconds = 1;
+    setTimeout(() => {
+        controlPlaneClient.connect().catch((error: any) => {
+            console.log('Error connecting to the Control Plane server: ', error);
+        }).then(() => {
+            controlPlaneClient.send(Buffer.from(filter));
+            filter_manager = controlPlaneClient.filter_manager;
+        });
+    }, seconds * 1000);
+}
 
 // PRODUCER
 const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
@@ -66,20 +97,24 @@ app.post('/', (req: Request, res: Response) => {
         // Send to other region 
         console.log('Forwarding the message to ', region);
 
-        let targetRegion = region == 'site1' ? 'proxy-1' : 'proxy-2';
+        // let targetRegion = region == 'site1' ? 'proxy-1' : 'proxy-2';
+        let targetRegions = filter_manager.matchFilter({ topic: topic, region: region, message: message });
+        console.log('Target region: ', targetRegions);
 
-        fetch(`http://${targetRegion}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        }).then(() => {
-            console.log('Event sent successfully to ', region);
-            res.status(200).send('Message forwarded');
-        }).catch((error: any) => {
-            console.log('Error forwarding the message: ', error);
-            res.status(500).send('Error forwarding the message');
+        targetRegions.forEach((targetRegion) => {
+            fetch(`http://${targetRegion}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            }).then(() => {
+                console.log('Event sent successfully to ', region);
+                res.status(200).send('Message forwarded');
+            }).catch((error: any) => {
+                console.log('Error forwarding the message: ', error);
+                res.status(500).send('Error forwarding the message');
+            });
         });
     }
 
@@ -90,32 +125,3 @@ app.post('/', (req: Request, res: Response) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
-// CONTROL PLANE
-// Retrive json filters 
-const filter = readFileSync('./src/filters/filter.json', 'utf-8');
-
-
-// CONTROL PLANE SERVER
-if (IS_MASTER == "true") {
-    const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, filter);
-    // Start server
-    controlPlaneServer.start().catch((error: any) => {
-        console.log('Error starting the Control Plane server: ', error);
-    }).then(() => {
-        controlPlaneServer.onConnection()
-    });
-} else {
-    // CONTROL PLANE CLIENT
-    const controlPlaneClient = new ControlPlaneClient(MASTER, CONTROL_PORT);
-
-    // Connect to the server
-    const seconds = 1;
-    setTimeout(() => {
-        controlPlaneClient.connect().catch((error: any) => {
-            console.log('Error connecting to the Control Plane server: ', error);
-        }).then(() => {
-            controlPlaneClient.send(Buffer.from(filter));
-        });
-    }, seconds * 1000);
-}
