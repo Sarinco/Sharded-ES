@@ -101,8 +101,14 @@ app.post('/', (req: Request, res: Response) => {
         let targetRegions = filter_manager.matchFilter({ topic: topic, region: region, message: message });
         console.log('Target region: ', targetRegions);
 
+        if (targetRegions.length == 0) {
+            console.log('No target region found');
+            res.status(500).send('No target region found');
+            return;
+        }
+
         targetRegions.forEach((targetRegion) => {
-            fetch(`http://${targetRegion}`, {
+            fetch(`http://${targetRegion}/direct-forward`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -110,14 +116,32 @@ app.post('/', (req: Request, res: Response) => {
                 body: JSON.stringify(body)
             }).then(() => {
                 console.log('Event sent successfully to ', region);
-                res.status(200).send('Message forwarded');
             }).catch((error: any) => {
                 console.log('Error forwarding the message: ', error);
                 res.status(500).send('Error forwarding the message');
+                return;
             });
         });
+        res.status(200).send('Message forwarded');
     }
 
+});
+
+app.post('/direct-forward', (req: Request, res: Response) => {
+    const body = req.body;
+    console.log('Received request: ', body);
+    const { topic, region, message } = body;
+
+    console.log('Received message for this region: ', region);
+    console.log('Message: ', message);
+
+    producer.send(topic, message).then(() => {
+        console.log('Message forwarded');
+        res.status(200).send('Message forwarded');
+    }).catch((error: any) => {
+        console.log('Error forwarding the message: ', error);
+        res.status(500).send('Error forwarding the message');
+    });
 });
 
 

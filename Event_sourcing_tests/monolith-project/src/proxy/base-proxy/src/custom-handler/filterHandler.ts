@@ -1,18 +1,9 @@
 import { v4 as uuid } from 'uuid';
+import {
+    Filter,
+    Event
+} from '@src/control-plane/interfaces';
 
-interface Filter {
-    name: string;
-    proxy_address: string;
-    region: string;
-    topic: string;
-    filters: Array<JSON>;
-}
-
-interface Event {
-    topic: string;
-    region: string;
-    message: string;
-}
 
 export function replaceAddress(input: string, ip: string) {
     const inputJson: Array<Filter> = JSON.parse(input);
@@ -37,26 +28,39 @@ export class FilterManager {
         this.topicRegion_to_filterId = new Map();
     }
 
-    addFilter(filters: Array<Filter>) {
-        /* Add a filter to the filter map */
-        console.log("Filters: ", filters);
-        filters.forEach(filter => {
-            const filterId = uuid();
-            this.filterId_to_filter.set(filterId, filter);
+    // Overloaded function signatures
+    addFilter(filters: Array<Filter>): void; // Accepts an array of filters
+    addFilter(filter: Filter): void; // Accepts a single filter object
+    addFilter(filters: Filter | Array<Filter>): void {
+        /* Handle both a single filter or an array of filters */
+        if (Array.isArray(filters)) {
+            // If it's an array, process each filter
+            filters.forEach(filter => this.addSingleFilter(filter));
+        } else {
+            // If it's a single filter, process it
+            this.addSingleFilter(filters);
+        }
+    }
 
-            if (this.proxyAddress_to_filterId.has(filter.proxy_address)) {
-                this.proxyAddress_to_filterId.get(filter.proxy_address)?.push(filterId);
-            } else {
-                this.proxyAddress_to_filterId.set(filter.proxy_address, [filterId]);
-            }
+    private addSingleFilter(filter: Filter): void {
+        /* Adds a single filter to the filter map */
+        const filterId = uuid();
+        this.filterId_to_filter.set(filterId, filter);
 
-            const topicRegion = filter.topic + ":" + filter.region;
-            if (this.topicRegion_to_filterId.has(topicRegion)) {
-                this.topicRegion_to_filterId.get(topicRegion)?.push(filterId);
-            } else {
-                this.topicRegion_to_filterId.set(topicRegion, [filterId]);
-            }
-        });
+        // Handle proxy address mapping
+        if (this.proxyAddress_to_filterId.has(filter.proxy_address)) {
+            this.proxyAddress_to_filterId.get(filter.proxy_address)?.push(filterId);
+        } else {
+            this.proxyAddress_to_filterId.set(filter.proxy_address, [filterId]);
+        }
+
+        // Handle topic-region mapping
+        const topicRegion = filter.topic + ":" + filter.region;
+        if (this.topicRegion_to_filterId.has(topicRegion)) {
+            this.topicRegion_to_filterId.get(topicRegion)?.push(filterId);
+        } else {
+            this.topicRegion_to_filterId.set(topicRegion, [filterId]);
+        }
     }
 
     matchFilter(event: Event): Array<string> {
@@ -70,6 +74,7 @@ export class FilterManager {
         for (const tr of topicRegion) {
             const filterIds = this.topicRegion_to_filterId.get(tr);
             if (!filterIds) {
+                console.log("No filter found for topicRegion: ", tr);
                 continue
             }
             for (const filterId of filterIds) {
@@ -86,6 +91,11 @@ export class FilterManager {
         }
 
         return ip_address;
+    }
+
+    getAllFilters(): IterableIterator<Filter> {
+        /* Return all filters */
+        return this.filterId_to_filter.values();
     }
 
     private removeFilter(filterId: string) {

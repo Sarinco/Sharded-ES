@@ -40,8 +40,8 @@ export class ControlPlaneClient {
     }
 
     onDataFunction(data: Buffer) {
+        console.debug('Data received:', data.toString());
         const dataJson = JSON.parse(data.toString());
-        console.log("Recieved data: ", dataJson);
         // TODO: Manage filter
         this.filter_manager.addFilter(dataJson);
     }

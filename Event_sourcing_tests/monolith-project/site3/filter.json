@@ -3,14 +3,14 @@
         "name": "filter",
         "proxy_address": "SET BY CONTROL PLANE",
         "region": "site3",
-        "topic": "stock",
+        "topic": "products",
         "filters": []
     },
     {
         "name": "filter",
         "proxy_address": "SET BY CONTROL PLANE",
         "region": "test-site",
-        "topic": "stock",
+        "topic": "products",
         "filters": []
     }
 ]

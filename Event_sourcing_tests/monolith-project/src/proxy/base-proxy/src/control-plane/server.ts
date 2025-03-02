@@ -1,5 +1,7 @@
 import net from 'net';
+
 import { replaceAddress, FilterManager } from "@src/custom-handler/filterHandler";
+import { Filter } from '@src/control-plane/interfaces';
 
 
 function getSimpleIPAddress(remoteAddress: string | undefined): string | null {
@@ -78,19 +80,19 @@ export class ControlPlaneServer {
             socket.on('close', () => {
                 console.log(`Client disconnected: ${clientId}`);
                 this.connections.delete(clientId);
-                // this.callbackFunctions.onClose(clientId);
+                this.onCloseFunction(clientId);
             });
 
             socket.on('timeout', () => {
                 console.log(`Client timed out: ${clientId}`);
                 this.connections.delete(clientId);
-                // this.callbackFunctions.onTimeout(clientId);
+                this.onTimeoutFunction(clientId);
             });
 
             socket.on('error', (err) => {
                 console.log(`Client error: ${clientId}`);
                 this.connections.delete(clientId);
-                // this.callbackFunctions.onError(err, clientId);
+                this.onErrorFunction(err, clientId);
             });
         });
     }
@@ -108,25 +110,50 @@ export class ControlPlaneServer {
         socket.write(JSON.stringify(modifiedFilter));
 
         // Send all filters to the client
-        //for (const [key, value] of this.filter_map.entries()) {
-            //socket.write(value);
-        //}
+        const all_current_filters: IterableIterator<Filter> = this.filter_manager.getAllFilters();
+        for (const filter of all_current_filters) {
+            const filterToSend = JSON.stringify(filter);
+            console.log(`Sending filter to client ${clientId}:`, filterToSend);
+            socket.write(filterToSend);
+        }
 
         // Add client to active connections
         this.connections.set(clientId, socket);
     }
 
     onDataFunction(data: Buffer, clientId: string) {
-        // Broadcast the message to all connected connections
-        this.broadcast(data.toString(), clientId);
-
-        const ipAddress = this.connections.get(clientId)?.remoteAddress;
+        const ipAddress = getSimpleIPAddress(this.connections.get(clientId)?.remoteAddress);
         if (!ipAddress) {
             console.log('Error getting the IP address');
             return;
         }
         const parsedFilter = replaceAddress(data.toString(), ipAddress);
         this.filter_manager.addFilter(parsedFilter);
+
+        // Broadcast the message to all connected connections
+        this.broadcast(JSON.stringify(parsedFilter), clientId);
+    }
+
+    onTimeoutFunction(clientId: string) {
+        this.cleanFilter(clientId);
+    }
+
+    onErrorFunction(err: Error, clientId: string) {
+        console.error(`Error with client ${clientId}:`, err);
+        this.cleanFilter(clientId);
+    }
+
+    onCloseFunction(clientId: string) {
+        this.cleanFilter(clientId);
+    }
+
+    private cleanFilter(clientId: string) {
+        const ipAddress = getSimpleIPAddress(this.connections.get(clientId)?.remoteAddress);
+        if (!ipAddress) {
+            console.log('Error getting the IP address');
+            return;
+        }
+        this.filter_manager.removeFiltersByProxyAddress(ipAddress);
     }
 
     // Broadcast a message to all connected connections
