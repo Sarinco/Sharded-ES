@@ -8,6 +8,10 @@ import { ProducerFactory } from '@src/handlers/kafkaHandler';
 import { ControlPlaneServer } from '@src/control-plane/server';
 import { ControlPlaneClient } from '@src/control-plane/client';
 import { FilterManager } from '@src/custom-handler/filterHandler';
+import {
+    ADD_FILTER,
+    REMOVE_FILTER,
+} from '@src/control-plane/interfaces';
 
 //Connection variables setup
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -51,7 +55,7 @@ if (IS_MASTER == "true") {
         controlPlaneClient.connect().catch((error: any) => {
             console.log('Error connecting to the Control Plane server: ', error);
         }).then(() => {
-            controlPlaneClient.send(Buffer.from(filter));
+            controlPlaneClient.send(Buffer.from(filter), ADD_FILTER);
             filter_manager = controlPlaneClient.filter_manager;
         });
     }, seconds * 1000);
@@ -73,8 +77,17 @@ app.use(express.json());
 
 // For health check
 app.get('/', (req: Request, res: Response) => {
-    res.status(200).send('Producer is running');
+   res.status(200).send('Server is running');
 });
+
+app.get('/filters', (req: Request, res: Response) => {
+    let filters = [];
+    for (const filter of filter_manager.getAllFilters()) {
+        filters.push(filter);
+    }
+    res.status(200).send(filters);
+});
+
 
 // Logging all the requests made to the server
 app.post('/', (req: Request, res: Response) => {

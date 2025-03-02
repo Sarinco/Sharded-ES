@@ -1,5 +1,10 @@
 import net from 'net';
 import { FilterManager } from "@src/custom-handler/filterHandler";
+import {
+    RawControlPacket,
+    ADD_FILTER,
+    REMOVE_FILTER
+} from '@src/control-plane/interfaces';
 
 export class ControlPlaneClient {
     private socket: net.Socket;
@@ -24,7 +29,7 @@ export class ControlPlaneClient {
             });
 
             this.socket.on('data', (data) => {
-               this.onDataFunction(data); 
+                this.onDataFunction(data);
             });
 
             this.socket.on('close', () => {
@@ -42,8 +47,17 @@ export class ControlPlaneClient {
     onDataFunction(data: Buffer) {
         console.debug('Data received:', data.toString());
         const dataJson = JSON.parse(data.toString());
-        // TODO: Manage filter
-        this.filter_manager.addFilter(dataJson);
+
+        switch (dataJson.type) {
+            case ADD_FILTER:
+                this.filter_manager.addFilter(dataJson.data);
+                break;
+            case REMOVE_FILTER:
+                this.filter_manager.removeFiltersByProxyAddress(dataJson.data);
+                break;
+            default:
+                console.log('Unknown packet type');
+        }
     }
 
     // Disconnect from the server
@@ -57,9 +71,13 @@ export class ControlPlaneClient {
     }
 
     // Send data to the server
-    send(data: Buffer): Promise<void> {
+    send(data: Buffer, type: string): Promise<void> {
+        const packet: RawControlPacket = {
+            type: type,
+            data: JSON.parse(data.toString())
+        };
         return new Promise((resolve, reject) => {
-            this.socket.write(data, (err) => {
+            this.socket.write(JSON.stringify(packet), (err) => {
                 if (err) {
                     reject(err);
                 } else {

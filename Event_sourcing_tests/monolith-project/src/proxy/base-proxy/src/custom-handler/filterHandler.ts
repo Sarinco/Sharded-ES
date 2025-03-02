@@ -5,15 +5,13 @@ import {
 } from '@src/control-plane/interfaces';
 
 
-export function replaceAddress(input: string, ip: string) {
-    const inputJson: Array<Filter> = JSON.parse(input);
-
+export function replaceAddress(input_json: Array<Filter>, ip: string) {
     // Iterate over the json array and change the proxy_address var to ip
-    inputJson.forEach(element => {
+    input_json.forEach(element => {
         element.proxy_address = ip;
     });
 
-    return inputJson;
+    return input_json;
 }
 
 export class FilterManager {
@@ -112,11 +110,14 @@ export class FilterManager {
     removeFiltersByProxyAddress(proxyAddress: string) {
         /* Remove all filters with a specific proxy address */
         const filterIds = this.proxyAddress_to_filterId.get(proxyAddress);
+        let nb_filters = 0;
         if (filterIds) {
             filterIds.forEach(filterId => {
+                nb_filters++;
                 this.removeFilter(filterId);
             });
         }
+        console.log(`Removed ${nb_filters} filters for proxy address ${proxyAddress}`);
         this.proxyAddress_to_filterId.delete(proxyAddress);
     }
 }
