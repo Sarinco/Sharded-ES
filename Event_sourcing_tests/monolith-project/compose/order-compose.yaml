@@ -30,13 +30,13 @@ services:
 
   db-orders-init:
     build:
-      context: ./src/back-end/orders
+      context: ../src/back-end/orders
       dockerfile: Dockerfile.init-db
     volumes:
-      - ./src/back-end/orders:/app
-      - ./utils/types:/app/src/types
-      - ./utils/handlers:/app/src/handlers
-      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+      - ../src/back-end/orders:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
     environment:
       PORT: ${ORDERS_PORT}
       EVENT_ADDRESS: ${EVENT_HOST}
@@ -53,7 +53,7 @@ services:
     ports:
       - "${DB_ORDERS_EXTERNAL_PORT}:${DB_ORDERS_PORT}"
     volumes:
-      - ./src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ../src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]

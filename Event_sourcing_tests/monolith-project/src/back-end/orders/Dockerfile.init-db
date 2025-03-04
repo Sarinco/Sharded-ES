@@ -14,4 +14,4 @@ RUN npm install
 # copy the rest of the files
 COPY . .
 
-ENTRYPOINT npm run src
+ENTRYPOINT npm run init-db
