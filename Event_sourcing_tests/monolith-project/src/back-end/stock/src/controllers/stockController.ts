@@ -26,13 +26,15 @@ const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
 
 const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
 const PROXY_PORT = process.env.PROXY_PORT;
-const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/proxy`;
+const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
 
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;
 const DB_PORT = "6379";
 
 const topic = ['products', 'orders'];
+
+const DEFAULT_REGION = process.env.REGION;
 
 
 // REDIS 
@@ -44,10 +46,10 @@ const redis: RedisClientType = createClient({
 
 // PRODUCER
 const producer = {
-    send: async (topic: string, message: any) => {
+    send: async (topic: string, message: any, region: string) => {
         const body = {
             topic,
-            region: 'eu-west-1',
+            region: region,
             message
         }
 
@@ -175,6 +177,8 @@ const stock = {
                 return res.status(403).send("Unauthorized");
             }
 
+            const region = req.headers.region || DEFAULT_REGION;
+
             if (req.body.name === undefined || req.body.name === "") {
                 res.status(400).send("Invalid name");
                 return;
@@ -198,7 +202,8 @@ const stock = {
 
             producer.send(
                 'products',
-                event.toJSON()
+                event.toJSON(),
+                region
             ).then(() => {
                 console.log("Product added successfully by ", addedBy);
                 res.send("Product added successfully");
@@ -256,9 +261,12 @@ const stock = {
                 updatedBy
             );
 
+            const region = req.headers.region || DEFAULT_REGION;
+
             producer.send(
                 'products',
-                event.toJSON()
+                event.toJSON(),
+                region
             ).then(() => {
                 console.log("Product updated sent successfully");
                 res.send("Product updated successfully");
@@ -308,9 +316,12 @@ const stock = {
 
             const event: ProductDeletedEvent = new ProductDeletedEvent(req.params.id, deletedBy);
 
+            const region = req.headers.region || DEFAULT_REGION;
+
             producer.send(
                 'products',
-                event.toJSON()
+                event.toJSON(),
+                region
             ).then(() => {
                 console.log("Product deleted sent successfully");
                 res.send("Product deleted successfully");

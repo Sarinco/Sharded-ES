@@ -1,18 +1,18 @@
 services:
   stock:
     build:
-      context: ./src/back-end/stock
+      context: ../src/back-end/stock
       dockerfile: Dockerfile
     volumes:
-      - ./src/back-end/stock:/app
-      - ./utils/types:/app/src/types
-      - ./utils/handlers:/app/src/handlers
-      #- ./utils/middleware/token.ts:/app/src/middleware/token.ts
-      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+      - ../src/back-end/stock:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      #- ../utils/middleware/token.ts:/app/src/middleware/token.ts
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
     ports:
-      - "5000:5000"
+      - "${STOCK_EXTERNAL_PORT}:${STOCK_PORT}"
     # The watch command will check for changes in the code and restart the server
-    command: sh boot-in-order.sh 
+    command: sh -c "npm install && npm run watch" 
     environment:
       PORT: ${STOCK_PORT} 
       DB_ADDRESS: ${DB_STOCK_HOST}
@@ -21,6 +21,7 @@ services:
       PROXY_ADDRESS: ${PROXY_HOST}
       PROXY_PORT: ${PROXY_PORT}
       JWT_SECRET: ${JWT_SECRET}
+      REGION: ${REGION}
     depends_on:
       broker:
         condition: service_healthy
@@ -31,13 +32,13 @@ services:
 
   db-stock-init:
     build:
-      context: ./src/back-end/stock
+      context: ../src/back-end/stock
       dockerfile: Dockerfile.init-db
     volumes:
-      - ./src/back-end/stock:/app
-      - ./utils/types:/app/src/types
-      - ./utils/handlers:/app/src/handlers
-      - ./utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+      - ../src/back-end/stock:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
     environment:
       PORT: ${STOCK_PORT}
       EVENT_ADDRESS: ${EVENT_HOST}
@@ -52,9 +53,9 @@ services:
   db-stock:
     image: redis:alpine
     ports:
-      - "${DB_STOCK_PORT}:6379"
+      - "${DB_STOCK_EXTERNAL_PORT}:${DB_STOCK_PORT}"
     volumes:
-      - ./src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ../src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
