@@ -1,22 +1,21 @@
 import net from 'net';
-import { FilterManager } from "@src/custom-handler/filterHandler";
+import { ConfigManager } from "@src/custom-handler/configHandler";
 import {
     RawControlPacket,
-    ADD_FILTER,
-    REMOVE_FILTER
+    CONFIG_PACKET
 } from '@src/control-plane/interfaces';
 
 export class ControlPlaneClient {
     private socket: net.Socket;
     private port: number;
     private host: string;
-    public filter_manager: FilterManager;
+    public config_manager: ConfigManager;
 
     constructor(host: string, port: number) {
         this.port = port;
         this.host = host;
         this.socket = new net.Socket();
-        this.filter_manager = new FilterManager();
+        this.config_manager = new ConfigManager();
     }
 
     // Connect to the server
@@ -46,15 +45,12 @@ export class ControlPlaneClient {
 
     onDataFunction(data: Buffer) {
         console.debug('Data received:', data.toString());
-        const dataJson = JSON.parse(data.toString());
+        const data_json = JSON.parse(data.toString());
 
-        switch (dataJson.type) {
-            case ADD_FILTER:
-                this.filter_manager.addFilter(dataJson.data);
-                break;
-            case REMOVE_FILTER:
-                this.filter_manager.removeFiltersByProxyAddress(dataJson.data);
-                break;
+        switch (data_json.type) {
+            case CONFIG_PACKET:
+                this.config_manager.setConfig(data_json.data);
+                break    
             default:
                 console.log('Unknown packet type');
         }

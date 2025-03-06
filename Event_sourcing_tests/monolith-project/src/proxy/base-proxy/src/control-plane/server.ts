@@ -1,13 +1,12 @@
 import net from 'net';
+import { readFileSync } from 'fs';
 
-import { replaceAddress, FilterManager } from "@src/custom-handler/filterHandler";
+import { ConfigManager } from "@src/custom-handler/configHandler";
 import {
-    Filter,
+    RawConfig,
     RawControlPacket,
-    AddFilterPacket,
-    RemoveFilterPacket,
-    ADD_FILTER,
-    REMOVE_FILTER
+    CONFIG_PACKET,
+    defaultRule
 } from '@src/control-plane/interfaces';
 
 
@@ -24,23 +23,69 @@ function getSimpleIPAddress(remote_address: string | undefined): string | null {
     return remote_address; // Return the original address if it's IPv6 or already simple
 }
 
+function testSimple() {
+    console.log("Test simple running");
+}
+
+const testsimple2 = (test: string) => {
+    console.log("Hello ", test);
+}
+
 export class ControlPlaneServer {
     private server: net.Server;
     private port: number;
     private connections: Map<string, net.Socket>;
-    private own_filter: Array<Filter>;
-    public filter_manager: FilterManager
+    private config: RawConfig[];
+    public config_manager: ConfigManager
 
-    constructor(port: number, own_filter: string) {
+    constructor(port: number, config: string) {
         this.port = port;
         this.server = net.createServer();
         this.connections = new Map();
-        this.own_filter = JSON.parse(own_filter);
-        this.filter_manager = new FilterManager();
+        this.config = JSON.parse(config);
+        this.config_manager = new ConfigManager();
+    }
+
+    configFilters() {
+        for (const conf of this.config) {
+            switch (conf.action) {
+                case 'shard':
+                    // Read the file specify in rule
+                    const file = conf.rules;
+                    if (!file) {
+                        console.log('No file specified');
+                        break;
+                    }
+                    // list current directory
+                    const new_rules = readFileSync(file, 'utf-8');  
+                    conf.rules = new_rules;
+                    break;
+                case 'broadcast':
+                    conf.rules = defaultRule.toString(); 
+                    break;
+                default:
+                    console.log('Unknown action');
+            }
+        }
     }
 
     // Start the server
     start(): Promise<void> {
+
+        const test = new Function('caca', 'testSimple', `
+console.log("caca: ", caca);
+testSimple();
+return caca + 1;
+`);
+        const newFunc = eval(testsimple2.toString());
+        newFunc("caca");
+
+        // console.log("Running the function with result: ",test(1, testSimple));
+        // console.log("function chelou: ", test.toString());
+        //
+        this.configFilters();
+        console.log("Config: ", this.config);
+
         return new Promise((resolve, reject) => {
             this.server.listen(this.port, () => {
                 console.log(`Control Plane server started on port ${this.port}`);
@@ -112,23 +157,14 @@ export class ControlPlaneServer {
             console.log('Error getting the IP address or port');
             return;
         }
-        console.log("My IP address: ", ip_address);
-        const modified_filter = replaceAddress(this.own_filter, ip_address)
 
-        // Send all filters to the client
-        const all_current_filters: IterableIterator<Filter> = this.filter_manager.getAllFilters();
-        const filters: Filter[] = [ ...modified_filter ];
-        for (const filter of all_current_filters) {
-            filters.push(filter);
-        }
-        const packet = {
-            type: ADD_FILTER,
-            data: filters
+        // Send config to the client
+        const packet: RawControlPacket = {
+            type: CONFIG_PACKET,
+            data: this.config
         };
-        const result = socket.write(JSON.stringify(packet));
-        if (!result) {
-            console.log('Error sending the filter to the client');
-        }
+
+        socket.write(JSON.stringify(packet));
 
         // Add client to active connections
         this.connections.set(clientId, socket);
@@ -137,26 +173,6 @@ export class ControlPlaneServer {
     onDataFunction(data: Buffer, clientId: string) {
         const data_json = JSON.parse(data.toString());
         switch (data_json.type) {
-            case ADD_FILTER:
-                const ip_address = getSimpleIPAddress(this.connections.get(clientId)?.remoteAddress);
-                if (!ip_address) {
-                    console.log('Error getting the IP address');
-                    return;
-                }
-                const filters: Filter[] = data_json.data;
-                const parsed_filter = replaceAddress(filters, ip_address);
-                console.log('Received filters:', parsed_filter);
-                this.filter_manager.addFilter(parsed_filter);
-
-                // Broadcast the message to all connected connections
-                const packet: RawControlPacket = {
-                    type: ADD_FILTER,
-                    data: parsed_filter
-                };
-                this.broadcast(JSON.stringify(packet), clientId);
-                break;
-            case REMOVE_FILTER:
-                break;
             default:
                 console.log('Unknown packet type');
         }
@@ -164,32 +180,13 @@ export class ControlPlaneServer {
     }
 
     onTimeoutFunction(clientId: string) {
-        this.cleanFilter(clientId);
     }
 
     onErrorFunction(err: Error, clientId: string) {
         console.error(`Error with client ${clientId}:`, err);
-        this.cleanFilter(clientId);
     }
 
     onCloseFunction(clientId: string) {
-        this.cleanFilter(clientId);
-    }
-
-    private cleanFilter(clientId: string) {
-        const ip_address = clientId.split(':')[0];
-        if (!ip_address) {
-            console.log('Error getting the IP address');
-            return;
-        }
-        this.filter_manager.removeFiltersByProxyAddress(ip_address);
-
-        // Broadcast the message to all connected connections
-        const packet: RawControlPacket = {
-            type: REMOVE_FILTER,
-            data: ip_address
-        };
-        this.broadcast(JSON.stringify(packet), clientId);
     }
 
     // Broadcast a message to all connected connections

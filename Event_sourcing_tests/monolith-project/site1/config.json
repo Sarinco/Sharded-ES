@@ -1,0 +1,11 @@
+[
+    {
+        "topic": "users",
+        "action": "broadcast"
+    },
+    {
+        "topic": "products",
+        "action": "shard",
+        "rules": "/app/src/filters/product.js"
+    }
+]

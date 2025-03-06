@@ -1,27 +1,34 @@
-export const ADD_FILTER = 'add_filter';
-export const REMOVE_FILTER = 'remove_filter';
+export const CONFIG_PACKET = 'config';
+export const BROADCAST = 'broadcast';
+
+export const defaultRule = (event: Event) => {
+    return {
+        action: 'broadcast',
+        id: '-1'
+    }
+};
+
+export interface Rule {
+    action: string;
+    id: string;
+}
 
 export interface RawControlPacket {
     type: string;
     data: any;
 }
 
-export interface AddFilterPacket {
-    type: string;
-    data: Filter;
-}
-
-export interface RemoveFilterPacket {
-    type: string;
-    data: string;
-}
-
-export interface Filter {
-    name: string;
-    proxy_address: string;
-    region: string;
+export interface RawConfig {
     topic: string;
-    filters: Array<JSON>;
+    action: string;
+    rules?: string;
+}
+
+
+export interface Config {
+    topic: string;
+    action: string;
+    rules: string;
 }
 
 export interface Event {

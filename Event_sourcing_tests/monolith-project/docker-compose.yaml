@@ -21,7 +21,8 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
-      - ./site1/filter.json:/app/src/filters/filter.json
+      - ./site1/config.json:/app/src/config.json
+      - ./site1/filters/:/app/src/filters/
     ports:
       - "${PROXY_1_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server
@@ -45,7 +46,6 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
-      - ./site2/filter.json:/app/src/filters/filter.json
     ports:
       - "${PROXY_2_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server
@@ -68,7 +68,6 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
-      - ./site3/filter.json:/app/src/filters/filter.json
     ports:
       - "${PROXY_3_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server
