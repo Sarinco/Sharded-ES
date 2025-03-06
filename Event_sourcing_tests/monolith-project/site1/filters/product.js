@@ -1,3 +1,6 @@
-() => {
-    console.log('product.js working');
+(event) => {
+    return {
+        action: 'broadcast',
+        id: -1
+    }
 }

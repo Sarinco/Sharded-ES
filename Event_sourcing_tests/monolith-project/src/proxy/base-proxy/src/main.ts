@@ -83,11 +83,16 @@ app.get('/', (req: Request, res: Response) => {
 app.post('/', (req: Request, res: Response) => {
     const body = req.body;
     console.log('Received request: ', body);
-    const { topic, region, message } = body;
+    const { topic, message } = body;
 
-    console.log('Received message for this region: ', region);
     console.log('Message: ', message);
+
+
+    const rule = config_manager.matchRule(body);
+    console.log('Rule: ', rule);
+
     res.status(500).send('Error not implemented');
+
 
     // if (region == REGION) {
     //     producer.send(topic, message).then(() => {

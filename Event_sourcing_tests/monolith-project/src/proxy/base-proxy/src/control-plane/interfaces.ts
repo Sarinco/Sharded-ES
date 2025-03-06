@@ -1,4 +1,6 @@
 export const CONFIG_PACKET = 'config';
+export const NEW_CONNECTION_PACKET = 'new_connection';
+
 export const BROADCAST = 'broadcast';
 
 export const defaultRule = (event: Event) => {
@@ -33,7 +35,6 @@ export interface Config {
 
 export interface Event {
     topic: string;
-    region: string;
     message: string;
 }
 

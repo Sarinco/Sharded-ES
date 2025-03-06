@@ -6,7 +6,8 @@ import {
     RawConfig,
     RawControlPacket,
     CONFIG_PACKET,
-    defaultRule
+    defaultRule,
+    NEW_CONNECTION_PACKET
 } from '@src/control-plane/interfaces';
 
 
@@ -57,11 +58,11 @@ export class ControlPlaneServer {
                         break;
                     }
                     // list current directory
-                    const new_rules = readFileSync(file, 'utf-8');  
+                    const new_rules = readFileSync(file, 'utf-8');
                     conf.rules = new_rules;
                     break;
                 case 'broadcast':
-                    conf.rules = defaultRule.toString(); 
+                    conf.rules = defaultRule.toString();
                     break;
                 default:
                     console.log('Unknown action');
@@ -72,17 +73,6 @@ export class ControlPlaneServer {
     // Start the server
     start(): Promise<void> {
 
-        const test = new Function('caca', 'testSimple', `
-console.log("caca: ", caca);
-testSimple();
-return caca + 1;
-`);
-        const newFunc = eval(testsimple2.toString());
-        newFunc("caca");
-
-        // console.log("Running the function with result: ",test(1, testSimple));
-        // console.log("function chelou: ", test.toString());
-        //
         this.configFilters();
         console.log("Config: ", this.config);
 
@@ -158,13 +148,29 @@ return caca + 1;
             return;
         }
 
+        //send known ip's to the client 
+        let known_ips = Array.from(this.connections.keys());
+        known_ips = known_ips.map((key) => {
+            return key.split(":")[0];
+        });
+        //adds own ip to the list
+        known_ips.push(ip_address);
+
+        let packet: RawControlPacket = {
+            type: NEW_CONNECTION_PACKET,
+            data: known_ips
+        };
+
+        socket.write(JSON.stringify(packet));
+
         // Send config to the client
-        const packet: RawControlPacket = {
+        packet = {
             type: CONFIG_PACKET,
             data: this.config
         };
 
         socket.write(JSON.stringify(packet));
+
 
         // Add client to active connections
         this.connections.set(clientId, socket);
