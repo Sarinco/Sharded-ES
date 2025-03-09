@@ -72,7 +72,6 @@ export class ControlPlaneServer {
 
     // Start the server
     start(): Promise<void> {
-
         this.configFilters();
         console.log("Config: ", this.config);
 
@@ -178,6 +177,7 @@ export class ControlPlaneServer {
 
     onDataFunction(data: Buffer, clientId: string) {
         const data_json = JSON.parse(data.toString());
+        console.log("coucou");
         switch (data_json.type) {
             default:
                 console.log('Unknown packet type');
