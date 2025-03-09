@@ -28,6 +28,7 @@ const CONTROL_PORT = parseInt(process.env.CONTROL_PORT as string) || 6000;
 const IS_MASTER = process.env.IS_MASTER || 'false';
 
 let config_manager: ConfigManager
+let control_plane: ControlPlaneServer
 
 // CONTROL PLANE
 // Retrive json filters 
@@ -37,6 +38,7 @@ let config_manager: ConfigManager
 if (IS_MASTER == "true") {
     const config = readFileSync('./src/config.json', 'utf-8');
     const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, config);
+    control_plane = controlPlaneServer;
     // Start server
     controlPlaneServer.start().catch((error: any) => {
         console.log('Error starting the Control Plane server: ', error);
@@ -93,6 +95,14 @@ app.post('/', (req: Request, res: Response) => {
 
     if (routing_instructions.action == 'broadcast') {
         // TODO : send the message to everyone
+
+        // remarque : Yo max, l'implémentation ci-dessous est incomplète et j'aimerais
+        // bien la discuter avec toi, kiss kiss
+
+        let connections = control_plane.connections 
+        connections.forEach((socket: any, key: string) => {
+            socket.write(JSON.stringify(body) + "%end%");
+        });
     }
 
     if (routing_instructions.action == 'shard') {

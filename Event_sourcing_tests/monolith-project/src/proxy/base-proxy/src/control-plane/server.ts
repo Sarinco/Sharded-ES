@@ -24,18 +24,11 @@ function getSimpleIPAddress(remote_address: string | undefined): string | null {
     return remote_address; // Return the original address if it's IPv6 or already simple
 }
 
-function testSimple() {
-    console.log("Test simple running");
-}
-
-const testsimple2 = (test: string) => {
-    console.log("Hello ", test);
-}
 
 export class ControlPlaneServer {
     private server: net.Server;
     private port: number;
-    private connections: Map<string, net.Socket>;
+    public connections: Map<string, net.Socket>;
     private config: RawConfig[];
     public config_manager: ConfigManager
 

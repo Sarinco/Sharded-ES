@@ -51,7 +51,7 @@ export class ControlPlaneClient {
 
         let full_data = this.socketBuffer + data.toString()
         let split_queries = full_data.split("%end%");
-        
+ 
         if (split_queries.length < 2 ){
             this.socketBuffer = full_data;
             return;
