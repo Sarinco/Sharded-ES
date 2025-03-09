@@ -40,6 +40,7 @@ export class ConfigManager {
      * @returns Rule
      */
     matchRule(event: Event): Rule {
+        console.log(event);
         const callback = this.rule_map.get(event.topic);
         if (!callback) {
             return defaultRule(event);

@@ -88,8 +88,16 @@ app.post('/', (req: Request, res: Response) => {
     console.log('Message: ', message);
 
 
-    const rule = config_manager.matchRule(body);
-    console.log('Rule: ', rule);
+    const routing_instructions = config_manager.matchRule(body);
+    console.log('Rule: ', routing_instructions);
+
+    if (routing_instructions.action == 'broadcast') {
+        // TODO : send the message to everyone
+    }
+
+    if (routing_instructions.action == 'shard') {
+        // TODO : send the message to the specified region
+    }
 
     res.status(500).send('Error not implemented');
 

@@ -7,6 +7,7 @@ import {
 
 export class ControlPlaneClient {
     private socket: net.Socket;
+    private socketBuffer: string = "";
     private port: number;
     private host: string;
     public config_manager: ConfigManager;
@@ -44,16 +45,33 @@ export class ControlPlaneClient {
     }
 
     onDataFunction(data: Buffer) {
-        console.debug('Data received:', data.toString());
-        const data_json = JSON.parse(data.toString());
+        // parse data to make sure that all the data has arrived, buffer
+        // the data that is not completed yet.
+        // the data must end by the string "%end%" to be parseable
 
-        switch (data_json.type) {
-            case CONFIG_PACKET:
-                this.config_manager.setConfig(data_json.data);
-                break    
-            default:
-                console.log('Unknown packet type');
+        let full_data = this.socketBuffer + data.toString()
+        let split_queries = full_data.split("%end%");
+        
+        if (split_queries.length < 2 ){
+            this.socketBuffer = full_data;
+            return;
         }
+
+        for (let i= 0; i < split_queries.length-1; i++){
+            console.log("full data packet received : ", split_queries[i]);
+            const data_json = JSON.parse(split_queries[i]);
+
+            switch (data_json.type) {
+                case CONFIG_PACKET:
+                    this.config_manager.setConfig(data_json.data);
+                    break    
+                default:
+                    console.log('Unknown packet type');
+            }
+        }
+
+        // put the remaining data into the buffer
+        this.socketBuffer = split_queries[split_queries.length-1];
     }
 
     // Disconnect from the server

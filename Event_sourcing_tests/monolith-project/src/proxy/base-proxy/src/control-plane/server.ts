@@ -160,7 +160,8 @@ export class ControlPlaneServer {
             data: known_ips
         };
 
-        socket.write(JSON.stringify(packet));
+
+        socket.write(JSON.stringify(packet) + "%end%");
 
         // Send config to the client
         packet = {
@@ -168,7 +169,7 @@ export class ControlPlaneServer {
             data: this.config
         };
 
-        socket.write(JSON.stringify(packet));
+        socket.write(JSON.stringify(packet) + "%end%");
 
 
         // Add client to active connections
