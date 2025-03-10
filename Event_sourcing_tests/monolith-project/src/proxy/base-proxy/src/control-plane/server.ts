@@ -6,9 +6,14 @@ import {
     RawConfig,
     RawControlPacket,
     CONFIG_PACKET,
+    NEW_CONNECTION_PACKET,
+    ID_PACKET,
     defaultRule,
-    NEW_CONNECTION_PACKET
+    NewConnectionPacket,
 } from '@src/control-plane/interfaces';
+import {
+    ControlPlane
+} from '@src/control-plane/control-plane';
 
 
 function getSimpleIPAddress(remote_address: string | undefined): string | null {
@@ -25,19 +30,18 @@ function getSimpleIPAddress(remote_address: string | undefined): string | null {
 }
 
 
-export class ControlPlaneServer {
+export class ControlPlaneServer extends ControlPlane {
     private server: net.Server;
     private port: number;
-    public connections: Map<string, net.Socket>;
     private config: RawConfig[];
-    public config_manager: ConfigManager
+    private sockets: Map<string, net.Socket>;
 
-    constructor(port: number, config: string) {
+    constructor(port: number, config: string, region: string) {
+        super(region);
         this.port = port;
         this.server = net.createServer();
-        this.connections = new Map();
         this.config = JSON.parse(config);
-        this.config_manager = new ConfigManager();
+        this.sockets = new Map();
     }
 
     configFilters() {
@@ -68,6 +72,7 @@ export class ControlPlaneServer {
         this.configFilters();
         console.log("Config: ", this.config);
 
+
         return new Promise((resolve, reject) => {
             this.server.listen(this.port, () => {
                 console.log(`Control Plane server started on port ${this.port}`);
@@ -88,23 +93,27 @@ export class ControlPlaneServer {
                 resolve();
             });
 
-            // Close all active client connections
-            this.connections.forEach((socket) => socket.destroy());
-            this.connections.clear();
+            // Close all active client sockets
+            this.sockets.forEach((socket) => socket.destroy());
+            this.sockets.clear();
         });
     }
 
-    // Handle incoming connections
+    // Handle incoming sockets
     onConnection() {
         this.server.on('connection', (socket) => {
             const remote_address = getSimpleIPAddress(socket.remoteAddress);
+            if (!remote_address) {
+                console.log('Error getting the remote address');
+                return;
+            }
             const clientId = `${remote_address}:${socket.remotePort}`;
             console.log(`New client connected: ${clientId}`);
 
             this.onConnectionFunction(socket, clientId);
 
-            // Store the socket in the connections map
-            this.connections.set(clientId, socket);
+            // Store the socket in the sockets map
+            this.sockets.set(clientId, socket);
 
             // Attach event listeners to the socket
             socket.on('data', (data) => {
@@ -113,19 +122,19 @@ export class ControlPlaneServer {
 
             socket.on('close', () => {
                 console.log(`Client disconnected: ${clientId}`);
-                this.connections.delete(clientId);
+                this.sockets.delete(clientId);
                 this.onCloseFunction(clientId);
             });
 
             socket.on('timeout', () => {
                 console.log(`Client timed out: ${clientId}`);
-                this.connections.delete(clientId);
+                this.sockets.delete(clientId);
                 this.onTimeoutFunction(clientId);
             });
 
             socket.on('error', (err) => {
                 console.log(`Client error: ${clientId}`);
-                this.connections.delete(clientId);
+                this.sockets.delete(clientId);
                 this.onErrorFunction(err, clientId);
             });
         });
@@ -141,16 +150,25 @@ export class ControlPlaneServer {
         }
 
         //send known ip's to the client 
-        let known_ips = Array.from(this.connections.keys());
-        known_ips = known_ips.map((key) => {
-            return key.split(":")[0];
-        });
-        //adds own ip to the list
-        known_ips.push(ip_address);
+        let data: NewConnectionPacket[] = this.getConnectedconnections();
+        console.log("Data: ", data);
+        let ips = this.connections.get(this.region);
+        if (ips) {
+            ips.push(ip_address)
+            data.push({
+                region: this.region,
+                ip: ips
+            });
+        } else {
+            data.push({
+                region: this.region,
+                ip: [ip_address]
+            });
+        }
 
         let packet: RawControlPacket = {
             type: NEW_CONNECTION_PACKET,
-            data: known_ips
+            data: data
         };
 
 
@@ -165,18 +183,54 @@ export class ControlPlaneServer {
         socket.write(JSON.stringify(packet) + "%end%");
 
 
-        // Add client to active connections
-        this.connections.set(clientId, socket);
+        // Add client to active sockets
+        this.sockets.set(clientId, socket);
     }
 
     onDataFunction(data: Buffer, clientId: string) {
-        const data_json = JSON.parse(data.toString());
-        console.log("coucou");
-        switch (data_json.type) {
-            default:
-                console.log('Unknown packet type');
+        let full_data = this.socket_buffer + data.toString();
+        let split_queries = full_data.split("%end%");
+
+        if (split_queries.length < 2) {
+            console.log("Data not complete");
+            this.socket_buffer = full_data;
+            return;
+        }
+        const own_ip = getSimpleIPAddress(this.sockets.get(clientId)?.localAddress);
+        if (!own_ip) {
+            console.log('Error getting the own IP address');
+            return;
         }
 
+        for (let i = 0; i < split_queries.length - 1; i++) {
+            console.log("Full data packet received: ", split_queries[i]);
+            const data_json = JSON.parse(split_queries[i]);
+            switch (data_json.type) {
+                case ID_PACKET:
+                    const ip_address = clientId.split(':')[0];
+                    const region = data_json.data.region;
+
+                    this.addConnection(region, ip_address);
+
+                    // Broadcast the new connection to all clients
+                    let connection_data: NewConnectionPacket[] = [{
+                        region: region,
+                        ip: [ip_address]
+                    }];
+
+                    const packet: RawControlPacket = {
+                        type: NEW_CONNECTION_PACKET,
+                        data: connection_data 
+                    };
+
+                    console.log("Packet: ", packet);
+                    this.controlBroadcast(JSON.stringify(packet), clientId);
+                    break;
+                default:
+                    console.log('Unknown packet type');
+            }
+        }
+        this.socket_buffer = split_queries[split_queries.length - 1];
     }
 
     onTimeoutFunction(clientId: string) {
@@ -189,27 +243,11 @@ export class ControlPlaneServer {
     onCloseFunction(clientId: string) {
     }
 
-    // Broadcast a message to all connected connections
-    broadcast(message: string, excludeClientId?: string) {
-        this.connections.forEach((socket, clientId) => {
-            if (clientId !== excludeClientId) {
-                socket.write(message);
+    controlBroadcast(message: string, excludeClientId?: string) {
+        this.sockets.forEach((socket, key) => {
+            if (key !== excludeClientId) {
+                socket.write(message + "%end%");
             }
         });
-    }
-
-    // Send a message to a specific client
-    sendToClient(clientId: string, message: string) {
-        const socket = this.connections.get(clientId);
-        if (socket) {
-            socket.write(message);
-        } else {
-            console.error(`Client ${clientId} not found`);
-        }
-    }
-
-    // Get all connected client IDs
-    getConnectedconnections(): string[] {
-        return Array.from(this.connections.keys());
     }
 }

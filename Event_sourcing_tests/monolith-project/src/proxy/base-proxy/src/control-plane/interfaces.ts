@@ -1,5 +1,12 @@
 export const CONFIG_PACKET = 'config';
+
 export const NEW_CONNECTION_PACKET = 'new_connection';
+export interface NewConnectionPacket {
+    region: string;
+    ip: string[];
+}
+
+export const ID_PACKET = 'identity';
 
 export const BROADCAST = 'broadcast';
 

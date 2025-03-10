@@ -32,7 +32,7 @@ services:
       EVENT_ADDRESS: ${EVENT_HOST_SITE_1}
       EVENT_PORT: ${EVENT_PORT_SITE_1}
       EVENT_CLIENT_ID: "proxy-1"
-      REGION: "site1"
+      REGION: "eu-be"
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
       IS_MASTER: "true"
@@ -55,7 +55,7 @@ services:
       EVENT_ADDRESS: ${EVENT_HOST_SITE_2}
       EVENT_PORT: ${EVENT_PORT_SITE_2}
       EVENT_CLIENT_ID: "proxy-2"
-      REGION: "site2"
+      REGION: "eu-spain"
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
     networks:
@@ -77,7 +77,7 @@ services:
       EVENT_ADDRESS: ${EVENT_HOST_SITE_3}
       EVENT_PORT: ${EVENT_PORT_SITE_3}
       EVENT_CLIENT_ID: "proxy-3"
-      REGION: "site1"
+      REGION: "eu-uk"
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
     networks:

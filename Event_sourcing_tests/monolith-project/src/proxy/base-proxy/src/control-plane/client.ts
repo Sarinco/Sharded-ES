@@ -2,21 +2,23 @@ import net from 'net';
 import { ConfigManager } from "@src/custom-handler/configHandler";
 import {
     RawControlPacket,
-    CONFIG_PACKET
+    CONFIG_PACKET,
+    ID_PACKET,
+    NEW_CONNECTION_PACKET,
+    NewConnectionPacket
 } from '@src/control-plane/interfaces';
+import { ControlPlane } from '@src/control-plane/control-plane';
 
-export class ControlPlaneClient {
+export class ControlPlaneClient extends ControlPlane {
     private socket: net.Socket;
-    private socketBuffer: string = "";
     private port: number;
     private host: string;
-    public config_manager: ConfigManager;
 
-    constructor(host: string, port: number) {
+    constructor(host: string, port: number, region: string) {
+        super(region);
         this.port = port;
         this.host = host;
         this.socket = new net.Socket();
-        this.config_manager = new ConfigManager();
     }
 
     // Connect to the server
@@ -49,29 +51,46 @@ export class ControlPlaneClient {
         // the data that is not completed yet.
         // the data must end by the string "%end%" to be parseable
 
-        let full_data = this.socketBuffer + data.toString()
+        let full_data = this.socket_buffer + data.toString()
         let split_queries = full_data.split("%end%");
- 
-        if (split_queries.length < 2 ){
-            this.socketBuffer = full_data;
+
+        if (split_queries.length < 2) {
+            this.socket_buffer = full_data;
             return;
         }
 
-        for (let i= 0; i < split_queries.length-1; i++){
+        for (let i = 0; i < split_queries.length - 1; i++) {
             console.log("full data packet received : ", split_queries[i]);
             const data_json = JSON.parse(split_queries[i]);
 
             switch (data_json.type) {
                 case CONFIG_PACKET:
                     this.config_manager.setConfig(data_json.data);
-                    break    
+                    break;
+
+                case NEW_CONNECTION_PACKET:
+                    const connections = data_json.data;
+                    for (let connection of connections) {
+                        const ip_address: string[] = connection.ip;
+                        const region = connection.region;
+
+                        if (!ip_address || !region) {
+                            console.log('Error getting the ip address or region');
+                            continue;
+                        }
+
+                        ip_address.forEach((ip) => {
+                            this.addConnection(region, ip);
+                        });
+                    }
+                    break;
                 default:
                     console.log('Unknown packet type');
             }
         }
 
         // put the remaining data into the buffer
-        this.socketBuffer = split_queries[split_queries.length-1];
+        this.socket_buffer = split_queries[split_queries.length - 1];
     }
 
     // Disconnect from the server
@@ -90,8 +109,11 @@ export class ControlPlaneClient {
             type: type,
             data: JSON.parse(data.toString())
         };
+
+        let full_data = JSON.stringify(packet) + "%end%";
+
         return new Promise((resolve, reject) => {
-            this.socket.write(JSON.stringify(packet), (err) => {
+            this.socket.write(full_data, (err) => {
                 if (err) {
                     reject(err);
                 } else {
