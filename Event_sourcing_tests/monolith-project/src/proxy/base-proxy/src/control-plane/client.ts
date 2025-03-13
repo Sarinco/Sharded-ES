@@ -5,7 +5,8 @@ import {
     CONFIG_PACKET,
     ID_PACKET,
     NEW_CONNECTION_PACKET,
-    NewConnectionPacket
+    NewConnectionPacket,
+    LOST_CONNECTION_PACKET
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
 
@@ -61,7 +62,13 @@ export class ControlPlaneClient extends ControlPlane {
 
         for (let i = 0; i < split_queries.length - 1; i++) {
             console.log("full data packet received : ", split_queries[i]);
-            const data_json = JSON.parse(split_queries[i]);
+            let data_json;
+            try {
+                data_json = JSON.parse(split_queries[i]);
+            } catch (e) {
+                console.log('Error parsing JSON data');
+                continue;
+            }
 
             switch (data_json.type) {
                 case CONFIG_PACKET:
@@ -84,8 +91,21 @@ export class ControlPlaneClient extends ControlPlane {
                         });
                     }
                     break;
+
+                case LOST_CONNECTION_PACKET:
+                    const lost_connection = data_json.data;
+                    const ip_address = lost_connection.ip;
+
+                    if (!ip_address) {
+                        console.log('Error getting the ip address for removal');
+                        continue;
+                    }
+
+                    this.removeConnection(ip_address);
+                    break;
+
                 default:
-                    console.log('Unknown packet type');
+                    console.log(`Unknown packet type : ${data_json.type}`);
             }
         }
 

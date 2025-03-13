@@ -8,6 +8,7 @@ import {
     CONFIG_PACKET,
     NEW_CONNECTION_PACKET,
     ID_PACKET,
+    LOST_CONNECTION_PACKET,
     defaultRule,
     NewConnectionPacket,
 } from '@src/control-plane/interfaces';
@@ -121,20 +122,14 @@ export class ControlPlaneServer extends ControlPlane {
             });
 
             socket.on('close', () => {
-                console.log(`Client disconnected: ${clientId}`);
-                this.sockets.delete(clientId);
                 this.onCloseFunction(clientId);
             });
 
             socket.on('timeout', () => {
-                console.log(`Client timed out: ${clientId}`);
-                this.sockets.delete(clientId);
                 this.onTimeoutFunction(clientId);
             });
 
             socket.on('error', (err) => {
-                console.log(`Client error: ${clientId}`);
-                this.sockets.delete(clientId);
                 this.onErrorFunction(err, clientId);
             });
         });
@@ -233,14 +228,37 @@ export class ControlPlaneServer extends ControlPlane {
         this.socket_buffer = split_queries[split_queries.length - 1];
     }
 
+    shutdownConnection(clientId: string) {
+        const packet: RawControlPacket = {
+            type: LOST_CONNECTION_PACKET,
+            data: {
+                ip: clientId.split(':')[0]
+            }
+        };
+        this.controlBroadcast(JSON.stringify(packet), clientId);
+        console.log(`removal packet for client ${clientId} broadcasted`);
+
+    }
+
     onTimeoutFunction(clientId: string) {
+        console.log(`Client timed out: ${clientId}`);
+        this.sockets.delete(clientId);
+        this.shutdownConnection(clientId);
+        this.removeConnection(clientId.split(':')[0]);
     }
 
     onErrorFunction(err: Error, clientId: string) {
-        console.error(`Error with client ${clientId}:`, err);
+        console.log(`Error on client ${clientId}: ${err.message}`);
+        this.sockets.delete(clientId);
+        this.shutdownConnection(clientId);
+        this.removeConnection(clientId.split(':')[0]);
     }
 
     onCloseFunction(clientId: string) {
+        console.log(`Client disconnected: ${clientId}`);
+        this.sockets.delete(clientId);
+        this.shutdownConnection(clientId);
+        this.removeConnection(clientId.split(':')[0]);
     }
 
     controlBroadcast(message: string, excludeClientId?: string) {

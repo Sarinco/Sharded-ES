@@ -1,6 +1,7 @@
 export const CONFIG_PACKET = 'config';
 
 export const NEW_CONNECTION_PACKET = 'new_connection';
+export const LOST_CONNECTION_PACKET = 'lost_connection';
 export interface NewConnectionPacket {
     region: string;
     ip: string[];
