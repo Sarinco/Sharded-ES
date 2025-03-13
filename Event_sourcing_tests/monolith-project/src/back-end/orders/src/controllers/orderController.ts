@@ -1,7 +1,7 @@
 const { Kafka, EachMessagePayload } = require('kafkajs');
 import { v4 as uuid } from 'uuid';
 import Order from "../types/order";
-import { OrderAddedEvent } from '../types/order-events'; 
+import { OrderAddedEvent } from '../types/order-events';
 import { ordersEventHandler } from "../custom-handlers/ordersEventHandler";
 import { ProducerFactory } from '../handlers/kafkaHandler';
 import { createClient, RedisClientType } from 'redis';
@@ -9,19 +9,25 @@ import { verifyJWT } from '../middleware/token';
 
 // create a client connected to your local kafka instance
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
-const EVENT_PORT    = process.env.EVENT_PORT    || "9092";
-export const client        = new Kafka({
+const EVENT_PORT = process.env.EVENT_PORT || "9092";
+export const client = new Kafka({
     clientId: 'event-pipeline',
-    brokers:  [`${EVENT_ADDRESS}:${EVENT_PORT}`]
+    brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`]
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "order-service";
 
+const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
+const PROXY_PORT = process.env.PROXY_PORT;
+const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
+
 // for redis
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
-const DB_PORT    = "6379";
-const KEYSPACE   = process.env.KEYSPACE   || "orders";
+const DB_PORT = "6379";
+const KEYSPACE = process.env.KEYSPACE || "orders";
 
 export const topicList = ['orders'];
+
+const DEFAULT_REGION = process.env.REGION;
 
 const redisUrl = "redis://" + DB_ADDRESS + ":" + DB_PORT;
 const redis: RedisClientType = createClient({
@@ -30,7 +36,7 @@ const redis: RedisClientType = createClient({
 
 //setup fct
 export const databaseSetup = async () => {
-    
+
 
     // REDIS
     await redis.on('error', (error: any) => {
@@ -43,12 +49,27 @@ export const databaseSetup = async () => {
 }
 
 // const producer = client.producer()
-const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
-producer.start().then(() => {
-    console.log("Producer started successfully");
-}).catch((error: any) => {
-    console.log("Error starting the producer: ", error);
-});
+const producer = {
+    send: async (topic: string, message: any) => {
+        const body = {
+            topic,
+            message
+        }
+
+        const result = await fetch(PROXY, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        })
+
+        if (result.status !== 200) {
+            console.debug(result);
+            throw new Error('Error forwarding the message');
+        }
+    }
+}
 
 const consumer = client.consumer({ groupId: 'orders-group' });
 
@@ -59,7 +80,7 @@ export const brokerConsumerConnect = async () => {
 
     await consumer.run({
         eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
-            if (message.value == null ) {
+            if (message.value == null) {
                 console.log("Message is null");
                 return;
             }
@@ -110,23 +131,23 @@ const orders = {
             //console.debug('Token:', token);
 
             //if (!token) {
-                //throw new Error('No token provided');
+            //throw new Error('No token provided');
             //}
 
             //const decoded = verifyJWT(token);
 
             //if (decoded === "Invalid token") {
-                //return res.status(401).send("Invalid token");
+            //return res.status(401).send("Invalid token");
             //}
 
             //const { role, email: addedBy, exp } = decoded as any;
 
             //if (exp < Date.now().valueOf() / 1000) {
-                //return res.status(401).send("Token has expired");
+            //return res.status(401).send("Token has expired");
             //}
 
             //if (role !== "admin") {
-                //return res.status(403).send("Unauthorized");
+            //return res.status(403).send("Unauthorized");
             //}
 
             const event: OrderAddedEvent = new OrderAddedEvent(
@@ -141,7 +162,7 @@ const orders = {
                 'orders',
                 event.toJSON()
             ).then(() => {
-            //    console.log("Order added successfully by ", addedBy);
+                //    console.log("Order added successfully by ", addedBy);
                 res.send("Order added successfully");
             }).catch((error: any) => {
                 console.log("Error in add method: ", error);

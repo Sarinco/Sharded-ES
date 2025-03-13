@@ -29,6 +29,11 @@ const client = new Kafka({
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "users-service";
 
+const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
+const PROXY_PORT = process.env.PROXY_PORT;
+const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
+
+
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;
 const DB_PORT = "6379";
@@ -44,13 +49,27 @@ const redis: RedisClientType = createClient({
 
 
 // PRODUCER
-const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
-producer.start().then(() => {
-    console.log("Producer started successfully");
-}).catch((error: any) => {
-    console.log("Error starting the producer: ", error);
-});
+const producer = {
+    send: async (topic: string, message: any) => {
+        const body = {
+            topic,
+            message
+        }
 
+        const result = await fetch(PROXY, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        })
+
+        if (result.status !== 200) {
+            console.debug(result);
+            throw new Error('Error forwarding the message');
+        }
+    }
+}
 
 // CONSUMER
 const consumer = client.consumer({
