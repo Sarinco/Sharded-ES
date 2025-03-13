@@ -23,7 +23,7 @@ export class ProducerFactory {
     }
 
     public async send(topic: string, message: any): Promise<void> {
-        console.log('Sending message: ', message)
+        console.log('Sending message: ', message, ' to topic: ', topic);
         await this.producer.send({
             topic,
             messages: [message],

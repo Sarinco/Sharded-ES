@@ -124,7 +124,7 @@ export class ControlPlaneClient extends ControlPlane {
     }
 
     // Send data to the server
-    send(data: Buffer, type: string): Promise<void> {
+    sendControl(data: Buffer, type: string): Promise<void> {
         const packet: RawControlPacket = {
             type: type,
             data: JSON.parse(data.toString())

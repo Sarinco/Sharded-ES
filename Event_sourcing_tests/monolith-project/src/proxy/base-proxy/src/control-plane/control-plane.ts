@@ -21,8 +21,30 @@ export class ControlPlane {
         this.socket_buffer = "";
     }
 
+    send(data: string, ip: string) {
+        console.debug(`Sending data to ${ip}`);
+        // Send the data to the client
+        fetch(`http://${ip}/direct-forward`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: data
+        }).then(() => {
+            console.log('Event sent successfully to ', ip);
+        }).catch((error: any) => {
+            console.log(`Error forwarding the message to ${ip}: `, error);
+            return;
+        });
+    }
+
     // Broadcast a message to all connected connections
-    broadcast(message: string, excludeClientId?: string) {
+    broadcast(event: string) {
+        const all_ips = Array.from(this.ip_region.keys());
+        console.log('Broadcasting message to: ', all_ips);
+        all_ips.forEach((ip) => {
+            this.send(event, ip);
+        });
     }
 
     /**

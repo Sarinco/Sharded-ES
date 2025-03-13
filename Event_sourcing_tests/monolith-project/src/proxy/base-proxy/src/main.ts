@@ -10,8 +10,13 @@ import { ControlPlaneClient } from '@src/control-plane/client';
 import { ConfigManager } from '@src/custom-handler/configHandler';
 import {
     ID_PACKET,
+    Event
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from './control-plane/control-plane';
+
+
+
+
 
 //Connection variables setup
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -61,18 +66,18 @@ if (IS_MASTER == "true") {
 
             // Send the ID packet to the server
             const id_packet: Buffer = Buffer.from(JSON.stringify({ region: REGION }));
-            control_plane_client.send(id_packet, ID_PACKET);
+            control_plane_client.sendControl(id_packet, ID_PACKET);
         });
     }, seconds * 1000);
 }
 
 // PRODUCER
 const producer = new ProducerFactory(EVENT_CLIENT_ID, [`${EVENT_ADDRESS}:${EVENT_PORT}`]);
-// producer.start().then(() => {
-//     console.log("Producer started successfully");
-// }).catch((error: any) => {
-//     console.log("Error starting the producer: ", error);
-// });
+producer.start().then(() => {
+    console.log("Producer started successfully");
+}).catch((error: any) => {
+    console.log("Error starting the producer: ", error);
+});
 
 const app = express();
 const PORT: number = parseInt(process.env.PORT as string);
@@ -90,24 +95,24 @@ app.get('/', (req: Request, res: Response) => {
 app.post('/', (req: Request, res: Response) => {
     const body = req.body;
     console.log('Received request: ', body);
+    
     const { topic, message } = body;
 
     console.log('Message: ', message);
 
-
-    const routing_instructions = config_manager.matchRule(body);
+    const event: Event = body;
+    const routing_instructions = config_manager.matchRule(event);
     console.log('Rule: ', routing_instructions);
 
     if (routing_instructions.action == 'broadcast') {
-        // TODO : send the message to everyone
-
-        // remarque : Yo max, l'implémentation ci-dessous est incomplète et j'aimerais
-        // bien la discuter avec toi, kiss kiss
-
-        let connections = control_plane.connections
-        connections.forEach((socket: any, key: string) => {
-            socket.write(JSON.stringify(body) + "%end%");
+        producer.send(topic, message).then(() => {
+            control_plane.broadcast(JSON.stringify(event));
+            res.status(200).send('Message broadcasted');
+        }).catch((error: any) => {
+            console.log('Error broadcasting the message: ', error);
+            res.status(500).send('Error broadcasting the message');
         });
+        return;
     }
 
     if (routing_instructions.action == 'shard') {
@@ -115,56 +120,13 @@ app.post('/', (req: Request, res: Response) => {
     }
 
     res.status(500).send('Error not implemented');
-
-
-    // if (region == REGION) {
-    //     producer.send(topic, message).then(() => {
-    //         console.log('Message forwarded');
-    //         res.status(200).send('Message forwarded');
-    //     }).catch((error: any) => {
-    //         console.log('Error forwarding the message: ', error);
-    //         res.status(500).send('Error forwarding the message');
-    //     });
-    // } else {
-    //     // Send to other region 
-    //     console.log('Forwarding the message to ', region);
-    //
-    //     // let targetRegion = region == 'site1' ? 'proxy-1' : 'proxy-2';
-    //     let targetRegions = config_manager.matchFilter({ topic: topic, region: region, message: message });
-    //     console.log('Target region: ', targetRegions);
-    //
-    //     if (targetRegions.length == 0) {
-    //         console.log('No target region found');
-    //         res.status(500).send('No target region found');
-    //         return;
-    //     }
-    //
-    //     targetRegions.forEach((targetRegion) => {
-    //         fetch(`http://${targetRegion}/direct-forward`, {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json'
-    //             },
-    //             body: JSON.stringify(body)
-    //         }).then(() => {
-    //             console.log('Event sent successfully to ', region);
-    //         }).catch((error: any) => {
-    //             console.log('Error forwarding the message: ', error);
-    //             res.status(500).send('Error forwarding the message');
-    //             return;
-    //         });
-    //     });
-    //     res.status(200).send('Message forwarded');
-    // }
-
 });
 
 app.post('/direct-forward', (req: Request, res: Response) => {
     const body = req.body;
     console.log('Received request: ', body);
-    const { topic, region, message } = body;
+    const { topic, message } = body;
 
-    console.log('Received message for this region: ', region);
     console.log('Message: ', message);
 
     producer.send(topic, message).then(() => {
