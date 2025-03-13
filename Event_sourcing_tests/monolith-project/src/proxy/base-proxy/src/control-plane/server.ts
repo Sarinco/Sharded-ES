@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 
 import { ConfigManager } from "@src/custom-handler/configHandler";
 import {
-    RawConfig,
+    Config,
     RawControlPacket,
     CONFIG_PACKET,
     NEW_CONNECTION_PACKET,
@@ -11,6 +11,7 @@ import {
     LOST_CONNECTION_PACKET,
     defaultRule,
     NewConnectionPacket,
+    NEW_SHARD,
 } from '@src/control-plane/interfaces';
 import {
     ControlPlane
@@ -34,19 +35,19 @@ function getSimpleIPAddress(remote_address: string | undefined): string | null {
 export class ControlPlaneServer extends ControlPlane {
     private server: net.Server;
     private port: number;
-    private config: RawConfig[];
+    private config: Config[];
     private sockets: Map<string, net.Socket>;
 
     constructor(port: number, config: string, region: string) {
         super(region);
         this.port = port;
         this.server = net.createServer();
-        this.config = JSON.parse(config);
+        this.config = this.configFilters(JSON.parse(config));
         this.sockets = new Map();
     }
 
-    configFilters() {
-        for (const conf of this.config) {
+    configFilters(RawConfig: Config[]): Config[] {
+        for (const conf of RawConfig) {
             switch (conf.action) {
                 case 'shard':
                     // Read the file specify in rule
@@ -66,13 +67,12 @@ export class ControlPlaneServer extends ControlPlane {
                     console.log('Unknown action');
             }
         }
+        return RawConfig;
     }
 
     // Start the server
     start(): Promise<void> {
-        this.configFilters();
-        console.log("Config: ", this.config);
-
+        this.config_manager.setConfig(this.config);
 
         return new Promise((resolve, reject) => {
             this.server.listen(this.port, () => {
@@ -226,6 +226,17 @@ export class ControlPlaneServer extends ControlPlane {
             }
         }
         this.socket_buffer = split_queries[split_queries.length - 1];
+    }
+
+    newShardAdvertisement(region: string[], id: string): void {
+        const packet: RawControlPacket = {
+            type: NEW_SHARD,
+            data: {
+                region: region,
+                ip: id
+            }
+        };
+        this.controlBroadcast(JSON.stringify(packet));
     }
 
     shutdownConnection(clientId: string) {

@@ -16,7 +16,7 @@ export class ControlPlane {
     constructor(region: string) {
         this.connections = new Map();
         this.ip_region = new Map();
-        this.config_manager = new ConfigManager();
+        this.config_manager = new ConfigManager(this);
         this.region = region;
         this.socket_buffer = "";
     }
@@ -44,6 +44,23 @@ export class ControlPlane {
         console.log('Broadcasting message to: ', all_ips);
         all_ips.forEach((ip) => {
             this.send(event, ip);
+        });
+    }
+    
+    /**
+     * Send to a specific region
+     * @param event
+     * @param region
+     * @returns
+     */
+    sendToRegion(event: string, region: string[]) {
+        region.forEach((r) => {
+            const connections = this.connections.get(r);
+            if (connections) {
+                connections.forEach((ip) => {
+                    this.send(event, ip);
+                });
+            }
         });
     }
 
@@ -102,5 +119,8 @@ export class ControlPlane {
         console.log(`Client ${ip} removed from region ${region}`);
     }
 
+    newShardAdvertisement(region: string[], id: string) {
+        console.log('NOT SUPPOSED TO RUN: newShardAdvertisement is supposed to be implemented in the child class');
+    }
 
 } 

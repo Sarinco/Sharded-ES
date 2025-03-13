@@ -10,7 +10,10 @@ import { ControlPlaneClient } from '@src/control-plane/client';
 import { ConfigManager } from '@src/custom-handler/configHandler';
 import {
     ID_PACKET,
-    Event
+    Event,
+    BROADCAST,
+    NEW_SHARD,
+    NewShardRule
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from './control-plane/control-plane';
 
@@ -104,7 +107,7 @@ app.post('/', (req: Request, res: Response) => {
     const routing_instructions = config_manager.matchRule(event);
     console.log('Rule: ', routing_instructions);
 
-    if (routing_instructions.action == 'broadcast') {
+    if (routing_instructions.action == BROADCAST) {
         producer.send(topic, message).then(() => {
             control_plane.broadcast(JSON.stringify(event));
             res.status(200).send('Message broadcasted');
@@ -115,11 +118,37 @@ app.post('/', (req: Request, res: Response) => {
         return;
     }
 
-    if (routing_instructions.action == 'shard') {
-        // TODO : send the message to the specified region
+    if (routing_instructions.action == NEW_SHARD) {
+        // Cast the routing instructions to NewShardRule
+        const new_shard_rule: NewShardRule = {
+            action: routing_instructions.action,
+            id: routing_instructions.id,
+            topic: event.topic,
+            region: routing_instructions.region || []
+        };
+        const region = new_shard_rule.region;
+        if (!region) {
+            console.log('Error getting the region');
+            res.status(500).send('Error getting the region');
+            return;
+        }
+        const index = region.indexOf(REGION);
+        if (index != -1) {
+            producer.send(topic, message).then(() => {
+                console.log('Message sent to the correct region');
+                res.status(200).send('Message sent to the correct region');
+            }).catch((error: any) => {
+                console.log('Error sending the message to the correct region: ', error);
+                res.status(500).send('Error sending the message to the correct region');
+            });
+            region.splice(index, 1);
+        }
+
+        // Forward the message to the correct region
+        control_plane.sendToRegion(JSON.stringify(event), region);
     }
 
-    res.status(500).send('Error not implemented');
+    // res.status(500).send('Error not implemented');
 });
 
 app.post('/direct-forward', (req: Request, res: Response) => {

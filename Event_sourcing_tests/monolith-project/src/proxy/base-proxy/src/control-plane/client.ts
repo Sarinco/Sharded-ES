@@ -6,7 +6,8 @@ import {
     ID_PACKET,
     NEW_CONNECTION_PACKET,
     NewConnectionPacket,
-    LOST_CONNECTION_PACKET
+    LOST_CONNECTION_PACKET,
+    NEW_SHARD
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
 
@@ -121,6 +122,15 @@ export class ControlPlaneClient extends ControlPlane {
                 resolve();
             });
         });
+    }
+
+    newShardAdvertisement(region: string[], id: string): Promise<void> {
+        const data = {
+            region: region,
+            id: id
+        };
+
+        return this.sendControl(Buffer.from(JSON.stringify(data)), NEW_SHARD);
     }
 
     // Send data to the server
