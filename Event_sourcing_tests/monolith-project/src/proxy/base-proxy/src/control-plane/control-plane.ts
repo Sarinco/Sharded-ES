@@ -2,6 +2,7 @@ import net from 'net';
 
 import { ConfigManager } from "@src/custom-handler/configHandler";
 import {
+    NEW_SHARD,
     NewConnectionPacket,
     RawConfig,
 } from '@src/control-plane/interfaces';
@@ -21,21 +22,30 @@ export class ControlPlane {
         this.socket_buffer = "";
     }
 
-    send(data: string, ip: string) {
+    parentDataFunction(packet: any) {
+        let data = packet.data;
+        switch (packet.type) {
+            case NEW_SHARD:
+                const result = { id: data.id, region: data.region };
+                this.config_manager.newShard(result, data.topic);
+                break;
+            default:
+                console.log('Unknown event type for parent control plane');
+                break;
+        }
+    }
+
+
+    send(data: string, ip: string): Promise<Response> {
         console.debug(`Sending data to ${ip}`);
         // Send the data to the client
-        fetch(`http://${ip}/direct-forward`, {
+        return fetch(`http://${ip}/direct-forward`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: data
-        }).then(() => {
-            console.log('Event sent successfully to ', ip);
-        }).catch((error: any) => {
-            console.log(`Error forwarding the message to ${ip}: `, error);
-            return;
-        });
+        })
     }
 
     // Broadcast a message to all connected connections
@@ -46,22 +56,24 @@ export class ControlPlane {
             this.send(event, ip);
         });
     }
-    
+
     /**
      * Send to a specific region
      * @param event
      * @param region
      * @returns
      */
-    sendToRegion(event: string, region: string[]) {
+    sendToRegion(event: string, region: string[]): Promise<Response>[] {
+        let promises: Promise<Response>[] = [];
         region.forEach((r) => {
             const connections = this.connections.get(r);
             if (connections) {
                 connections.forEach((ip) => {
-                    this.send(event, ip);
+                    promises.push(this.send(event, ip))
                 });
             }
         });
+        return promises;
     }
 
     /**
@@ -119,7 +131,7 @@ export class ControlPlane {
         console.log(`Client ${ip} removed from region ${region}`);
     }
 
-    newShardAdvertisement(region: string[], id: string) {
+    newShardAdvertisement(region: string[], id: string, topic: string) {
         console.log('NOT SUPPOSED TO RUN: newShardAdvertisement is supposed to be implemented in the child class');
     }
 

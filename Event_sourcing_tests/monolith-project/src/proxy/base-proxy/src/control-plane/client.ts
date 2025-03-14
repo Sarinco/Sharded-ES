@@ -71,6 +71,7 @@ export class ControlPlaneClient extends ControlPlane {
                 continue;
             }
 
+            this.parentDataFunction(data_json);
             switch (data_json.type) {
                 case CONFIG_PACKET:
                     this.config_manager.setConfig(data_json.data);
@@ -124,8 +125,9 @@ export class ControlPlaneClient extends ControlPlane {
         });
     }
 
-    newShardAdvertisement(region: string[], id: string): Promise<void> {
+    newShardAdvertisement(region: string[], id: string, topic: string): Promise<void> {
         const data = {
+            topic: topic, 
             region: region,
             id: id
         };

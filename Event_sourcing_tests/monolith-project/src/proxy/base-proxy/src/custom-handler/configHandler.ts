@@ -11,7 +11,7 @@ import { ControlPlane } from '@src/control-plane/control-plane';
 export class ConfigManager {
 
     private rule_map: Map<string, Function>;
-    private forward_map: Map<string, Map<string, string>>;
+    private forward_map: Map<string, Map<string, string[]>>;
     private control_plane: ControlPlane;
 
 
@@ -39,14 +39,37 @@ export class ConfigManager {
         }
     }
 
+    getForwardMapJSON() {
+        console.log("Forward map:", this.forward_map);
+        let result = Array.from(this.forward_map.entries()).map(([key, value]) => {
+            return {
+                topic: key,
+                map: Array.from(value.entries()).map(([k, v]) => {
+                    return {
+                        id: k,
+                        region: v
+                    }
+                })
+            }
+        });
+        return JSON.stringify(result);
+    }
+
+    /**
+     * Create a new shard
+     *
+     * @param result
+     * @param topic
+     * @returns 
+     */
     newShard(result: any, topic: string) {
+        console.log(`Creating new shard with id: ${result.id} and region: ${result.region} in topic: ${topic}`);
         const forward_map = this.forward_map.get(topic);
         if (!forward_map) {
             console.error('Forward map not found');
         }
 
-        forward_map?.set(result.id, result.region);
-        this.control_plane.newShardAdvertisement(result.region, result.id);
+        forward_map?.set(result.id, Array.from(result.region));
     }
 
     /**
@@ -65,6 +88,7 @@ export class ConfigManager {
         const result = callback(event.message.value);
         if (result.action == NEW_SHARD) {
             this.newShard(result, event.topic);
+            this.control_plane.newShardAdvertisement(result.region, result.id, event.topic);
         }
 
         return result;

@@ -98,65 +98,70 @@ app.get('/', (req: Request, res: Response) => {
 app.post('/', (req: Request, res: Response) => {
     const body = req.body;
     console.log('Received request: ', body);
-    
-    const { topic, message } = body;
 
-    console.log('Message: ', message);
+    const { topic, message } = body;
 
     const event: Event = body;
     const routing_instructions = config_manager.matchRule(event);
     console.log('Rule: ', routing_instructions);
 
-    if (routing_instructions.action == BROADCAST) {
-        producer.send(topic, message).then(() => {
-            control_plane.broadcast(JSON.stringify(event));
-            res.status(200).send('Message broadcasted');
-        }).catch((error: any) => {
-            console.log('Error broadcasting the message: ', error);
-            res.status(500).send('Error broadcasting the message');
-        });
-        return;
-    }
-
-    if (routing_instructions.action == NEW_SHARD) {
-        // Cast the routing instructions to NewShardRule
-        const new_shard_rule: NewShardRule = {
-            action: routing_instructions.action,
-            id: routing_instructions.id,
-            topic: event.topic,
-            region: routing_instructions.region || []
-        };
-        const region = new_shard_rule.region;
-        if (!region) {
-            console.log('Error getting the region');
-            res.status(500).send('Error getting the region');
-            return;
-        }
-        const index = region.indexOf(REGION);
-        if (index != -1) {
+    switch (routing_instructions.action) {
+        case BROADCAST:
             producer.send(topic, message).then(() => {
-                console.log('Message sent to the correct region');
-                res.status(200).send('Message sent to the correct region');
+                control_plane.broadcast(JSON.stringify(event));
+                res.status(200).send('Message broadcasted');
             }).catch((error: any) => {
-                console.log('Error sending the message to the correct region: ', error);
-                res.status(500).send('Error sending the message to the correct region');
+                console.log('Error broadcasting the message: ', error);
+                res.status(500).send('Error broadcasting the message');
             });
-            region.splice(index, 1);
-        }
+            break;
 
-        // Forward the message to the correct region
-        control_plane.sendToRegion(JSON.stringify(event), region);
+        case NEW_SHARD:
+            // Cast the routing instructions to NewShardRule
+            const new_shard_rule: NewShardRule = {
+                action: routing_instructions.action,
+                id: routing_instructions.id,
+                topic: event.topic,
+                region: routing_instructions.region || []
+            };
+            const region = new_shard_rule.region;
+            if (!region) {
+                console.log('Error getting the region');
+                res.status(500).send('Error getting the region');
+                return;
+            }
+            const index = region.indexOf(REGION);
+            if (index != -1) {
+                producer.send(topic, message).then(() => {
+                    console.log('Message sent to my region');
+                }).catch((error: any) => {
+                    console.log('Error sending the message to the correct region: ', error);
+                    res.status(500).send('Error sending the message to the correct region');
+                });
+                region.splice(index, 1);
+            }
+
+            // Forward the message to the correct region
+            let responses = control_plane.sendToRegion(JSON.stringify(event), region);
+            console.log('Responses: ', responses);
+            Promise.all(responses).then(() => {
+                res.status(200).send('Message forwarded to all regions');
+            }).catch((error: any) => {
+                console.log('Error forwarding the message to all regions: ', error);
+                res.status(500).send('Error forwarding the message to all regions');
+            });
+            break;
+        default:
+            res.status(500).send('Error not implemented');
+            break;
     }
 
-    // res.status(500).send('Error not implemented');
 });
 
 app.post('/direct-forward', (req: Request, res: Response) => {
     const body = req.body;
     console.log('Received request: ', body);
     const { topic, message } = body;
-
-    console.log('Message: ', message);
 
     producer.send(topic, message).then(() => {
         console.log('Message forwarded');
@@ -178,6 +183,14 @@ app.get('/connections', (req: Request, res: Response) => {
 
     console.log('Connections: ', connections);
     res.status(200).send(connections);
+});
+
+// Get the forwarding table
+app.get('/forwarding-table', (req: Request, res: Response) => {
+    console.log('Getting forwarding table');
+    const forwarding_table: string = config_manager.getForwardMapJSON();
+    console.log('Forwarding table: ', forwarding_table);
+    res.status(200).send(forwarding_table);
 });
 
 

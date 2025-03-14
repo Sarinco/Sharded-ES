@@ -200,6 +200,8 @@ export class ControlPlaneServer extends ControlPlane {
         for (let i = 0; i < split_queries.length - 1; i++) {
             console.log("Full data packet received: ", split_queries[i]);
             const data_json = JSON.parse(split_queries[i]);
+
+            this.parentDataFunction(data_json);
             switch (data_json.type) {
                 case ID_PACKET:
                     const ip_address = clientId.split(':')[0];
@@ -228,12 +230,13 @@ export class ControlPlaneServer extends ControlPlane {
         this.socket_buffer = split_queries[split_queries.length - 1];
     }
 
-    newShardAdvertisement(region: string[], id: string): void {
+    newShardAdvertisement(region: string[], id: string, topic: string): void {
         const packet: RawControlPacket = {
             type: NEW_SHARD,
             data: {
+                topic: topic,
                 region: region,
-                ip: id
+                id: id
             }
         };
         this.controlBroadcast(JSON.stringify(packet));

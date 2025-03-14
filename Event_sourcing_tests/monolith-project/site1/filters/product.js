@@ -1,6 +1,4 @@
 (event) => {
-    console.log("Entered product.js");
-    console.log(event);
     event = JSON.parse(event);
     switch (event.type) {
         case 'ProductAdded':
