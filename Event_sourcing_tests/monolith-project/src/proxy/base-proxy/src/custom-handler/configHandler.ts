@@ -7,20 +7,41 @@ import {
     NEW_SHARD
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
+import { createClient, RedisClientType } from 'redis';
 
 export class ConfigManager {
 
     private rule_map: Map<string, Function>;
     private forward_map: Map<string, Map<string, string[]>>;
     private control_plane: ControlPlane;
+    private redis_db: RedisClientType;
 
 
     constructor(control_plane: ControlPlane) {
         this.control_plane = control_plane;
         this.rule_map = new Map();
         this.forward_map = new Map();
+
+        // setup connection to mapping db
+        const db_map_address = process.env.EVENT_DB;
+        const db_port = "6379";
+        const redis_url = "redis://" + db_map_address + ":" + db_port;
+
+        this.redis_db = createClient({
+            url: redis_url
+        });
+        this.redisSetup()
     }
 
+    async redisSetup(){
+        await this.redis_db.on('error', (error: any) => {
+            console.log("Error in Redis: ", error);
+        }).connect().then(() => {
+            console.log("Connected to Redis");
+        }).catch((error: any) => {
+            console.log("Error connecting to Redis: ", error);
+        });
+    }
 
     /**
      * Recieve the config from the control plane
@@ -37,6 +58,14 @@ export class ConfigManager {
             this.rule_map.set(conf.topic, callback);
             this.forward_map.set(conf.topic, new Map());
         }
+    }
+
+    async getStoredMap(){
+        console.log("TODO : retreive data in redis db");
+    }
+
+    async storeShard(){
+        console.log("Store the mf shard in redis")
     }
 
     getForwardMapJSON() {

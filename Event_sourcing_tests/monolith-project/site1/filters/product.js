@@ -14,7 +14,7 @@
                     return {
                         action: 'new_shard',
                         id: event.data.id,
-                        region: ['eu-uk']
+                        region: ['eu-spain']
                     }
                 default:
                     console.log("No case for this category: " + event.data.category);
