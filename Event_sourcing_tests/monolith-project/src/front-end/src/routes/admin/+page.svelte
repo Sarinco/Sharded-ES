@@ -123,7 +123,6 @@
             <TableHeadCell>Product name</TableHeadCell>
             <TableHeadCell>Category</TableHeadCell>
             <TableHeadCell>Price</TableHeadCell>
-            <TableHeadCell>Count</TableHeadCell>
             <TableHeadCell>
                 <span class="sr-only"> Edit </span>
             </TableHeadCell>
@@ -134,7 +133,6 @@
                     <TableBodyCell>{item.name}</TableBodyCell>
                     <TableBodyCell>{item.category}</TableBodyCell>
                     <TableBodyCell>${item.price}</TableBodyCell>
-                    <TableBodyCell>{item.count}</TableBodyCell>
                     <TableBodyCell>
                         <ButtonGroup>
                             <Button
@@ -222,16 +220,6 @@
                     type="text"
                     class="text-xl"
                     bind:value={modalProduct.category}
-                    required
-                />
-            </Label>
-            <br />
-            <Label class="space-y-2">
-                <span>Product count</span>
-                <Input
-                    type="number"
-                    class="text-xl"
-                    bind:value={modalProduct.count}
                     required
                 />
             </Label>

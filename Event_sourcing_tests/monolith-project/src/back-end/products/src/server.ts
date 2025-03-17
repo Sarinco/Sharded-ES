@@ -2,9 +2,9 @@ import express, { Request, Response } from 'express';
 // For module aliasing
 require('module-alias/register');
 
-import stockRoutes from '@src/routes/stockRoute';
+import productsRoutes from '@src/routes/productsRoute';
 import kafkaRoutes from '@src/routes/kafkaRoute';
-import { consumerConnect, redisSetup } from '@src/controllers/stockController';
+import { consumerConnect, redisSetup } from '@src/controllers/productsController';
 
 const app = express();
 const PORT: number = parseInt(process.env.PORT as string);
@@ -12,12 +12,12 @@ const PORT: number = parseInt(process.env.PORT as string);
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
     res.send('Hello World!');
 });
 
-// Use stock routes
-app.use('/api/stock', stockRoutes);
+// Use products routes
+app.use('/api/products', productsRoutes);
 
 
 // Kafka routes
@@ -32,10 +32,10 @@ app.listen(PORT, () => {
 // Connect the consumer and redis
 redisSetup()
 .catch(e => {
-    console.error(`[stock/redisSetup] ${e.message}`, e);
+    console.error(`[products/redisSetup] ${e.message}`, e);
     return;
 }).then(() =>
     consumerConnect()
-        .catch(e => console.error(`[stock/consumer] ${e.message}`, e))
+        .catch(e => console.error(`[products/consumer] ${e.message}`, e))
 );
 

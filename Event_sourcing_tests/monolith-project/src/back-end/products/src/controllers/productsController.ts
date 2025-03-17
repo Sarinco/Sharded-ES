@@ -4,16 +4,14 @@ import { createClient, RedisClientType } from 'redis';
 
 // Custom imports
 import { Product } from "@src/types/product";
-import Order from "@src/types/order";
 import { productEventHandler } from "@src/custom-handlers/productEventHandler";
 import { orderEventHandler } from "@src/custom-handlers/orderEventHandler";
-import { ProducerFactory } from "@src/handlers/kafkaHandler";
 import { verifyJWT } from '@src/middleware/token';
 import {
     ProductAddedEvent,
     ProductDeletedEvent,
     ProductUpdatedEvent
-} from "@src/types/events/stock-events";
+} from "@src/types/events/product-events";
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -22,7 +20,7 @@ const client = new Kafka({
     clientId: 'event-pipeline',
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
 });
-const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "stock-service";
+const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || 'product-service';
 
 const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
 const PROXY_PORT = process.env.PROXY_PORT;
@@ -33,8 +31,6 @@ const DB_ADDRESS = process.env.DB_ADDRESS;
 const DB_PORT = "6379";
 
 const topic = ['products', 'orders'];
-
-const DEFAULT_REGION = process.env.REGION;
 
 
 // REDIS 
@@ -69,7 +65,7 @@ const producer = {
 
 // CONSUMER
 const consumer = client.consumer({
-    groupId: 'stock-group',
+    groupId: EVENT_CLIENT_ID,
 });
 
 // SETUP
@@ -96,7 +92,7 @@ const consumerConnect = async () => {
     await Promise.all(topic.map(topic => consumer.subscribe({ topic, fromBeginning: true })));
     // Small local equivalent of CQRS for the stock service
     await consumer.run({
-        eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
+        eachMessage: async ({ topic, message }: EachMessagePayload) => {
             if (message.value === null) {
                 console.log("Message is null");
                 return;
@@ -110,11 +106,12 @@ const consumerConnect = async () => {
                     });
                     break;
 
-                case 'orders':
-                    const orderEvent = JSON.parse(message.value.toString());
-                    console.log("Order event : ", orderEvent);
-                    await orderEventHandler(redis, orderEvent);
-                    break;
+                // TODO: MOVE THIS TO STOCK SERVICE
+                // case 'orders':
+                //     const orderEvent = JSON.parse(message.value.toString());
+                //     console.log("Order event : ", orderEvent);
+                //     await orderEventHandler(redis, orderEvent);
+                //     break;
 
                 default:
                     console.log("Unknown topic: ", topic);
@@ -127,7 +124,7 @@ const consumerConnect = async () => {
 // HTTP
 const stock = {
     // Retrieve all stocks
-    findAll: async (req: any, res: any) => {
+    findAll: async (_req: any, res: any) => {
         try {
             // Get the products from the Cassandra database
             const products: Product[] = [];
@@ -193,7 +190,6 @@ const stock = {
                 req.body.description,
                 req.body.image,
                 req.body.category,
-                req.body.count,
                 addedBy
             );
 
@@ -223,7 +219,7 @@ const stock = {
                 throw new Error('No token provided');
             }
 
-            const decoded = verifyJWT(token); TODO:
+            const decoded = verifyJWT(token); 
 
             if (decoded === "Invalid token") {
                 return res.status(401).send("Invalid token");
@@ -253,7 +249,6 @@ const stock = {
                 req.body.description,
                 req.body.image,
                 req.body.category,
-                req.body.count,
                 updatedBy
             );
 
@@ -285,7 +280,7 @@ const stock = {
                 throw new Error('No token provided');
             }
 
-            const decoded = verifyJWT(token); TODO:
+            const decoded = verifyJWT(token); 
 
             if (decoded === "Invalid token") {
                 return res.status(401).send("Invalid token");

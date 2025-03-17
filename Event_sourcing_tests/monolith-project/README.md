@@ -22,29 +22,26 @@ There a init-db file that is run in the product service to initialize the databa
 
 The product service is a service that is responsible for managing the products of the project. It has the following endpoints:
 
-- `GET /stock`: Get all the products
+- `GET /products`: Get all the products
 - `PUT /`: Update a product
 - `POST /add`: Create a product
 
 To test it you can use the following curl commands:
 
 ```bash
-curl http://localhost:80/api/stock/ \
-   -H "Content-Type: application/json" \-d '{"name": "NAME", "price": 10}'
-
-curl http://localhost:80/api/stock/ \
-   -H "Content-Type: application/json" \-d '{"name": "Banana", "price": 10, "description": "Just a banana", "image": "https://plus.unsplash.com/premium_photo-1724250081106-4bb1be9bf950?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmFuYW5hfGVufDB8fDB8fHww", "count": 20, "category": "Fruits"}'
+curl http://localhost:80/api/products/ \
+   -H "Content-Type: application/json" \-d '{"name": "Banana", "price": 5, "description": "Just a banana", "image": "https://plus.unsplash.com/premium_photo-1724250081106-4bb1be9bf950?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmFuYW5hfGVufDB8fDB8fHww", "category": "Fruits"}'  -H "authorization:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDAzMDY1NDAsImV4cCI6MTc1NTg1ODU0MH0.q-ZZUj3Tphe6NEMOZAqtSGu1ziIxPjBaABpbZrCU2y0"
 ```
 This command create a simple product with a name and a price and add it to the database.
 
 ```bash
- curl -X DELETE "http://localhost:80/api/stock/5c729e31-8d5a-47e0-ab54-fb1233bd791d"
+ curl -X DELETE "http://localhost:80/api/products/5c729e31-8d5a-47e0-ab54-fb1233bd791d"
 ```
 This command deletes the product with the id `5c729e31-8d5a-47e0-ab54-fb1233bd791d`.
 
 ```bash
 
-curl -X PUT -H "Content-Type: application/json" -H "authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Mzg1MDQ3MDQsImV4cCI6MTczODU5MTEwNH0.M_DAAIrxolnnrdfFHTB7i4_d-kpv_4enWYu3ga8I5Y4" -d '{"name": "Banana", "price": 5, "description": "Just a banana", "image": "https://plus.unsplash.com/premium_photo-1724250081106-4bb1be9bf950?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmFuYW5hfGVufDB8fDB8fHww", "count": 20, "category": "Fruits"}' http://localhost:80/api/stock/56678d6d-a002-40cf-a44f-41036003bbb2
+curl -X PUT -H "Content-Type: application/json" -H "authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Mzg1MDQ3MDQsImV4cCI6MTczODU5MTEwNH0.M_DAAIrxolnnrdfFHTB7i4_d-kpv_4enWYu3ga8I5Y4" -d '{"name": "Banana", "price": 5, "description": "Just a banana", "image": "https://plus.unsplash.com/premium_photo-1724250081106-4bb1be9bf950?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmFuYW5hfGVufDB8fDB8fHww", "count": 20, "category": "Fruits"}' http://localhost:80/api/products/56678d6d-a002-40cf-a44f-41036003bbb2
 ```
 
 

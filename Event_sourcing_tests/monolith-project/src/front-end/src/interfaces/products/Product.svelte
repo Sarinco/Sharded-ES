@@ -12,7 +12,6 @@
     price: number;
     image: string;
     category: String;
-    count: number;
   }
   export let product: Product;
 
@@ -43,8 +42,6 @@
         <h5 class="fw-bolder">{product.name}</h5>
         <!-- Product price-->
         ${product.price}
-        <!-- Product quantity-->
-        <p>{product.count} left</p>
       </div>
     </div>
     <!-- Product actions-->

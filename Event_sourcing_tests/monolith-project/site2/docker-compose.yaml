@@ -1,6 +1,6 @@
 include:
   - ../src/back-end/event-pipeline/docker-compose.yaml # Event pipeline service (Kafka)
-  - ../compose/stock-compose.yaml # Stock services
+  - ../compose/products-compose.yaml # Stock services
   - ../compose/order-compose.yaml
   - ../compose/email-compose.yaml
   - ../compose/users-compose.yaml
@@ -21,7 +21,7 @@ services:
       - VITE_GATEWAY_URL=http://localhost:${GATEWAY_PORT}
     command: npm run dev -- --host
     depends_on:
-      - stock 
+      - products 
   gateway:
     image: nginx:alpine
     volumes:
@@ -31,7 +31,7 @@ services:
       - "${GATEWAY_PORT}:80"
     depends_on:
       - frontend
-      - stock
+      - products
       - orders
     environment:
       - FRONTEND_URL=http://frontend:3000

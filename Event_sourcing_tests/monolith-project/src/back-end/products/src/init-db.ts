@@ -1,5 +1,5 @@
 require('module-alias/register');
-import { client, topic } from '@src/controllers/stockController';
+import { client, topic } from '@src/controllers/productsController';
 import { MemberDescription } from 'kafkajs';
 
 const PORT: number = parseInt(process.env.PORT as string);

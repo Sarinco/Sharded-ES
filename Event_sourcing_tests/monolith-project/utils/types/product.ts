@@ -6,27 +6,17 @@ export class Product {
     description: string;
     image: string;
     category: string;
-    count: number;
 
-    constructor(id: string, name: string, price: number, description: string, image: string, category: string, count: number){
+    constructor(id: string, name: string, price: number, description: string, image: string, category: string){
         this.id = id;
         this.name = name;
         this.price = price;
         this.description = description;
         this.image = image;
         this.category = category;
-        this.count = count;
-    }
-
-    static getColumsList(): string {
-        return '(id, name, price, description, image, category, count)';
-    }
-
-    createCQL(): string {
-        return `(${this.id}, '${this.name}', ${this.price}, '${this.description}', '${this.image}', '${this.category}', ${this.count})`;
     }
 
     static fromJSON(json: any): Product {
-        return new Product(json.id, json.name, json.price, json.description, json.image, json.category, json.count);
+        return new Product(json.id, json.name, json.price, json.description, json.image, json.category);
     }
 }

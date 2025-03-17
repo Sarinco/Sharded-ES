@@ -5,8 +5,7 @@
     },
     {
         "topic": "products",
-        "action": "shard",
-        "rules": "/app/src/filters/product.js"
+        "action": "broadcast"
     },
     {
         "topic": "orders",

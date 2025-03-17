@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { consumer, consumerConnect } from '@src/controllers/stockController';
+import { consumer, consumerConnect } from '@src/controllers/productsController';
 
 const router = Router();
 
-router.post('/disconnect', (req, res) => {
+router.post('/disconnect', (_req, res) => {
     console.log('Disconnecting consumer');
     consumer.stop().catch((error) => {
         console.error("Error in disconnect: ", error);
@@ -17,7 +17,7 @@ router.post('/disconnect', (req, res) => {
     });
 });
 
-router.post('/subscribe', (req, res) => {
+router.post('/subscribe', (_req, res) => {
     console.log('Subscribing to topic');
     consumerConnect().then(() => {
         res.status(200).send('Subscribed');

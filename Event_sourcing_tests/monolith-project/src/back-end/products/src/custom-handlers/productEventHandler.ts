@@ -6,7 +6,7 @@ import {
     ProductAddedEvent,
     ProductDeletedEvent,
     ProductUpdatedEvent
-} from "@src/types/events/stock-events";
+} from "@src/types/events/product-events";
 
 
 // Handle event and update the state of the product list
@@ -21,7 +21,6 @@ export async function productEventHandler(redis: RedisClientType, event: any) {
                 productAddedEvent.description,
                 productAddedEvent.image,
                 productAddedEvent.category,
-                productAddedEvent.count
             );
             await redis.set(
                 productAddedEvent.id,
@@ -60,7 +59,6 @@ export async function productEventHandler(redis: RedisClientType, event: any) {
                     productUpdatedEvent.description,
                     productUpdatedEvent.image,
                     productUpdatedEvent.category,
-                    productUpdatedEvent.count
                 );
                 await redis.set(
                     productUpdatedEvent.id,
