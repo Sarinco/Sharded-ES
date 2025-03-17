@@ -150,28 +150,7 @@ const stock = {
     // Add a new product
     add: async (req: any, res: any) => {
         try {
-            const token = req.headers.authorization;
-            console.debug('Token:', token);
-
-            if (!token) {
-                throw new Error('No token provided');
-            }
-
-            const decoded = verifyJWT(token);
-
-            if (decoded === "Invalid token") {
-                return res.status(401).send("Invalid token");
-            }
-
-            const { role, email: addedBy, exp } = decoded as any;
-
-            if (exp < Date.now().valueOf() / 1000) {
-                return res.status(401).send("Token has expired");
-            }
-
-            if (role !== "admin") {
-                return res.status(403).send("Unauthorized");
-            }
+            const added_by = req.decoded.email;
 
             if (req.body.name === undefined || req.body.name === "") {
                 res.status(400).send("Invalid name");
@@ -190,14 +169,14 @@ const stock = {
                 req.body.description,
                 req.body.image,
                 req.body.category,
-                addedBy
+                added_by
             );
 
             producer.send(
                 'products',
                 event.toJSON(),
             ).then(() => {
-                console.log("Product added successfully by ", addedBy);
+                console.log("Product added successfully by ", added_by);
                 res.send("Product added successfully");
             }).catch((error: any) => {
                 console.log("Error in add method: ", error);
@@ -212,30 +191,7 @@ const stock = {
     // Update a product
     update: async (req: any, res: any) => {
         try {
-            const token = req.headers.authorization;
-            console.debug('Token:', token);
-
-            if (!token) {
-                throw new Error('No token provided');
-            }
-
-            const decoded = verifyJWT(token); 
-
-            if (decoded === "Invalid token") {
-                return res.status(401).send("Invalid token");
-            }
-
-            const { role, email: updatedBy, exp } = decoded as any;
-
-            if (exp < Date.now().valueOf() / 1000) {
-                return res.status(401).send("Token has expired");
-            }
-
-            if (role !== "admin") {
-                return res.status(403).send("Unauthorized");
-            }
-
-            console.log("req.body: ", req.body);
+            const { role, email: updatedBy, exp } = req.decoded;
 
             if (req.params.id === undefined || req.params.id === "") {
                 res.status(400).send("Invalid id");
@@ -273,28 +229,7 @@ const stock = {
     // Delete a product
     delete: async (req: any, res: any) => {
         try {
-            const token = req.headers.authorization;
-            console.debug('Token:', token);
-
-            if (!token) {
-                throw new Error('No token provided');
-            }
-
-            const decoded = verifyJWT(token); 
-
-            if (decoded === "Invalid token") {
-                return res.status(401).send("Invalid token");
-            }
-
-            const { role, email: deletedBy, exp } = decoded as any;
-
-            if (exp < Date.now().valueOf() / 1000) {
-                return res.status(401).send("Token has expired");
-            }
-
-            if (role !== "admin") {
-                return res.status(403).send("Unauthorized");
-            }
+            const { role, email: deletedBy, exp } = req.decoded;
 
             console.log("Calling the delete method with id: ", req.params.id);
             if (req.params.id === undefined || req.params.id === "") {

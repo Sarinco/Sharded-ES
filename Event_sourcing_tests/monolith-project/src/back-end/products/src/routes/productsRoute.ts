@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import stock from '../controllers/productsController';
+import stock from '@src/controllers/productsController';
+import { verifyAdmin } from '@src/middleware/auth';
 
 const router = Router();
 
@@ -7,13 +8,13 @@ const router = Router();
 router.get('/', stock.findAll);
 
 // Add a new product
-router.post('/', stock.add);
+router.post('/', verifyAdmin, stock.add);
 
 // Update a product
-router.put('/:id', stock.update);
+router.put('/:id', verifyAdmin, stock.update);
 
 // Delete a product
-router.delete('/:id', stock.delete);
+router.delete('/:id', verifyAdmin, stock.delete);
 
 
 export default router;
