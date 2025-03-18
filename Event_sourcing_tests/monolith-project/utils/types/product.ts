@@ -6,6 +6,7 @@ export class Product {
     description: string;
     image: string;
     category: string;
+    stock: number;
 
     constructor(id: string, name: string, price: number, description: string, image: string, category: string){
         this.id = id;
@@ -14,6 +15,7 @@ export class Product {
         this.description = description;
         this.image = image;
         this.category = category;
+        this.stock = 0;
     }
 
     static fromJSON(json: any): Product {

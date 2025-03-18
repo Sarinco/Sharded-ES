@@ -4,6 +4,7 @@ import { env } from '$env/dynamic/public';
 import { Product } from '../types/product';
 
 const PRODUCT_URL = `${import.meta.env.VITE_GATEWAY_URL}/api/products` || 'http://localhost:80/api/products';
+const STOCK_URL = `${import.meta.env.VITE_GATEWAY_URL}/api/stock` || 'http://localhost:80/api/stock';
 console.log('PRODUCT_URL:', PRODUCT_URL);
 
 const headers = {
@@ -35,19 +36,27 @@ function createProducts() {
             }
             const data = await response.json();
 
-            const categorizedProducts = categorizeProducts(data);
+            const categorizedProducts = await categorizeProducts(data);
             set(categorizedProducts);
-            console.log('categorizedProducts:', categorizedProducts);
             return categorizedProducts;
         } catch (error) {
             handleError(error, 'get products');
         }
     };
 
-    const categorizeProducts = (products: any[]): any => {
+    const categorizeProducts = async (products: any[]): Promise<any> => {
         const categorizedProducts: any = {};
 
         for (const product of products) {
+            const response = await fetch(`${STOCK_URL}/${product.id}`, {
+                method: 'GET',
+            });
+            const stock = await response.json();
+            console.log('stock:', stock);
+            const total_stock = stock.reduce((acc: number, stock: any) => acc + parseInt(stock.stock), 0);
+
+            product.stock = total_stock;
+
             if (!categorizedProducts[product.category]) {
                 categorizedProducts[product.category] = [];
             }

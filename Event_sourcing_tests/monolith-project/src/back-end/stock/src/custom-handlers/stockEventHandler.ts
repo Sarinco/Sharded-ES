@@ -13,12 +13,27 @@ export async function stockEventHandler(redis: RedisClientType, event: any) {
     switch (event.type) {
         case "IncreaseStock": {
             console.log("Increase stock event received");
-            if (stockString.stock === undefined) {
-                console.log("Specified stock not found so not increasing stock");
-                return;
+            let newStock = 0;
+            console.log("Stock count: ", stock.count, " and stockString: ", stockString);
+            if (stockString.stock == undefined || stockString.stock == null || stockString.stock == "NaN") {
+                console.log("Specified stock not found adding entry to the stock list");
+                await redis.lPush(stock.id, stock.warehouse).catch((error: any) => {
+                    console.log("Error in add method: ", error);
+                    throw error;
+                }).then(() => {
+                    console.log("Warehouse successfully added to the product");
+                });
+                newStock = stock.count;
+            } else {
+                let oldStock = parseInt(stockString.stock);
+                // Check if oldStock is NaN
+                if (isNaN(oldStock)) {
+                    oldStock = 0;
+                }
+                newStock = oldStock + stock.count;
             }
 
-            let newStock = parseInt(stockString.stock) + stock.count;
+            console.log("New stock: ", newStock);
             await redis.hSet(`${stock_id}`, 'stock', newStock).catch((error: any) => {
                 console.log("Error in set method: ", error);
                 throw error;

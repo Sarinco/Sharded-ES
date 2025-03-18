@@ -123,6 +123,7 @@
             <TableHeadCell>Product name</TableHeadCell>
             <TableHeadCell>Category</TableHeadCell>
             <TableHeadCell>Price</TableHeadCell>
+            <TableHeadCell>Stock</TableHeadCell>
             <TableHeadCell>
                 <span class="sr-only"> Edit </span>
             </TableHeadCell>
@@ -133,6 +134,7 @@
                     <TableBodyCell>{item.name}</TableBodyCell>
                     <TableBodyCell>{item.category}</TableBodyCell>
                     <TableBodyCell>${item.price}</TableBodyCell>
+                    <TableBodyCell>{item.stock}</TableBodyCell>
                     <TableBodyCell>
                         <ButtonGroup>
                             <Button
