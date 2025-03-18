@@ -44,6 +44,32 @@ This command deletes the product with the id `5c729e31-8d5a-47e0-ab54-fb1233bd79
 curl -X PUT -H "Content-Type: application/json" -H "authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Mzg1MDQ3MDQsImV4cCI6MTczODU5MTEwNH0.M_DAAIrxolnnrdfFHTB7i4_d-kpv_4enWYu3ga8I5Y4" -d '{"name": "Banana", "price": 5, "description": "Just a banana", "image": "https://plus.unsplash.com/premium_photo-1724250081106-4bb1be9bf950?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmFuYW5hfGVufDB8fDB8fHww", "count": 20, "category": "Fruits"}' http://localhost:80/api/products/56678d6d-a002-40cf-a44f-41036003bbb2
 ```
 
+### Stock service
+
+To decrease the stock
+```bash
+curl -X PUT http://localhost:80/api/stock/decrease/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4 -H "Content-Type: application/json" -d '{"count": 100, "warehouse": "charleroi-sud"}'
+```
+
+To increase the stock
+```bash
+curl -X PUT http://localhost:80/api/stock/increase/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4 -H "Content-Type: application/json" -d '{"count": 100, "warehouse": "charleroi-sud"}' -H "authorization:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDAzMDY1NDAsImV4cCI6MTc1NTg1ODU0MH0.q-ZZUj3Tphe6NEMOZAqtSGu1ziIxPjBaABpbZrCU2y0"
+```
+
+To set the stock to a specific value
+```bash
+curl -X POST http://localhost:80/api/stock/set/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4 -H "Content-Type: application/json" -d '{"count": 200, "warehouse": "charleroi-sud"}' -H "authorization:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDAzMDY1NDAsImV4cCI6MTc1NTg1ODU0MH0.q-ZZUj3Tphe6NEMOZAqtSGu1ziIxPjBaABpbZrCU2y0"
+```
+
+To get the stock of a product
+```bash
+# All the warehouses
+curl http://localhost:80/api/stock/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4
+
+# Specific warehouse
+curl http://localhost:80/api/stock/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4\?warehouse\=charleroi-sud
+```
+
 
 ### User service
 

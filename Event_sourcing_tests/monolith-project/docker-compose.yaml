@@ -5,8 +5,8 @@ services:
       service: kafka-ui
     networks:
       - site1
-      - site2
-      - site3
+      # - site2
+      # - site3
     environment:
       KAFKA_CLUSTERS_0_NAME: ${EVENT_HOST_SITE_1}
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_1}:${EVENT_PORT_SITE_1}

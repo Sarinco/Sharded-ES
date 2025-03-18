@@ -3,6 +3,11 @@ import { createClient, RedisClientType } from 'redis';
 
 // Custom imports
 import { stockEventHandler } from "@src/custom-handlers/stockEventHandler";
+import {
+    IncreaseStockEvent,
+    DecreaseStockEvent,
+    UpdateStockEvent,
+} from "@src/types/events/stock-event";
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -113,22 +118,107 @@ const consumerConnect = async () => {
 const stock = {
     // Increase the stock of a product
     increaseStock: async (req: any, res: any) => {
-        res.status(501).send("Not implemented");
+        const { count, warehouse } = req.body;
+        const id = req.params.id;
+        if (!id || !count || !warehouse) {
+            res.status(400).send("Bad request");
+            return;
+        }
+
+        const event: IncreaseStockEvent = new IncreaseStockEvent(id, count, warehouse);
+
+        producer.send(
+            'stock',
+            event.toJSON()
+        ).then(() => {
+            console.log("Stock increase event sent");
+            res.status(200).send("Stock increase event sent");
+        }).catch((error: any) => {
+            console.log("Error in sending stock increase event: ", error);
+            res.status(500).send("Error in sending stock increase event");
+        });
     },
 
     // Decrease the stock of a product
     decreaseStock: async (req: any, res: any) => {
-        res.status(501).send("Not implemented");
+        const { count, warehouse } = req.body;
+        const id = req.params.id;
+
+        if (!id || !count || !warehouse) {
+            res.status(400).send("Bad request");
+            return;
+        }
+
+        const event: DecreaseStockEvent = new DecreaseStockEvent(id, count, warehouse);
+
+        producer.send(
+            'stock',
+            event.toJSON()
+        ).then(() => {
+            console.log("Stock decrease event sent");
+            res.status(200).send("Stock decrease event sent");
+        }).catch((error: any) => {
+            console.log("Error in sending stock decrease event: ", error);
+            res.status(500).send("Error in sending stock decrease event");
+        });
     },
 
     // Get the stock of a product
     getStock: async (req: any, res: any) => {
-        res.status(501).send("Not implemented");
+        const id = req.params.id;
+        if (!id) {
+            res.status(400).send("Bad request");
+            return;
+        }
+
+        const warehouse = req.query.warehouse;
+        let stock_id;
+        let stock: any;
+        if (!warehouse) {
+            // Get all the warehouses whre the product is stored
+            const warehouses = await redis.lRange(id, 0, -1);
+            console.log("Warehouses: ", warehouses);
+            console.log("ID: ", id);
+            stock = [];
+            for (const warehouse of warehouses) { 
+                stock_id = id + ":" + warehouse;
+                let stock_entry = await redis.hGet(`${id}:${warehouse}`, 'stock');
+                console.log("Stock entry: ", stock_entry);
+                stock.push({
+                    warehouse: warehouse,
+                    stock: stock_entry
+                }); 
+            }
+            res.status(200).send(stock);
+        } else {
+            console.log(`Getting stock for product ${id} in warehouse ${warehouse}`);
+            stock_id = id + ":" + warehouse;
+            stock = await redis.hGet(stock_id, 'stock');
+            res.status(200).send(stock);
+        }
     },
 
     // Set the stock of a product
     setStock: async (req: any, res: any) => {
-        res.status(501).send("Not implemented");
+        const { count, warehouse } = req.body;
+        const id = req.params.id;
+        if (!id || !count || !warehouse) {
+            res.status(400).send("Bad request");
+            return;
+        }
+
+        const event: UpdateStockEvent = new UpdateStockEvent(id, count, warehouse);
+
+        producer.send(
+            'stock',
+            event.toJSON()
+        ).then(() => {
+            console.log("Stock update event sent");
+            res.status(200).send("Stock update event sent");
+        }).catch((error: any) => {
+            console.log("Error in sending stock update event: ", error);
+            res.status(500).send("Error in sending stock update event");
+        });
     }
 }
 

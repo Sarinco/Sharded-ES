@@ -3,7 +3,8 @@ import { client, topic } from '@src/controllers/stockController';
 import { MemberDescription } from 'kafkajs';
 
 const PORT: number = parseInt(process.env.PORT as string);
-const group = 'stock-group';
+const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || 'stock-service';
+const group = EVENT_CLIENT_ID;
 
 const initDB = async () => {
     try {
