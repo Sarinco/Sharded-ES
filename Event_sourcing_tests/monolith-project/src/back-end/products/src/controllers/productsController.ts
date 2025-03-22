@@ -119,8 +119,6 @@ const stock = {
         try {
             // Get the products from the Cassandra database
             const products: Product[] = [];
-            const allKeys = await redis.keys('*');
-            console.log("All keys: ", allKeys);
             for await (const id of redis.scanIterator()) {
                 const value = await redis.get(id);
                 console.log("Value: ", value);

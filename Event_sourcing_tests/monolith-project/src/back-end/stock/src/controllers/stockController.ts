@@ -8,6 +8,7 @@ import {
     IncreaseStockEvent,
     DecreaseStockEvent,
     UpdateStockEvent,
+    GetStockEvent,
 } from "@src/types/events/stock-event";
 
 // Setup environment variables
@@ -57,6 +58,7 @@ const producer = {
             console.debug(result);
             throw new Error('Error forwarding the message');
         }
+        return result.json();
     }
 }
 
@@ -166,6 +168,34 @@ const stock = {
 
     // Get the stock of a product
     getStock: async (req: any, res: any) => {
+        // Check if the request need to get forwarded to the proxy
+        const ask_proxy = req.query.ask_proxy;
+        console.log(`Ask proxy: ${ask_proxy}`);
+        console.log(`Request: ${req.originalUrl}`);
+        console.dir(req.query);
+        if (!ask_proxy) {
+            console.log("Asking the proxy to get the stock");
+            const event: GetStockEvent = new GetStockEvent(
+                req.params.id,
+                req.query.warehouse,
+                req.originalUrl,
+                '',
+            );
+
+            producer.send(
+                'stock',
+                event.toJSON()
+            ).then((result: any) => {
+                console.log(`Result from the proxy: ${result}`);
+                res.status(200).json(result);
+            }).catch((error: any) => {
+                console.log("Error in sending stock get event: ", error);
+                res.status(500).send("Error in sending stock get event");
+            });
+            return;
+        }
+
+        console.log(`Path of the request: ${req.originalUrl}`);
         const id = req.params.id;
         if (!id) {
             res.status(400).send("Bad request");
@@ -194,15 +224,17 @@ const stock = {
                 });
             }
             res.status(200).send(stock);
+            return;
         } else {
             console.log(`Getting stock for product ${id} in warehouse ${warehouse}`);
             stock_id = id + ":" + warehouse;
             stock = await redis.hGet(stock_id, 'stock');
             console.log("Stock: ", stock);
             if (stock === null) {
-                res.status(200).send(0);
+                stock = "0";
             }
             res.status(200).send(stock);
+            return;
         }
     },
 

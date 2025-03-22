@@ -33,10 +33,10 @@ export class ControlPlane {
     }
 
 
-    send(data: string, ip: string): Promise<Response> {
+    send(data: string, ip: string, endpoint: string = "direct-forward"): Promise<Response> {
         console.debug(`Sending data to ${ip}`);
         // Send the data to the client
-        return fetch(`http://${ip}/direct-forward`, {
+        return fetch(`http://${ip}/${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -67,6 +67,19 @@ export class ControlPlane {
             if (connections) {
                 connections.forEach((ip) => {
                     promises.push(this.send(event, ip))
+                });
+            }
+        });
+        return promises;
+    }
+
+    sendToRegionWithEndpoint(data: string, region: string[], endpoint: string): Promise<Response>[] {
+        let promises: Promise<Response>[] = [];
+        region.forEach((r) => {
+            const connections = this.connections.get(r);
+            if (connections) {
+                connections.forEach((ip) => {
+                    promises.push(this.send(data, ip, endpoint))
                 });
             }
         });

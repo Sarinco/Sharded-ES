@@ -36,6 +36,8 @@ services:
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
       IS_MASTER: "true"
+      GATEWAY_ADDRESS: "${GATEWAY_ADDRESS}"
+      GATEWAY_PORT: "${GATEWAY_PORT_1}"
     networks:
       - proxy
       - site1
@@ -58,6 +60,8 @@ services:
       REGION: "eu-spain"
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
+      GATEWAY_ADDRESS: "${GATEWAY_ADDRESS}"
+      GATEWAY_PORT: "${GATEWAY_PORT_2}"
     networks:
       - proxy
       - site2
@@ -80,23 +84,11 @@ services:
       REGION: "eu-uk"
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
+      GATEWAY_ADDRESS: "${GATEWAY_ADDRESS}"
+      GATEWAY_PORT: "${GATEWAY_PORT}"
     networks:
       - proxy
       - site3
-  db-proxy-3-mapping:
-    image: redis:alpine
-    ports:
-      - "${DB_MAPPING_EXTERNAL_PORT_3}:6379"
-    volumes: 
-      - ./src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - proxy
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      interval: 1s
-      timeout: 3s
-      retries: 5
 
 networks:
   site1:

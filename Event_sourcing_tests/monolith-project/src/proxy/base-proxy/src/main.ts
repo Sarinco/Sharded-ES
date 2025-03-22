@@ -20,7 +20,6 @@ import { ControlPlane } from './control-plane/control-plane';
 
 
 
-
 //Connection variables setup
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
 const EVENT_PORT = process.env.EVENT_PORT;
@@ -35,6 +34,11 @@ if (!EVENT_ADDRESS || !EVENT_PORT || !EVENT_CLIENT_ID) {
 const MASTER = process.env.MASTER || 'proxy-1';
 const CONTROL_PORT = parseInt(process.env.CONTROL_PORT as string) || 6000;
 const IS_MASTER = process.env.IS_MASTER || 'false';
+
+// Gateway 
+const GATEWAY_ADDRESS = process.env.GATEWAY_ADDRESS;
+const GATEWAY_PORT = process.env.GATEWAY_PORT;
+const GATEWAY = `http://${GATEWAY_ADDRESS}:${GATEWAY_PORT}`;
 
 let config_manager: ConfigManager;
 let control_plane: ControlPlane;
@@ -89,10 +93,44 @@ const PORT: number = parseInt(process.env.PORT as string);
 app.use(express.json());
 
 // For health check
-app.get('/', (req: Request, res: Response) => {
+app.get('/health', (req: Request, res: Response) => {
     res.status(200).send('Server is running');
 });
 
+// Forwards the message to the gateway and returns the response
+app.post('/gateway-forward', (req: Request, res: Response) => {
+    let { path, auth } = req.body;
+    // Remove the first / from the path
+    // Add the query parameters ask_proxy=no
+    let url = new URL(GATEWAY + path);
+    url.searchParams.append('ask_proxy', 'no');
+    path = url.pathname + url.search;
+    path = path.substring(1);
+
+    console.log(`Forwarding the message to the gateway: ${url.toString()}`);
+
+    fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'authorization': auth,
+        },
+    }).then((response) => {
+        if (response.status !== 200) {
+            console.log(`Response: ${response}`);
+            console.log('Error forwarding the message to the gateway');
+            res.status(500).send('Error forwarding the message to the gateway');
+            return;
+        }
+        response.json().then((data) => {
+            console.log('Response from the gateway: ', data);
+            res.status(200).json(data);
+        });
+    }).catch((error: any) => {
+        console.log('Error forwarding the message to the gateway: ', error);
+        res.status(500).send('Error forwarding the message to the gateway');
+    });
+});
 
 // Logging all the requests made to the server
 app.post('/', (req: Request, res: Response) => {
@@ -105,8 +143,40 @@ app.post('/', (req: Request, res: Response) => {
     const routing_instructions = config_manager.matchRule(event);
     console.log('Rule: ', routing_instructions);
 
+    const value = JSON.parse(message.value);
+    const is_cqrs = value.path != undefined;
+    let path = '';
+    let auth = '';
+    console.log('Value: ', value);
+    if (is_cqrs) {
+        console.log('CQRS message');
+        path = value.path;
+        auth = value.auth;
+    }
+    console.log(`Is CQRS: ${is_cqrs} and path: ${path}`);
+
     switch (routing_instructions.action) {
         case BROADCAST:
+            if (is_cqrs) {
+                // Send the message to own gateway
+                fetch(GATEWAY + path, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'authorization': auth
+                    },
+                }).then((response) => {
+                    console.log('Response from the gateway: ', response);
+                    response.json().then((data) => {
+                        res.status(200).send(data);
+                    });
+                }).catch((error: any) => {
+                    console.log('Error forwarding the message to the gateway: ', error);
+                    res.status(500).send('Error forwarding the message to the gateway');
+                });
+                return;
+            }
+
             producer.send(topic, message).then(() => {
                 control_plane.broadcast(JSON.stringify(event));
                 res.status(200).send('Message broadcasted');
@@ -130,6 +200,31 @@ app.post('/', (req: Request, res: Response) => {
                 return;
             }
             const index = region.indexOf(REGION);
+
+            if (is_cqrs && index != -1) {
+                // Send the message to own gateway
+                let url = new URL(GATEWAY + path);
+                url.searchParams.append('ask_proxy', 'no');
+                path = url.pathname + url.search;
+                path = path.substring(1);
+                fetch(url.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'authorization': auth
+                    },
+                }).then((response) => {
+                    console.log('Response from the gateway: ', response);
+                    response.json().then((data) => {
+                        res.status(200).json(data);
+                    });
+                }).catch((error: any) => {
+                    console.log('Error forwarding the message to the gateway: ', error);
+                    res.status(500).send('Error forwarding the message to the gateway');
+                });
+                return;
+            }
+
             if (index != -1) {
                 producer.send(topic, message).then(() => {
                     console.log('Message sent to my region');
@@ -139,6 +234,27 @@ app.post('/', (req: Request, res: Response) => {
                 });
                 region.splice(index, 1);
             }
+            // If the message is a CQRS message, forward it to all the other regions 
+            // at the /gateway-forward endpoint
+            if (is_cqrs) {
+                // Forward the message to the gateway
+                let request = {
+                    path,
+                    auth
+                }
+                let promises = control_plane.sendToRegionWithEndpoint(JSON.stringify(request), region, 'gateway-forward');
+                Promise.all(promises).then(async (responses) => {
+                    let data = await Promise.all(responses.map((response) => response.json()));
+                    console.log('Data: ', data);
+                    res.status(200).send(data);
+                }).catch((error: any) => {
+                    console.log('Error forwarding the message to all regions: ', error);
+                    res.status(500).send('Error forwarding the message to all regions');
+                });
+                return;
+            }
+
+
 
             // Forward the message to the correct region
             let responses = control_plane.sendToRegion(JSON.stringify(event), region);

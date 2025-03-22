@@ -1,3 +1,5 @@
+import { CQRSEvent } from "./CQRS-events";
+
 /**
  * This is the event that is triggered when the stock of a product is increased.
  */
@@ -139,6 +141,37 @@ export class UpdateStockEvent {
                 data: {
                     product: this.product,
                     count: this.count,
+                    warehouse: this.warehouse
+                }
+            })
+        };
+    }
+}
+
+
+export class GetStockEvent extends CQRSEvent {
+    product: string;
+    warehouse: string;
+
+    constructor(product: string, warehouse: string, path: string, auth: string) {
+        super(path, auth);
+        this.product = product;
+        this.warehouse = warehouse;
+    }
+
+    fromJSON(json: { product: string; warehouse: string; path: string; auth: string; }) {
+        return new GetStockEvent(json.product, json.warehouse, json.path, json.auth);
+    }
+
+    toJSON() {
+        return {
+            key: this.product,
+            value: JSON.stringify({
+                type: "GetStock",
+                path: this.path,
+                header: this.auth,
+                data: {
+                    product: this.product,
                     warehouse: this.warehouse
                 }
             })
