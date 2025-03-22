@@ -22,7 +22,8 @@ services:
       - VITE_GATEWAY_URL=http://localhost:${GATEWAY_PORT}
     command: npm run dev -- --host
     depends_on:
-      - products 
+      products:  
+        condition: service_healthy
   gateway:
     image: nginx:alpine
     volumes:
@@ -31,9 +32,12 @@ services:
     ports:
       - "${GATEWAY_PORT}:80"
     depends_on:
-      - frontend
-      - products
-      - orders
+      frontend:
+        condition: service_started
+      products:
+        condition: service_healthy
+      orders:
+        condition: service_healthy
     environment:
       - FRONTEND_URL=http://frontend:3000
 

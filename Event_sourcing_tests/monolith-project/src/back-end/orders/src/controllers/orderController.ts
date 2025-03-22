@@ -36,8 +36,6 @@ const redis: RedisClientType = createClient({
 
 //setup fct
 export const databaseSetup = async () => {
-
-
     // REDIS
     await redis.on('error', (error: any) => {
         console.log("Error in Redis: ", error);
@@ -174,6 +172,6 @@ const orders = {
         }
     },
 }
+export { consumer };
 
 export default orders;
-

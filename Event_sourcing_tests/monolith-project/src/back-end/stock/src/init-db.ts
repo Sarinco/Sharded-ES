@@ -56,7 +56,11 @@ const initDB = async () => {
                 await fetch(`http://${clientIP}:${PORT}/kafka/disconnect`, {
                     method: 'POST',
                 }).then((response) => {
-                    console.log("Response: ", response);
+                    console.log("Response status: ", response.status);
+                    if (response.status !== 200) {
+                        console.log("Error in disconnecting consumer: ", response);
+                        waitToStable = true;
+                    }
                     memberDisconnected.push(groupList.groups[i].members[j]);
                     memberToReconnect.push(groupList.groups[i].members[j]);
                 }).catch((error) => {

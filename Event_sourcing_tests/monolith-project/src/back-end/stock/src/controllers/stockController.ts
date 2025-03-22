@@ -3,6 +3,7 @@ import { createClient, RedisClientType } from 'redis';
 
 // Custom imports
 import { stockEventHandler } from "@src/custom-handlers/stockEventHandler";
+import { orderEventHandler } from "@src/custom-handlers/orderEventHandler";
 import {
     IncreaseStockEvent,
     DecreaseStockEvent,
@@ -99,12 +100,12 @@ const consumerConnect = async () => {
                     console.log("Stock event : ", stockEvent);
                     await stockEventHandler(redis, stockEvent);
                     break;
-                // TODO: MOVE THIS TO STOCK SERVICE
-                // case 'orders':
-                //     const orderEvent = JSON.parse(message.value.toString());
-                //     console.log("Order event : ", orderEvent);
-                //     await orderEventHandler(redis, orderEvent);
-                //     break;
+
+                case 'orders':
+                    const orderEvent = JSON.parse(message.value.toString());
+                    console.log("Order event : ", orderEvent);
+                    await orderEventHandler(redis, orderEvent);
+                    break;
 
                 default:
                     console.log("Unknown topic: ", topic);

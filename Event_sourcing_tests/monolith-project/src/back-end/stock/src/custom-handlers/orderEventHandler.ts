@@ -1,6 +1,7 @@
-import { Product } from "@src/types/product";
 import { OrderAddedEvent } from "@src/types/order-events";
 import { RedisClientType } from "redis";
+import { producer } from "@src/controllers/stockController";
+import { DecreaseStockEvent } from "@src/types/events/stock-event";
 
 export async function orderEventHandler(redis: RedisClientType, event: any) {
     switch (event.type) {
@@ -9,29 +10,24 @@ export async function orderEventHandler(redis: RedisClientType, event: any) {
             console.log("order received for processing");
             console.log(orderInfo);
 
-            const previousStockString = await redis.get(orderInfo.product);
-            if (previousStockString == null) {
-                console.log("Specified product not in stock");
+            const warehouse = orderInfo.location;
+            const product = orderInfo.product;
+            const stock_id = product + ":" + warehouse;
+            const stockString = await redis.hGet(stock_id, 'stock');
+
+            if (stockString === null) {
+                console.log("Specified stock not found so not processing order");
                 return;
             }
+            const newEvent: DecreaseStockEvent = new DecreaseStockEvent(product, orderInfo.count, warehouse);
 
-            const previousStockJson = JSON.parse(previousStockString);
-            let stockEntry = Product.fromJSON(previousStockJson);
-            if (stockEntry.count < orderInfo.count){
-                console.log("Not enough product in stock to satisfy the order");
-                return;
-            }
-            stockEntry.count -= orderInfo.count;
-
-
-            await redis.set(
-                stockEntry.id,
-                JSON.stringify(stockEntry)
-            ).catch((error: any) => {
-                console.log("Error in set method: ", error);
-                throw error;
-            }).then(() => {
-                console.log("Product successfully updated after order");
+            producer.send(
+                'stock',
+                newEvent.toJSON()
+            ).then(() => {
+                console.log("Stock decrease event sent");
+            }).catch((error: any) => {
+                console.log("Error in sending stock decrease event: ", error);
             });
 
         break;

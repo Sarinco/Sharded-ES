@@ -16,7 +16,7 @@ export async function stockEventHandler(redis: RedisClientType, event: any) {
             let newStock = 0;
             console.log("Stock count: ", stock.count, " and stockString: ", stockString);
             if (stockString.stock == undefined || stockString.stock == null || stockString.stock == "NaN") {
-                console.log("Specified stock not found adding entry to the stock list");
+                console.log("Specified stock not found adding entry to the stock list: ", stock.id + "==>" + stock.warehouse);
                 await redis.lPush(stock.id, stock.warehouse).catch((error: any) => {
                     console.log("Error in add method: ", error);
                     throw error;
