@@ -2,7 +2,6 @@ import net from 'net';
 
 import { ConfigManager } from "@src/custom-handler/configHandler";
 import {
-    NEW_SHARD,
     NewConnectionPacket,
     RawConfig,
 } from '@src/control-plane/interfaces';
@@ -27,10 +26,6 @@ export class ControlPlane {
     parentDataFunction(packet: any) {
         let data = packet.data;
         switch (packet.type) {
-            case NEW_SHARD:
-                const result = { id: data.id, region: data.region };
-                this.config_manager.newShard(result, data.topic);
-                break;
             default:
                 console.log('Unknown event type for parent control plane');
                 break;
@@ -132,9 +127,4 @@ export class ControlPlane {
         this.ip_region.delete(ip);
         console.log(`Client ${ip} removed from region ${region}`);
     }
-
-    newShardAdvertisement(region: string[], id: string, topic: string) {
-        console.log('NOT SUPPOSED TO RUN: newShardAdvertisement is supposed to be implemented in the child class');
-    }
-
 } 

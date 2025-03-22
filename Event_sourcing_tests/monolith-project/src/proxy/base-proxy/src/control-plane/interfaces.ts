@@ -10,13 +10,11 @@ export interface NewConnectionPacket {
 export const ID_PACKET = 'identity';
 
 export const BROADCAST = 'broadcast';
-export const NEW_SHARD = 'new_shard';
 export const SHARD = 'shard';
 
 export const defaultRule = (event: Event) => {
     return {
         action: 'broadcast',
-        id: '-1'
     }
 };
 
@@ -31,13 +29,11 @@ export const defaultRule = (event: Event) => {
  */
 export interface Rule {
     action: string;
-    id: string;
     region?: string[];
 }
 
-export interface NewShardRule extends Rule {
+export interface ShardRule extends Rule {
     topic: string;
-    region: string[];
 }
 
 export interface RawControlPacket {
@@ -48,14 +44,14 @@ export interface RawControlPacket {
 export interface RawConfig {
     topic: string;
     action: string;
-    rules?: string;
+    shardKeyProducer?: string;
 }
 
 
 export interface Config {
     topic: string;
     action: string;
-    rules: string;
+    shardKeyProducer: string;
 }
 
 export interface Message {

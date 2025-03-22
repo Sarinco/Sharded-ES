@@ -9,9 +9,10 @@ import {
     NEW_CONNECTION_PACKET,
     ID_PACKET,
     LOST_CONNECTION_PACKET,
+    SHARD,
+    BROADCAST,
     defaultRule,
     NewConnectionPacket,
-    NEW_SHARD,
 } from '@src/control-plane/interfaces';
 import {
     ControlPlane
@@ -49,19 +50,19 @@ export class ControlPlaneServer extends ControlPlane {
     configFilters(RawConfig: Config[]): Config[] {
         for (const conf of RawConfig) {
             switch (conf.action) {
-                case 'shard':
+                case SHARD:
                     // Read the file specify in rule
-                    const file = conf.rules;
+                    const file = conf.shardKeyProducer;
                     if (!file) {
                         console.log('No file specified');
                         break;
                     }
                     // list current directory
                     const new_rules = readFileSync(file, 'utf-8');
-                    conf.rules = new_rules;
+                    conf.shardKeyProducer = new_rules;
                     break;
-                case 'broadcast':
-                    conf.rules = defaultRule.toString();
+                case BROADCAST:
+                    conf.shardKeyProducer = defaultRule.toString();
                     break;
                 default:
                     console.log('Unknown action');
@@ -228,18 +229,6 @@ export class ControlPlaneServer extends ControlPlane {
             }
         }
         this.socket_buffer = split_queries[split_queries.length - 1];
-    }
-
-    newShardAdvertisement(region: string[], id: string, topic: string): void {
-        const packet: RawControlPacket = {
-            type: NEW_SHARD,
-            data: {
-                topic: topic,
-                region: region,
-                id: id
-            }
-        };
-        this.controlBroadcast(JSON.stringify(packet));
     }
 
     shutdownConnection(clientId: string) {

@@ -10,10 +10,10 @@ import { ControlPlaneClient } from '@src/control-plane/client';
 import { ConfigManager } from '@src/custom-handler/configHandler';
 import {
     ID_PACKET,
-    Event,
     BROADCAST,
-    NEW_SHARD,
-    NewShardRule
+    SHARD,
+    ShardRule,
+    Event,
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from './control-plane/control-plane';
 
@@ -116,11 +116,10 @@ app.post('/', (req: Request, res: Response) => {
             });
             break;
 
-        case NEW_SHARD:
+        case SHARD:
             // Cast the routing instructions to NewShardRule
-            const new_shard_rule: NewShardRule = {
+            const new_shard_rule: ShardRule = {
                 action: routing_instructions.action,
-                id: routing_instructions.id,
                 topic: event.topic,
                 region: routing_instructions.region || []
             };
@@ -183,14 +182,6 @@ app.get('/connections', (req: Request, res: Response) => {
 
     console.log('Connections: ', connections);
     res.status(200).send(connections);
-});
-
-// Get the forwarding table
-app.get('/forwarding-table', (req: Request, res: Response) => {
-    console.log('Getting forwarding table');
-    const forwarding_table: string = config_manager.getForwardMapJSON();
-    console.log('Forwarding table: ', forwarding_table);
-    res.status(200).send(forwarding_table);
 });
 
 

@@ -1,10 +1,10 @@
 import { v4 as uuid } from 'uuid';
 import {
+    SHARD,
     Event,
     Config,
     Rule,
     defaultRule,
-    NEW_SHARD
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
 import { createClient, RedisClientType } from 'redis';
@@ -12,35 +12,12 @@ import { createClient, RedisClientType } from 'redis';
 export class ConfigManager {
 
     private rule_map: Map<string, Function>;
-    private forward_map: Map<string, Map<string, string[]>>;
     private control_plane: ControlPlane;
-    private redis_db: RedisClientType;
 
 
     constructor(control_plane: ControlPlane) {
         this.control_plane = control_plane;
         this.rule_map = new Map();
-        this.forward_map = new Map();
-
-        // setup connection to mapping db
-        const db_map_address = process.env.EVENT_DB;
-        const db_port = "6379";
-        const redis_url = "redis://" + db_map_address + ":" + db_port;
-
-        this.redis_db = createClient({
-            url: redis_url
-        });
-        this.redisSetup()
-    }
-
-    async redisSetup(){
-        await this.redis_db.on('error', (error: any) => {
-            console.log("Error in Redis: ", error);
-        }).connect().then(() => {
-            console.log("Connected to Redis");
-        }).catch((error: any) => {
-            console.log("Error connecting to Redis: ", error);
-        });
     }
 
     /**
@@ -53,52 +30,10 @@ export class ConfigManager {
         console.log("Setting config");
         for (const conf of config) {
             console.log("Creating callback function for topic:", conf.topic);
-            console.log("Rules:", conf.rules);
-            const callback = eval(conf.rules);
+            console.log("Rules:", conf.shardKeyProducer);
+            const callback = eval(conf.shardKeyProducer);
             this.rule_map.set(conf.topic, callback);
-            this.forward_map.set(conf.topic, new Map());
         }
-    }
-
-    async getStoredMap(){
-        console.log("TODO : retreive data in redis db");
-    }
-
-    async storeShard(){
-        console.log("Store the mf shard in redis")
-    }
-
-    getForwardMapJSON() {
-        console.log("Forward map:", this.forward_map);
-        let result = Array.from(this.forward_map.entries()).map(([key, value]) => {
-            return {
-                topic: key,
-                map: Array.from(value.entries()).map(([k, v]) => {
-                    return {
-                        id: k,
-                        region: v
-                    }
-                })
-            }
-        });
-        return JSON.stringify(result);
-    }
-
-    /**
-     * Create a new shard
-     *
-     * @param result
-     * @param topic
-     * @returns 
-     */
-    newShard(result: any, topic: string) {
-        console.log(`Creating new shard with id: ${result.id} and region: ${result.region} in topic: ${topic}`);
-        const forward_map = this.forward_map.get(topic);
-        if (!forward_map) {
-            console.error('Forward map not found');
-        }
-
-        forward_map?.set(result.id, Array.from(result.region));
     }
 
     /**
@@ -115,10 +50,6 @@ export class ConfigManager {
             return defaultRule(event);
         }
         const result = callback(event.message.value);
-        if (result.action == NEW_SHARD) {
-            this.newShard(result, event.topic);
-            this.control_plane.newShardAdvertisement(result.region, result.id, event.topic);
-        }
 
         return result;
     }

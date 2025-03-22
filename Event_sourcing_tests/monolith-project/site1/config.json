@@ -10,5 +10,10 @@
     {
         "topic": "orders",
         "action": "broadcast"
+    },
+    {
+        "topic": "stock",
+        "action": "shard",
+        "shardKeyProducer": "/app/src/sharder/stock.js"
     }
 ]

@@ -171,7 +171,6 @@ const stock = {
             res.status(400).send("Bad request");
             return;
         }
-
         const warehouse = req.query.warehouse;
         let stock_id;
         let stock: any;
@@ -181,20 +180,28 @@ const stock = {
             console.log("Warehouses: ", warehouses);
             console.log("ID: ", id);
             stock = [];
-            for (const warehouse of warehouses) { 
+            if (warehouses.length === 0) {
+                res.status(200).send(stock);
+                return;
+            }
+            for (const warehouse of warehouses) {
                 stock_id = id + ":" + warehouse;
                 let stock_entry = await redis.hGet(`${id}:${warehouse}`, 'stock');
                 console.log("Stock entry: ", stock_entry);
                 stock.push({
                     warehouse: warehouse,
                     stock: stock_entry
-                }); 
+                });
             }
             res.status(200).send(stock);
         } else {
             console.log(`Getting stock for product ${id} in warehouse ${warehouse}`);
             stock_id = id + ":" + warehouse;
             stock = await redis.hGet(stock_id, 'stock');
+            console.log("Stock: ", stock);
+            if (stock === null) {
+                res.status(200).send(0);
+            }
             res.status(200).send(stock);
         }
     },
