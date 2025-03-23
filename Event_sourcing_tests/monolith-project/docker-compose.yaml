@@ -84,8 +84,6 @@ services:
       REGION: "eu-uk"
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
-      GATEWAY_ADDRESS: "${GATEWAY_ADDRESS}"
-      GATEWAY_PORT: "${GATEWAY_PORT}"
     networks:
       - proxy
       - site3

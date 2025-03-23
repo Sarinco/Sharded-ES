@@ -86,6 +86,11 @@ export class ControlPlane {
         return promises;
     }
 
+    sendToAllRegionsWithEndpoint(data: string, endpoint: string): Promise<Response>[] {
+        let regions = Array.from(this.connections.keys());
+        return this.sendToRegionWithEndpoint(data, regions, endpoint);
+    }
+
     /**
      * Get the regions with their associated connections
      * if connections is empty return an empty array

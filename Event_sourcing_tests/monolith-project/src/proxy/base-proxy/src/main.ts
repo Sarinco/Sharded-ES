@@ -99,6 +99,11 @@ app.get('/health', (req: Request, res: Response) => {
 
 // Forwards the message to the gateway and returns the response
 app.post('/gateway-forward', (req: Request, res: Response) => {
+    if (GATEWAY_PORT == undefined || GATEWAY_ADDRESS == undefined) {
+        console.log('Please provide the gateway address and port');
+        res.status(200).send();
+        return;
+    }
     let { path, auth } = req.body;
     // Remove the first / from the path
     // Add the query parameters ask_proxy=no
@@ -147,7 +152,8 @@ app.post('/', (req: Request, res: Response) => {
     const is_cqrs = value.path != undefined;
     let path = '';
     let auth = '';
-    console.log('Value: ', value);
+    let ask_all = req.query.ask_all;
+    console.log('Ask all: ', ask_all);
     if (is_cqrs) {
         console.log('CQRS message');
         path = value.path;
@@ -200,32 +206,9 @@ app.post('/', (req: Request, res: Response) => {
                 return;
             }
             const index = region.indexOf(REGION);
+            let include_myself = index != -1;
 
-            if (is_cqrs && index != -1) {
-                // Send the message to own gateway
-                let url = new URL(GATEWAY + path);
-                url.searchParams.append('ask_proxy', 'no');
-                path = url.pathname + url.search;
-                path = path.substring(1);
-                fetch(url.toString(), {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'authorization': auth
-                    },
-                }).then((response) => {
-                    console.log('Response from the gateway: ', response);
-                    response.json().then((data) => {
-                        res.status(200).json(data);
-                    });
-                }).catch((error: any) => {
-                    console.log('Error forwarding the message to the gateway: ', error);
-                    res.status(500).send('Error forwarding the message to the gateway');
-                });
-                return;
-            }
-
-            if (index != -1) {
+            if (include_myself && !is_cqrs) {
                 producer.send(topic, message).then(() => {
                     console.log('Message sent to my region');
                 }).catch((error: any) => {
@@ -242,9 +225,36 @@ app.post('/', (req: Request, res: Response) => {
                     path,
                     auth
                 }
-                let promises = control_plane.sendToRegionWithEndpoint(JSON.stringify(request), region, 'gateway-forward');
+                let promises;
+                if (ask_all) {
+                    console.log('Asking all');
+                    promises = control_plane.sendToAllRegionsWithEndpoint(JSON.stringify(request), 'gateway-forward');
+                    include_myself = true;
+                } else {
+                    promises = control_plane.sendToRegionWithEndpoint(JSON.stringify(request), region, 'gateway-forward');
+                }
+
+                if (include_myself) {
+                    console.log('Including myself');
+                    let url = new URL(GATEWAY + path);
+                    url.searchParams.append('ask_proxy', 'no');
+                    path = url.pathname + url.search;
+                    path = path.substring(1);
+                    promises.push(fetch(url.toString(), {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'authorization': auth
+                        },
+                    }));
+                }
+
                 Promise.all(promises).then(async (responses) => {
                     let data = await Promise.all(responses.map((response) => response.json()));
+                    // If data is an array of arrays, flatten it
+                    if (data.length > 0 && data[0].length > 0) {
+                        data = data.flat();
+                    }
                     console.log('Data: ', data);
                     res.status(200).send(data);
                 }).catch((error: any) => {

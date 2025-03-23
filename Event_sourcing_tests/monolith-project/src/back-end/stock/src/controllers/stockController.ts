@@ -40,13 +40,18 @@ const redis: RedisClientType = createClient({
 
 // PRODUCER
 const producer = {
-    send: async (topic: string, message: any) => {
+    send: async (topic: string, message: any, ask_all: boolean = false) => {
         const body = {
             topic,
             message
         }
 
-        const result = await fetch(PROXY, {
+        let url = new URL(PROXY);
+        if (ask_all) {
+            url.searchParams.append('ask_all', 'true');
+        }
+
+        const result = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -58,7 +63,14 @@ const producer = {
             console.debug(result);
             throw new Error('Error forwarding the message');
         }
-        return result.json();
+
+        if (result.headers.get('Content-Type')?.includes('application/json')) {
+            return result.json();
+        }
+        return result.text().then((text) => {
+            console.debug(`Content type: ${result.headers.get('Content-Type')} and text: ${text}`);
+            return text;
+        });
     }
 }
 
@@ -172,19 +184,22 @@ const stock = {
         const ask_proxy = req.query.ask_proxy;
         console.log(`Ask proxy: ${ask_proxy}`);
         console.log(`Request: ${req.originalUrl}`);
-        console.dir(req.query);
+
+        const warehouse = req.query.warehouse;
         if (!ask_proxy) {
+            let ask_all = warehouse === undefined;
             console.log("Asking the proxy to get the stock");
             const event: GetStockEvent = new GetStockEvent(
                 req.params.id,
-                req.query.warehouse,
+                warehouse,
                 req.originalUrl,
                 '',
             );
 
             producer.send(
                 'stock',
-                event.toJSON()
+                event.toJSON(),
+                ask_all
             ).then((result: any) => {
                 console.log(`Result from the proxy: ${result}`);
                 res.status(200).json(result);
@@ -201,7 +216,7 @@ const stock = {
             res.status(400).send("Bad request");
             return;
         }
-        const warehouse = req.query.warehouse;
+
         let stock_id;
         let stock: any;
         if (!warehouse) {
