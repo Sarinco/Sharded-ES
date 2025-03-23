@@ -153,13 +153,11 @@ app.post('/', (req: Request, res: Response) => {
     let path = '';
     let auth = '';
     let ask_all = req.query.ask_all;
-    console.log('Ask all: ', ask_all);
     if (is_cqrs) {
         console.log('CQRS message');
         path = value.path;
         auth = value.auth;
     }
-    console.log(`Is CQRS: ${is_cqrs} and path: ${path}`);
 
     switch (routing_instructions.action) {
         case BROADCAST:
@@ -217,6 +215,7 @@ app.post('/', (req: Request, res: Response) => {
                 });
                 region.splice(index, 1);
             }
+
             // If the message is a CQRS message, forward it to all the other regions 
             // at the /gateway-forward endpoint
             if (is_cqrs) {
