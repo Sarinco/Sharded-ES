@@ -93,7 +93,7 @@ const PORT: number = parseInt(process.env.PORT as string);
 app.use(express.json());
 
 // For health check
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
     res.status(200).send('Server is running');
 });
 
@@ -104,6 +104,7 @@ app.post('/gateway-forward', (req: Request, res: Response) => {
         res.status(200).send();
         return;
     }
+
     let { path, auth } = req.body;
     // Remove the first / from the path
     // Add the query parameters ask_proxy=no
@@ -152,7 +153,7 @@ app.post('/', (req: Request, res: Response) => {
     const is_cqrs = value.path != undefined;
     let path = '';
     let auth = '';
-    let ask_all = req.query.ask_all;
+    let ask_all = routing_instructions.ask_all == undefined ? false : routing_instructions.ask_all;
     if (is_cqrs) {
         console.log('CQRS message');
         path = value.path;
@@ -300,7 +301,7 @@ app.post('/direct-forward', (req: Request, res: Response) => {
 // DEBUG API ENDPOINT
 
 // Get all connected clients
-app.get('/connections', (req: Request, res: Response) => {
+app.get('/connections', (_req: Request, res: Response) => {
     console.log('Getting connections');
     console.log('Connections: ', control_plane.getConnectedconnections());
     const connections: string = JSON.stringify(control_plane.getConnectedconnections());

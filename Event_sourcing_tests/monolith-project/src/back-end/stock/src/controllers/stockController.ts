@@ -40,16 +40,13 @@ const redis: RedisClientType = createClient({
 
 // PRODUCER
 const producer = {
-    send: async (topic: string, message: any, ask_all: boolean = false) => {
+    send: async (topic: string, message: any) => {
         const body = {
             topic,
             message
         }
 
         let url = new URL(PROXY);
-        if (ask_all) {
-            url.searchParams.append('ask_all', 'true');
-        }
 
         const result = await fetch(url, {
             method: 'POST',
@@ -187,7 +184,6 @@ const stock = {
 
         const warehouse = req.query.warehouse;
         if (!ask_proxy) {
-            let ask_all = warehouse === undefined;
             console.log("Asking the proxy to get the stock");
             const event: GetStockEvent = new GetStockEvent(
                 req.params.id,
@@ -199,7 +195,6 @@ const stock = {
             producer.send(
                 'stock',
                 event.toJSON(),
-                ask_all
             ).then((result: any) => {
                 console.log(`Result from the proxy: ${result}`);
                 res.status(200).json(result);
