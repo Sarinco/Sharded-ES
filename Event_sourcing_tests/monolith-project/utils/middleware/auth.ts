@@ -1,6 +1,6 @@
 import { verifyJWT } from "./token";
 
-export function verifyAdmin(req: any, res: any, next: any) {
+export function verifyToken(req: any, res: any)  {
     const token = req.headers.authorization;
     if (!token) {
         return res.status(401).send("No token provided");
@@ -18,10 +18,40 @@ export function verifyAdmin(req: any, res: any, next: any) {
         return res.status(401).send("Token has expired");
     }
 
+    return decoded;
+}
+
+export function verifyUser(req: any, res: any, next: any) {
+    const { email } = verifyToken(req, res) as any;
+    
+    const user = req.params.email;
+
+    if (email !== user) {
+        return res.status(403).send("Unauthorized");
+    }
+
+    next();
+}
+
+export function verifyUserOrAdmin(req: any, res: any, next: any) {
+    const { role, email } = verifyToken(req, res) as any;
+    const user = req.params.email;
+
+    if (email !== user && role !== "admin") {
+        return res.status(403).send("Unauthorized");
+    }
+
+    next();
+}
+    
+
+export function verifyAdmin(req: any, res: any, next: any) {
+    const { role } = verifyToken(req, res) as any;
+
     if (role !== "admin") {
         return res.status(403).send("Unauthorized");
     }
 
-    req.decoded = decoded;
     next();
 }
+

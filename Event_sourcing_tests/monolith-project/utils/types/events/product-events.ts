@@ -1,3 +1,4 @@
+import { CQRSEvent } from "./CQRS-events";
 
 // Adding a new product event
 export class ProductAddedEvent {
@@ -145,6 +146,30 @@ export class ProductDeletedEvent {
                 data: {
                     id: this.id,
                     deleted_by: this.deleted_by
+                }
+            })
+        }
+    }
+}
+
+export class GetAllProductEvent extends CQRSEvent {
+    
+    constructor(path: string, auth: string) {
+        super(path, auth);
+    }
+
+    fromJSON(json: { path: string; auth: string; }) {
+        return new GetAllProductEvent(json.path, json.auth);
+    }
+
+    toJSON() {
+        return {
+            key: "No Key",
+            value: JSON.stringify({
+                type: "GetAllProduct",
+                path: this.path,
+                header: this.auth,
+                data: {
                 }
             })
         }

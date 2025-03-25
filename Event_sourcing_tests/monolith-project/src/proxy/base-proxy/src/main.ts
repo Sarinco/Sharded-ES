@@ -164,7 +164,11 @@ app.post('/', (req: Request, res: Response) => {
         case BROADCAST:
             if (is_cqrs) {
                 // Send the message to own gateway
-                fetch(GATEWAY + path, {
+                let url = new URL(GATEWAY + path);
+                url.searchParams.append('ask_proxy', 'no');
+                path = url.pathname + url.search;
+                path = path.substring(1);
+                fetch(url.toString(), {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
