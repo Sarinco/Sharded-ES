@@ -7,8 +7,5 @@ router.get('/', orders.findAll);
 
 router.post('/', orders.add);
 
-router.put('/', (req, res) => {
-    res.send("TODO");
-});
 
 export default router;

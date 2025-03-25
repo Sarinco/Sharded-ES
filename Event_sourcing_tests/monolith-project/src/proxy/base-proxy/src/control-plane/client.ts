@@ -125,16 +125,6 @@ export class ControlPlaneClient extends ControlPlane {
         });
     }
 
-    newShardAdvertisement(region: string[], id: string, topic: string): Promise<void> {
-        const data = {
-            topic: topic, 
-            region: region,
-            id: id
-        };
-
-        return this.sendControl(Buffer.from(JSON.stringify(data)), NEW_SHARD);
-    }
-
     // Send data to the server
     sendControl(data: Buffer, type: string): Promise<void> {
         const packet: RawControlPacket = {

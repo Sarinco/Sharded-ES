@@ -103,7 +103,7 @@ app.post('/', (req: Request, res: Response) => {
 
     const event: Event = body;
     const routing_instructions = config_manager.matchRule(event);
-    console.log('Rule: ', routing_instructions);
+    console.log('Rule applied on request : ', routing_instructions);
 
     switch (routing_instructions.action) {
         case BROADCAST:
@@ -126,10 +126,12 @@ app.post('/', (req: Request, res: Response) => {
             };
             const region = new_shard_rule.region;
             if (!region) {
-                console.log('Error getting the region');
-                res.status(500).send('Error getting the region');
+                console.log('Error getting the region to forward data');
+                res.status(500).send('Error getting the region to forward data');
                 return;
             }
+
+            // Check to see if message is adressed to my region
             const index = region.indexOf(REGION);
             if (index != -1) {
                 producer.send(topic, message).then(() => {
@@ -141,13 +143,13 @@ app.post('/', (req: Request, res: Response) => {
                 region.splice(index, 1);
             }
 
-            // Forward the message to the correct region
+            // Forward the message to other regions if applicable
             let responses = control_plane.sendToRegion(JSON.stringify(event), region);
             console.log('Responses: ', responses);
             Promise.all(responses).then(() => {
-                res.status(200).send('Message forwarded to all regions');
+                res.status(200).send('Message forwarded to all filtered regions');
             }).catch((error: any) => {
-                console.log('Error forwarding the message to all regions: ', error);
+                console.log('Error forwarding the message to all  filtered regions: ', error);
                 res.status(500).send('Error forwarding the message to all regions');
             });
             break;
@@ -165,11 +167,26 @@ app.post('/direct-forward', (req: Request, res: Response) => {
 
     producer.send(topic, message).then(() => {
         console.log('Message forwarded');
+        console.debug("Message topic : ", topic);
+        console.debug("message contents : ", message);
         res.status(200).send('Message forwarded');
     }).catch((error: any) => {
         console.log('Error forwarding the message: ', error);
         res.status(500).send('Error forwarding the message');
     });
+});
+
+app.post('/data-request', (req: Request, res: Response) => {
+    const body = req.body;
+    console.log('Received request: ', body);
+
+    const { topic, message } = body;
+
+    const event: Event = body;
+    const routing_instructions = config_manager.matchRule(event);
+    console.log('Rule applied on request : ', routing_instructions);
+
+    res.status(200).send("changeme");
 });
 
 
@@ -184,15 +201,6 @@ app.get('/connections', (req: Request, res: Response) => {
     console.log('Connections: ', connections);
     res.status(200).send(connections);
 });
-
-// Get the forwarding table
-app.get('/forwarding-table', (req: Request, res: Response) => {
-    console.log('Getting forwarding table');
-    const forwarding_table: string = config_manager.getForwardMapJSON();
-    console.log('Forwarding table: ', forwarding_table);
-    res.status(200).send(forwarding_table);
-});
-
 
 // Start the server
 app.listen(PORT, () => {

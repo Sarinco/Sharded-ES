@@ -230,18 +230,6 @@ export class ControlPlaneServer extends ControlPlane {
         this.socket_buffer = split_queries[split_queries.length - 1];
     }
 
-    newShardAdvertisement(region: string[], id: string, topic: string): void {
-        const packet: RawControlPacket = {
-            type: NEW_SHARD,
-            data: {
-                topic: topic,
-                region: region,
-                id: id
-            }
-        };
-        this.controlBroadcast(JSON.stringify(packet));
-    }
-
     shutdownConnection(clientId: string) {
         const packet: RawControlPacket = {
             type: LOST_CONNECTION_PACKET,

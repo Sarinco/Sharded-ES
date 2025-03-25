@@ -89,3 +89,16 @@ Example for orders
 curl http://localhost:80/api/orders/ \
    -H "Content-Type: application/json" \-d '{"customer": "012345", "location": "Belgium", "product": "456789", "count": "10"}'
 ```
+
+
+
+### New get functionality
+get info through a post to the /search-request endpoint
+
+inside frontend
+```bash
+curl http://localhost/api/orders/ \
+   -X GET \
+   -H "Content-Type: application/json" \
+   -d '{"topic" : "product", "message" : {"product": "123456", "warehouse": "charleroi"}}'
+```

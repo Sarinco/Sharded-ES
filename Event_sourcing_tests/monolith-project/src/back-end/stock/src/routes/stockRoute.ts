@@ -4,7 +4,7 @@ import stock from '../controllers/stockController';
 const router = Router();
 
 // Retrieve all products
-router.get('/', stock.findAll);
+router.get('/', stock.find);
 
 // Add a new product
 router.post('/', stock.add);

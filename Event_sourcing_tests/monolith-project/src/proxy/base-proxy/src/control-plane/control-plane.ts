@@ -7,8 +7,6 @@ import {
     RawConfig,
 } from '@src/control-plane/interfaces';
 
-import { createClient, RedisClientType } from 'redis';
-
 export class ControlPlane {
     public connections: Map<string, string[]>;
     private ip_region: Map<string, string>;
@@ -29,7 +27,6 @@ export class ControlPlane {
         switch (packet.type) {
             case NEW_SHARD:
                 const result = { id: data.id, region: data.region };
-                this.config_manager.newShard(result, data.topic);
                 break;
             default:
                 console.log('Unknown event type for parent control plane');
@@ -131,10 +128,6 @@ export class ControlPlane {
 
         this.ip_region.delete(ip);
         console.log(`Client ${ip} removed from region ${region}`);
-    }
-
-    newShardAdvertisement(region: string[], id: string, topic: string) {
-        console.log('NOT SUPPOSED TO RUN: newShardAdvertisement is supposed to be implemented in the child class');
     }
 
 } 

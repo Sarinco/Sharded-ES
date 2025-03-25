@@ -153,3 +153,22 @@ export class ProductDeletedEvent {
         }
     }
 }
+
+
+export class GetProductEvent {
+    parameters: any;
+
+    constructor(req_query: any) {
+        this.parameters = req_query;
+    }
+
+    toJSON(): any {
+        return {
+            key: "get",
+            value: JSON.stringify({
+                type: "GetProduct",
+                data: this.parameters
+            })
+        }   
+    }
+}

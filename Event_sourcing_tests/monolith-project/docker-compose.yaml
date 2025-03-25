@@ -37,26 +37,9 @@ services:
       CONTROL_PORT: "${CONTROL_PORT}"
       IS_MASTER: "true"
       EVENT_DB: "db-proxy-1-mapping"
-    depends_on:
-      db-proxy-1-mapping:
-        condition: service_healthy
     networks:
       - proxy
       - site1
-  db-proxy-1-mapping:
-    image: redis:alpine
-    ports:
-      - "${DB_MAPPING_EXTERNAL_PORT_1}:6379"
-    volumes: 
-      - ./src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - proxy
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      interval: 1s
-      timeout: 3s
-      retries: 5
 
   proxy-2:
     build:
@@ -78,26 +61,9 @@ services:
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
       EVENT_DB: "db-proxy-2-mapping"
-    depends_on:
-      db-proxy-2-mapping:
-        condition: service_healthy
     networks:
       - proxy
       - site2
-  db-proxy-2-mapping:
-    image: redis:alpine
-    ports:
-      - "${DB_MAPPING_EXTERNAL_PORT_2}:6379"
-    volumes: 
-      - ./src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - proxy
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      interval: 1s
-      timeout: 3s
-      retries: 5
   proxy-3:
     build:
       context: ./src/proxy/base-proxy
@@ -118,26 +84,9 @@ services:
       MASTER: "${MASTER}"
       CONTROL_PORT: "${CONTROL_PORT}"
       EVENT_DB: "db-proxy-3-mapping"
-    depends_on:
-      db-proxy-3-mapping:
-        condition: service_healthy
     networks:
       - proxy
       - site3
-  db-proxy-3-mapping:
-    image: redis:alpine
-    ports:
-      - "${DB_MAPPING_EXTERNAL_PORT_3}:6379"
-    volumes: 
-      - ./src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - proxy
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      interval: 1s
-      timeout: 3s
-      retries: 5
 
 networks:
   site1:

@@ -12,7 +12,8 @@ import { verifyJWT } from '@src/middleware/token';
 import {
     ProductAddedEvent,
     ProductDeletedEvent,
-    ProductUpdatedEvent
+    ProductUpdatedEvent,
+    GetProductEvent
 } from "@src/types/events/stock-events";
 
 // Setup environment variables
@@ -46,24 +47,37 @@ const redis: RedisClientType = createClient({
 
 // PRODUCER
 const producer = {
-    send: async (topic: string, message: any) => {
+    send: async (topic: string, message: any, get_event: boolean = false) => {
         const body = {
             topic,
             message
         }
+        let result: Response;
 
-        const result = await fetch(PROXY, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-        })
+        if (!get_event) {
+            result = await fetch(PROXY, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            })
+        } else {
+            result = await fetch(PROXY+"data-request", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            })
+        }
 
         if (result.status !== 200) {
             console.debug(result);
             throw new Error('Error forwarding the message');
         }
+
+        return result.text();
     }
 }
 
@@ -127,23 +141,26 @@ const consumerConnect = async () => {
 // HTTP
 const stock = {
     // Retrieve all stocks
-    findAll: async (req: any, res: any) => {
+    find: async (req: any, res: any) => {
         try {
             // Get the products from the Cassandra database
-            const products: Product[] = [];
-            for await (const id of redis.scanIterator()) {
-                const value = await redis.get(id);
-                console.log("Value: ", value);
-                if (value === null) {
-                    console.log("Value is null");
-                    continue;
-                }
-                const product = JSON.parse(value);
-                products.push(product);
-            }
+            console.debug("Get request received")
+            console.debug("body of the get : ", req.query);
+            const event: GetProductEvent = new GetProductEvent(req.query);
 
-            res.status(200).send(products);
+            console.log(JSON.stringify(event));
 
+            producer.send(
+                'products',
+                event.toJSON(),
+                true
+            ).then((result) => {
+                console.log("Get query successful, results : ", result);
+                res.send(result);
+            }).catch((error: any) => {
+                console.log("Error in get method: ", error);
+                res.status(500).send(error);
+            });
         } catch (error) {
             console.log("Error in findAll method: ", error);
             res.status(500).send(error);
