@@ -1,4 +1,4 @@
-import { OrderAddedEvent } from "@src/types/order-events";
+import { OrderAddedEvent } from "@src/types/events/order-events";
 import { RedisClientType } from "redis";
 import { producer } from "@src/controllers/stockController";
 import { DecreaseStockEvent } from "@src/types/events/stock-event";

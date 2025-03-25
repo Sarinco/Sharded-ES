@@ -10,6 +10,7 @@ import {
     UpdateStockEvent,
     GetStockEvent,
 } from "@src/types/events/stock-event";
+import { producer } from "@src/handlers/proxyHandler";
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -36,40 +37,6 @@ const redisUrl = "redis://" + DB_ADDRESS + ":" + DB_PORT;
 const redis: RedisClientType = createClient({
     url: redisUrl
 });
-
-
-// PRODUCER
-const producer = {
-    send: async (topic: string, message: any) => {
-        const body = {
-            topic,
-            message
-        }
-
-        let url = new URL(PROXY);
-
-        const result = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-        })
-
-        if (result.status !== 200) {
-            console.debug(result);
-            throw new Error('Error forwarding the message');
-        }
-
-        if (result.headers.get('Content-Type')?.includes('application/json')) {
-            return result.json();
-        }
-        return result.text().then((text) => {
-            console.debug(`Content type: ${result.headers.get('Content-Type')} and text: ${text}`);
-            return text;
-        });
-    }
-}
 
 // CONSUMER
 const consumer = client.consumer({

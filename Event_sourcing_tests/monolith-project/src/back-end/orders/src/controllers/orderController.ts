@@ -1,11 +1,15 @@
-const { Kafka, EachMessagePayload } = require('kafkajs');
+import { Kafka, EachMessagePayload } from 'kafkajs';
+import { createClient, RedisClientType } from 'redis';
+
 import { v4 as uuid } from 'uuid';
 import Order from "../types/order";
-import { OrderAddedEvent } from '../types/order-events';
-import { ordersEventHandler } from "../custom-handlers/ordersEventHandler";
+import {
+    OrderAddedEvent,
+    GetAllOrderEvent
+} from '@src/types/events/order-events';
+import { ordersEventHandler } from "@src/custom-handlers/ordersEventHandler";
 import { ProducerFactory } from '../handlers/kafkaHandler';
-import { createClient, RedisClientType } from 'redis';
-import { verifyJWT } from '../middleware/token';
+import { producer } from "@src/handlers/proxyHandler";
 
 // create a client connected to your local kafka instance
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
@@ -16,14 +20,9 @@ export const client = new Kafka({
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "order-service";
 
-const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
-const PROXY_PORT = process.env.PROXY_PORT;
-const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
-
 // for redis
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";
 const DB_PORT = "6379";
-const KEYSPACE = process.env.KEYSPACE || "orders";
 
 export const topicList = ['orders'];
 
@@ -46,30 +45,7 @@ export const databaseSetup = async () => {
     });
 }
 
-// const producer = client.producer()
-const producer = {
-    send: async (topic: string, message: any) => {
-        const body = {
-            topic,
-            message
-        }
-
-        const result = await fetch(PROXY, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-        })
-
-        if (result.status !== 200) {
-            console.debug(result);
-            throw new Error('Error forwarding the message');
-        }
-    }
-}
-
-const consumer = client.consumer({ groupId: 'orders-group' });
+const consumer = client.consumer({ groupId: EVENT_CLIENT_ID });
 
 export const brokerConsumerConnect = async () => {
     await consumer.connect()
@@ -77,7 +53,7 @@ export const brokerConsumerConnect = async () => {
     await Promise.all(topicList.map(topic => consumer.subscribe({ topic, fromBeginning: true })));
 
     await consumer.run({
-        eachMessage: async ({ topic, partition, message }: typeof EachMessagePayload) => {
+        eachMessage: async ({ topic, partition, message }: EachMessagePayload) => {
             if (message.value == null) {
                 console.log("Message is null");
                 return;
@@ -101,6 +77,26 @@ const orders = {
     // Retrieve all stocks
     findAll: async (req: any, res: any) => {
         try {
+            const ask_proxy = req.query.ask_proxy;
+            if (!ask_proxy) {
+                console.log("Asking the proxy to get the stock");
+                const event: GetAllOrderEvent = new GetAllOrderEvent(
+                    req.originalUrl,
+                    req.headers.authorization
+                );
+                producer.send(
+                    topicList[0],
+                    event.toJSON()
+                ).then((result: any) => {
+                    console.log("Result from proxy", result);
+                    res.status(200).json(result);
+                }).catch((error: any) => {
+                    console.log("Error in findAll method: ", error);
+                    res.status(500).send("Error in findAll method");
+                });
+                return;
+            }
+
             const orders: Order[] = [];
             for await (const id of redis.scanIterator()) {
                 const value = await redis.get(id);
@@ -123,31 +119,6 @@ const orders = {
     // Add a new product
     add: async (req: any, res: any) => {
         try {
-            // ## COMMENTED CODE FOR TOKEN VERIFICATION ## //
-
-            //const token = req.headers.authorization;
-            //console.debug('Token:', token);
-
-            //if (!token) {
-            //throw new Error('No token provided');
-            //}
-
-            //const decoded = verifyJWT(token);
-
-            //if (decoded === "Invalid token") {
-            //return res.status(401).send("Invalid token");
-            //}
-
-            //const { role, email: addedBy, exp } = decoded as any;
-
-            //if (exp < Date.now().valueOf() / 1000) {
-            //return res.status(401).send("Token has expired");
-            //}
-
-            //if (role !== "admin") {
-            //return res.status(403).send("Unauthorized");
-            //}
-
             const event: OrderAddedEvent = new OrderAddedEvent(
                 uuid(),
                 req.body.customer,
