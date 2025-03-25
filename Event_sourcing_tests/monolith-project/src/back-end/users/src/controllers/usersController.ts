@@ -13,10 +13,12 @@ import {
     UserUpdatedEvent,
 } from '@src/types/events/users-events';
 import { userEventHandler } from '@src/custom-handlers/usersEventHandler';
+import { producer } from "@src/handlers/proxyHandler";
 
 // Import the password middleware
 import { generateSalt, hashPassword, verifyPassword } from '@src/middleware/password';
 import { generateJWT, verifyJWT } from '@src/middleware/token';
+import { verifyToken } from '@src/middleware/auth';
 
 
 // Setup environment variables
@@ -47,33 +49,9 @@ const redis: RedisClientType = createClient({
     url: redisUrl,
 });
 
-
-// PRODUCER
-const producer = {
-    send: async (topic: string, message: any) => {
-        const body = {
-            topic,
-            message
-        }
-
-        const result = await fetch(PROXY, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-        })
-
-        if (result.status !== 200) {
-            console.debug(result);
-            throw new Error('Error forwarding the message');
-        }
-    }
-}
-
 // CONSUMER
 const consumer = client.consumer({
-    groupId: 'users-group'
+    groupId: EVENT_CLIENT_ID,
 });
 
 // SETUP
@@ -115,7 +93,6 @@ const consumerConnect = async () => {
 
 // HTTP Controller
 const users = {
-
     // Add a user
     register: async (req: any, res: any) => {
         const { email, password } = req.body;
@@ -123,6 +100,7 @@ const users = {
         try {
             // Check if the user already exists
             let response = await redis.get(email);
+            console.log("Response: ", response);
             if (response) {
                 console.log("User already exists");
                 return res.status(409).send("User already exists");
@@ -216,24 +194,7 @@ const users = {
     },
 
     // Get all users
-    getAll: async (req: any, res: any) => {
-        const token = req.headers.authorization;
-        const decoded = verifyJWT(token);
-
-        if (decoded === "Invalid token") {
-            return res.status(401).send("Invalid token");
-        }
-
-        const { role, exp } = decoded as any;
-
-        if (exp < Date.now().valueOf() / 1000) {
-            return res.status(401).send("Token has expired");
-        }
-
-        if (role !== "admin") {
-            return res.status(403).send("Unauthorized");
-        }
-
+    getAll: async (_req: any, res: any) => {
         try {
             // Get the users from the Cassandra database
             const users: User[] = [];
@@ -258,23 +219,6 @@ const users = {
 
     // Get a user by email
     getByEmail: async (req: any, res: any) => {
-        const token = req.headers.authorization;
-        const decoded = verifyJWT(token);
-
-        if (decoded === "Invalid token") {
-            return res.status(401).send("Invalid token");
-        }
-
-        const { role, exp } = decoded as any;
-
-        if (exp < Date.now().valueOf() / 1000) {
-            return res.status(401).send("Token has expired");
-        }
-
-        if (role !== "admin") {
-            return res.status(403).send("Unauthorized");
-        }
-
         try {
             // Get the user from the Cassandra database
             const response = await redis.get(req.params.email);
@@ -295,22 +239,7 @@ const users = {
 
     // Update a user
     update: async (req: any, res: any) => {
-        const token = req.headers.authorization;
-        const decoded = verifyJWT(token);
-
-        if (decoded === "Invalid token") {
-            return res.status(401).send("Invalid token");
-        }
-
-        const { role, email: modifiedBy, exp } = decoded as any;
-
-        if (exp < Date.now().valueOf() / 1000) {
-            return res.status(401).send("Token has expired");
-        }
-
-        if (role !== "admin") {
-            return res.status(403).send("Unauthorized");
-        }
+        const { email: modifiedBy } = verifyJWT(req.headers.authorization) as any;
 
         try {
             // Get the user from the database
@@ -345,22 +274,7 @@ const users = {
 
     // Delete a user
     delete: async (req: any, res: any) => {
-        const token = req.headers.authorization;
-        const decoded = verifyJWT(token);
-
-        if (decoded === "Invalid token") {
-            return res.status(401).send("Invalid token");
-        }
-
-        const { role, email: modifiedBy, exp } = decoded as any;
-
-        if (exp < Date.now().valueOf() / 1000) {
-            return res.status(401).send("Token has expired");
-        }
-
-        if (role !== "admin" && modifiedBy !== req.params.email) {
-            return res.status(403).send("Unauthorized");
-        }
+        const { email: modifiedBy } = verifyJWT(req.headers.authorization) as any
 
         try {
             // Get the user from the database
@@ -369,8 +283,6 @@ const users = {
                 console.log("User not found");
                 return res.status(404).send("User not found");
             }
-
-            const user = JSON.parse(response);
 
             // Send an event to Kafka
             const userDeletedEvent = new UserDeletedEvent(req.params.email, modifiedBy);

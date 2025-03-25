@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import users from '../controllers/usersController';
+
+import users from '@src/controllers/usersController';
+import { 
+    verifyAdmin, 
+    verifyUser,
+    verifyUserOrAdmin
+} from '@src/middleware/auth';
 
 const router = Router();
 
@@ -10,16 +16,16 @@ router.post('/register', users.register);
 router.post('/login', users.login);
 
 // Retrieve all users
-router.get('/', users.getAll);
+router.get('/', verifyAdmin, users.getAll);
 
 // Retrieve a single user with id
-router.get('/:email', users.getByEmail);
+router.get('/:email', verifyUserOrAdmin, users.getByEmail);
 
 // Make a user an admin
-router.put('/:email', users.update);
+router.put('/:email', verifyAdmin, users.update);
 
 // Delete a user
-router.delete('/:email', users.delete);
+router.delete('/:email', verifyUserOrAdmin, users.delete);
 
 
 export default router;
