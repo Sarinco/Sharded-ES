@@ -11,13 +11,15 @@ import {
     UserAuthenticatedEvent,
     UserDeletedEvent,
     UserUpdatedEvent,
+    GetUserEvent,
+    GetAllUserEvent,
 } from '@src/types/events/users-events';
 import { userEventHandler } from '@src/custom-handlers/usersEventHandler';
 import { producer } from "@src/handlers/proxyHandler";
 
 // Import the password middleware
 import { generateSalt, hashPassword, verifyPassword } from '@src/middleware/password';
-import { generateJWT, verifyJWT } from '@src/middleware/token';
+import { generateJWT, verifyJWT, generateServiceToken } from '@src/middleware/token';
 import { verifyToken } from '@src/middleware/auth';
 
 
@@ -31,10 +33,7 @@ const client = new Kafka({
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "users-service";
 
-const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
-const PROXY_PORT = process.env.PROXY_PORT;
-const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
-
+const SERVICE_TOKEN = generateServiceToken("users-service");
 
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;
@@ -99,9 +98,19 @@ const users = {
 
         try {
             // Check if the user already exists
-            let response = await redis.get(email);
-            console.log("Response: ", response);
-            if (response) {
+            // Get the user
+            const event: GetUserEvent = new GetUserEvent(
+                email,
+                `/api/users/${email}`,
+                req.headers.authorization
+            );
+
+            const response = await producer.send(
+                topic[0],
+                event.toJSON()
+            );
+
+            if (response.status !== 404) {
                 console.log("User already exists");
                 return res.status(409).send("User already exists");
             }
@@ -141,9 +150,22 @@ const users = {
         const { email, password } = req.body;
 
         try {
-            // Get the user from the database
-            const response = await redis.get(email);
-            if (!response) {
+            // Get the user
+            const event: GetUserEvent = new GetUserEvent(
+                email,
+                `/api/users/${email}`,
+                req.headers.authorization
+            );
+
+            const response = await producer.send(
+                topic[0],
+                event.toJSON()
+            ).catch((error: any) => {
+                console.log("Error in get user by email method: ", error);
+                res.status(500).send("Error in get user by email method");
+            });
+
+            if (!response || response.status == 404) {
                 console.log("User not found");
 
                 // Send an event to Kafka
@@ -153,7 +175,8 @@ const users = {
                 return res.status(404).send("User not found");
             }
 
-            const user = JSON.parse(response);
+            console.log("User found: ", response);
+            const user = await response.json();
             const storedHash = user.hash;
             const storedSalt = user.salt;
 
@@ -194,8 +217,33 @@ const users = {
     },
 
     // Get all users
-    getAll: async (_req: any, res: any) => {
+    getAll: async (req: any, res: any) => {
         try {
+            const ask_proxy = req.query.ask_proxy;
+            if (!ask_proxy) {
+                console.log("Asking the proxy to get the stock");
+                const event: GetAllUserEvent = new GetAllUserEvent(
+                    req.originalUrl,
+                    SERVICE_TOKEN
+                );
+                console.log("Event: ", event);
+                producer.send(
+                    topic[0],
+                    event.toJSON()
+                ).then((result: any) => {
+                    console.log("Result from proxy", result);
+                    if (result.status !== 200) {
+                        res.status(result.status).send(result.message);
+                        return;
+                    }
+                    res.status(200).json(result);
+                }).catch((error: any) => {
+                    console.log("Error in get user by email method: ", error);
+                    res.status(500).send("Error in get user by email method");
+                });
+                return;
+            }
+
             // Get the users from the Cassandra database
             const users: User[] = [];
             for await (const email of redis.scanIterator()) {
@@ -220,7 +268,32 @@ const users = {
     // Get a user by email
     getByEmail: async (req: any, res: any) => {
         try {
-            // Get the user from the Cassandra database
+            const ask_proxy = req.query.ask_proxy;
+            if (!ask_proxy) {
+                console.log("Asking the proxy to get the stock");
+                const event: GetUserEvent = new GetUserEvent(
+                    req.params.email,
+                    req.originalUrl,
+                    req.headers.authorization
+                );
+                producer.send(
+                    topic[0],
+                    event.toJSON()
+                ).then((result: any) => {
+                    console.log("Result from proxy", result);
+                    if (result.status !== 200) {
+                        res.status(result.status).send(result.message);
+                        return;
+                    }
+                    res.status(200).json(result);
+                }).catch((error: any) => {
+                    console.log("Error in get user by email method: ", error);
+                    res.status(500).send("Error in get user by email method");
+                });
+                return;
+            }
+
+            console.debug(`Looking for user ${req.params.email}`)
             const response = await redis.get(req.params.email);
             if (!response) {
                 console.log("User not found");

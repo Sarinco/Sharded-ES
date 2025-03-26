@@ -9,6 +9,7 @@ import {
     DecreaseStockEvent,
     UpdateStockEvent,
     GetStockEvent,
+    GetAllStockEvent,
 } from "@src/types/events/stock-event";
 import { producer } from "@src/handlers/proxyHandler";
 
@@ -149,12 +150,12 @@ const stock = {
         console.log(`Ask proxy: ${ask_proxy}`);
         console.log(`Request: ${req.originalUrl}`);
 
-        const warehouse = req.query.warehouse;
+        const warehouses = req.query.warehouse;
         if (!ask_proxy) {
             console.log("Asking the proxy to get the stock");
             const event: GetStockEvent = new GetStockEvent(
                 req.params.id,
-                warehouse,
+                warehouses,
                 req.originalUrl,
                 '',
             );
@@ -163,8 +164,16 @@ const stock = {
                 'stock',
                 event.toJSON(),
             ).then((result: any) => {
-                console.log(`Result from the proxy: ${result}`);
-                res.status(200).json(result);
+                if (result.status !== 200) {
+                    console.log("Error in findAll method: ", result);
+                    res.status(500).send("Error in findAll method");
+                }
+                result.json().then((data: any) => {
+                    res.status(200).send(data);
+                }).catch((error: any) => {
+                    console.log("Error in findAll method when converting to json: ", error);
+                    res.status(500).send("Error in findAll method when converting to json");
+                });
             }).catch((error: any) => {
                 console.log("Error in sending stock get event: ", error);
                 res.status(500).send("Error in sending stock get event");
@@ -180,39 +189,104 @@ const stock = {
         }
 
         let stock_id;
-        let stock: any;
-        if (!warehouse) {
-            // Get all the warehouses whre the product is stored
+        let stocks: any;
+        if (!warehouses) {
+            // Get all the warehouses where the product is stored
             const warehouses = await redis.lRange(id, 0, -1);
             console.log("Warehouses: ", warehouses);
             console.log("ID: ", id);
-            stock = [];
+            stocks = [];
             if (warehouses.length === 0) {
-                res.status(200).send(stock);
+                res.status(200).send(stocks);
                 return;
             }
             for (const warehouse of warehouses) {
                 stock_id = id + ":" + warehouse;
                 let stock_entry = await redis.hGet(`${id}:${warehouse}`, 'stock');
                 console.log("Stock entry: ", stock_entry);
-                stock.push({
+                stocks.push({
                     warehouse: warehouse,
                     stock: stock_entry
                 });
             }
-            res.status(200).send(stock);
+            res.status(200).send(stocks);
             return;
         } else {
-            console.log(`Getting stock for product ${id} in warehouse ${warehouse}`);
-            stock_id = id + ":" + warehouse;
-            stock = await redis.hGet(stock_id, 'stock');
-            console.log("Stock: ", stock);
-            if (stock === null) {
-                stock = "0";
+            // Get all the warehouses where the product is stored
+            let warehouses_list = warehouses.split(",");
+            stocks = [];
+            for (const warehouse of warehouses_list) {
+                console.log(`Getting stock for product ${id} in warehouse ${warehouse}`);
+                stock_id = id + ":" + warehouse;
+                let stock = await redis.hGet(stock_id, 'stock');
+                console.log("Stock: ", stock);
+                if (stocks === null) {
+                    stock = "0";
+                }
+                stocks.push({
+                    warehouse: warehouse,
+                    stock: stock
+                });
             }
-            res.status(200).send(stock);
+            res.status(200).send(stocks);
             return;
         }
+    },
+
+    getAllStock: async (req: any, res: any) => {
+        const ask_proxy = req.query.ask_proxy;
+        const warehouses = req.query.warehouse;
+        if (!ask_proxy) {
+            console.log("Asking the proxy to get the stock");
+            const event: GetAllStockEvent = new GetAllStockEvent(
+                req.originalUrl,
+                req.headers.authorization,
+                warehouses,
+            );
+
+            producer.send(
+                'stock',
+                event.toJSON(),
+            ).then((result: any) => {
+                if (result.status !== 200) {
+                    console.log("Error in findAll method: ", result);
+                    res.status(500).send("Error in findAll method");
+                }
+                result.json().then((data: any) => {
+                    res.status(200).send(data);
+                }).catch((error: any) => {
+                    console.log("Error in findAll method when converting to json: ", error);
+                    res.status(500).send("Error in findAll method when converting to json");
+                });
+            }).catch((error: any) => {
+                console.log("Error in sending stock get event: ", error);
+                res.status(500).send("Error in sending stock get event");
+            });
+            return;
+        }
+
+        const stocks: any = [];
+        for await (const id of redis.scanIterator()) {
+            // Check if the key is an list or a hash
+            const type = await redis.type(id);
+            if (type === 'list') {
+                let stock = [];
+                const warehouses = await redis.lRange(id, 0, -1);
+                for (const warehouse of warehouses) {
+                    const stock_id = id + ":" + warehouse;
+                    const stock_entry = await redis.hGet(stock_id, 'stock');
+                    stock.push({
+                        warehouse: warehouse,
+                        stock: stock_entry
+                    });
+                }
+                stocks.push({
+                    id: id,
+                    stock: stock
+                });
+            }
+        }
+        res.status(200).send(stocks);
     },
 
     // Set the stock of a product

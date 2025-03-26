@@ -9,6 +9,10 @@
         result.ask_all = true;
     }
 
+    if (event.type == "GetAllStock" && event.data.warehouse == undefined) {
+        result.ask_all = true;
+    }
+
     switch (event.data.warehouse) {
         case 'charleroi':
         case 'charleroi-ouest':
@@ -21,20 +25,15 @@
         case 'louvain-north':
         case 'louvain':
             result.region = ['eu-be'];
-            return result;
+            break;
         case 'barcelona':
         case 'madrid':
         case 'seville':
         case 'valencia':
             result.region = ['eu-spain'];
-            return result;
+            break;
         default:
             console.log("No case for this type: " + event.type);
-            return result;
     }
-    console.log("No case for this event");
-    return {
-        action: 'shard',
-        region: ['eu-be']
-    }
+    return result;
 }

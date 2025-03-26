@@ -168,7 +168,7 @@ export class GetAllProductEvent extends CQRSEvent {
             value: JSON.stringify({
                 type: "GetAllProduct",
                 path: this.path,
-                header: this.auth,
+                auth: this.auth,
                 data: {
                 }
             })

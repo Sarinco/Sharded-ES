@@ -17,6 +17,15 @@ export function generateJWT(email: string, role: string): string {
     return token;
 }
 
+export function generateServiceToken(service: string): string {
+    // Generate a token for the service with no expiration
+    let token = sign({
+        service: service
+    }, JWT_SECRET);
+    return token;
+}
+        
+
 // Verify a JWT token
 export function verifyJWT(token: string): string | object {
     try {

@@ -52,7 +52,7 @@ export class GetAllOrderEvent extends CQRSEvent {
             value: JSON.stringify({
                 type: "GetAllOrder",
                 path: this.path,
-                header: this.auth,
+                auth: this.auth,
                 data: {
                 }
             })

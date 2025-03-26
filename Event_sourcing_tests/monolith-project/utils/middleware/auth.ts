@@ -14,6 +14,11 @@ export function verifyToken(req: any, res: any)  {
 
     const { role, email: added_by, exp } = decoded as any;
 
+    // For no expiration, used by services
+    if (exp === undefined) {
+        return decoded;
+    }
+
     if (exp < Date.now().valueOf() / 1000) {
         return res.status(401).send("Token has expired");
     }

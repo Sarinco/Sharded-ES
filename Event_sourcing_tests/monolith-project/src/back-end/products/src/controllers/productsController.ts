@@ -106,8 +106,16 @@ const stock = {
                     topic[0],
                     event.toJSON()
                 ).then((result: any) => {
-                    console.log("Result from proxy", result);
-                    res.status(200).json(result);
+                    if (result.status !== 200) {
+                        console.log("Error in findAll method: ", result);
+                        res.status(500).send("Error in findAll method");
+                    }
+                    result.json().then((data: any) => {
+                        res.status(200).send(data);
+                    }).catch((error: any) => {
+                        console.log("Error in findAll method when converting to json: ", error);
+                        res.status(500).send("Error in findAll method when converting to json");
+                    });
                 }).catch((error: any) => {
                     console.log("Error in findAll method: ", error);
                     res.status(500).send("Error in findAll method");

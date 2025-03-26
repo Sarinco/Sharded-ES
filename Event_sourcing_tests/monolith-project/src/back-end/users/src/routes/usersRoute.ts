@@ -19,7 +19,7 @@ router.post('/login', users.login);
 router.get('/', verifyAdmin, users.getAll);
 
 // Retrieve a single user with id
-router.get('/:email', verifyUserOrAdmin, users.getByEmail);
+router.get('/:email', users.getByEmail);
 
 // Make a user an admin
 router.put('/:email', verifyAdmin, users.update);

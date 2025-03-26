@@ -1,9 +1,10 @@
+require('module-alias/register');
 
 import { client, topicList } from './controllers/orderController';
 import { MemberDescription } from 'kafkajs';
 
 const PORT: number = parseInt(process.env.PORT as string);
-const group = 'orders-group';
+const group = process.env.EVENT_CLIENT_ID as string;
 
 const initDB = async () => {
     try {

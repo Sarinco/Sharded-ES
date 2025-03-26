@@ -100,8 +100,8 @@ app.get('/health', (_req: Request, res: Response) => {
 // Forwards the message to the gateway and returns the response
 app.post('/gateway-forward', (req: Request, res: Response) => {
     if (GATEWAY_PORT == undefined || GATEWAY_ADDRESS == undefined) {
-        console.log('Please provide the gateway address and port');
-        res.status(200).send();
+        console.log('Please provide the gateway address and port sending empty array');
+        res.status(200).json([]);
         return;
     }
 
@@ -176,6 +176,11 @@ app.post('/', (req: Request, res: Response) => {
                     },
                 }).then((response) => {
                     console.log('Response from the gateway: ', response);
+                    if (response.status !== 200) {
+                        console.log('Error forwarding the message to the gateway');
+                        res.status(response.status).send('Error forwarding the message to the gateway');
+                        return;
+                    }
                     response.json().then((data) => {
                         res.status(200).send(data);
                     });
@@ -259,8 +264,53 @@ app.post('/', (req: Request, res: Response) => {
                     if (data.length > 0 && data[0].length > 0) {
                         data = data.flat();
                     }
-                    console.log('Data: ', data);
-                    res.status(200).send(data);
+                    // INFO: If the data has id field, it will be merged
+
+                    // Create a map to store all objects by id
+                    const mergedMap = new Map();
+
+                    // Helper function to merge two objects
+                    const mergeObjects = (obj1: any, obj2: any) => {
+                        const result = { ...obj1 };
+                        for (const key of Object.keys(obj2)) {
+                            if (Array.isArray(result[key]) && Array.isArray(obj2[key])) {
+                                // If both properties are arrays, concatenate them
+                                result[key] = [...result[key], ...obj2[key]];
+                            } else if (typeof result[key] === 'object' && typeof obj2[key] === 'object') {
+                                // If both properties are objects, merge them recursively
+                                result[key] = mergeObjects(result[key], obj2[key]);
+                            } else {
+                                // Otherwise, overwrite the property
+                                result[key] = obj2[key];
+                            }
+                        }
+                        return result;
+                    };
+
+                    // Iterate through all objects and merge them
+                    data.forEach((item) => {
+                        if (item.id !== undefined) {
+                            const existingItem = mergedMap.get(item.id);
+
+                            if (existingItem) {
+                                // Merge the existing item with the new one
+                                mergedMap.set(item.id, mergeObjects(existingItem, item));
+                            } else {
+                                // Add the new item to the map
+                                mergedMap.set(item.id, item);
+                            }
+                        } else {
+                            // If the item doesn't have an id, add it to the map with a unique key
+                            const uniqueKey = `no-id-${mergedMap.size}`;
+                            mergedMap.set(uniqueKey, item);
+                        }
+                    });
+
+                    // Convert the map back to an array
+                    const combinedData = Array.from(mergedMap.values());
+
+                    console.log('Combined Data (FULL OUTER JOIN): ', combinedData);
+                    res.status(200).send(combinedData);
                 }).catch((error: any) => {
                     console.log('Error forwarding the message to all regions: ', error);
                     res.status(500).send('Error forwarding the message to all regions');

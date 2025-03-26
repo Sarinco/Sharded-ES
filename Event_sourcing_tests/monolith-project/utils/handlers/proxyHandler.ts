@@ -7,6 +7,11 @@ class Proxy {
         const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
         const PROXY_PORT = process.env.PROXY_PORT;
         const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
+        if (!PROXY_ADDRESS || !PROXY_PORT) {
+            console.debug('Proxy address and port not set');
+            this.url = new URL('http://localhost:80/');
+            return;
+        }
         this.url = new URL(PROXY);
         console.debug(`Proxy URL: ${this.url}`);
     }
@@ -23,7 +28,7 @@ class Proxy {
         return this.url;
     }
 
-    public async send(topic: string, message: any) {
+    public async send(topic: string, message: any): Promise<Response> {
         const body = {
             topic,
             message
@@ -39,18 +44,12 @@ class Proxy {
             body: JSON.stringify(body),
         })
 
-        if (result.status !== 200) {
+        if (result.status >= 500) {
             console.debug(result);
             throw new Error('Error forwarding the message');
         }
-
-        if (result.headers.get('Content-Type')?.includes('application/json')) {
-            return result.json();
-        }
-        return result.text().then((text) => {
-            console.debug(`Content type: ${result.headers.get('Content-Type')} and text: ${text}`);
-            return text;
-        });
+        console.debug(`Content type: ${result.headers.get('Content-Type')}`);
+        return result;
     }
 
 }
