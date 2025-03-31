@@ -1,4 +1,5 @@
 export const CONFIG_PACKET = 'config';
+export const NEW_FILTER_PACKET = 'new_filter';
 
 export const NEW_CONNECTION_PACKET = 'new_connection';
 export const LOST_CONNECTION_PACKET = 'lost_connection';
@@ -12,11 +13,11 @@ export const ID_PACKET = 'identity';
 export const BROADCAST = 'broadcast';
 export const SHARD = 'shard';
 
-export const defaultRule = (event: Event) => {
-    return {
-        action: 'broadcast',
-    }
-};
+export const defaultRule: JSON = JSON.parse('{"action": "broadcast"}');
+
+export const defaultConfig = (event: Event) => {
+    return ["default", "", ""];
+}
 
 /*
  * Different type of rule that can be used

@@ -1,0 +1,2 @@
+topic;key;value;filter
+stock;warehouse;*;{"action":"shard", "region":["eu-be"]}

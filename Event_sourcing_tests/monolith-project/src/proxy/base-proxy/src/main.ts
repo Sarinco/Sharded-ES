@@ -43,13 +43,22 @@ const GATEWAY = `http://${GATEWAY_ADDRESS}:${GATEWAY_PORT}`;
 let config_manager: ConfigManager;
 let control_plane: ControlPlane;
 
-
+function parseCsv() {
+    const csv_file = readFileSync('./src/sharder/filters.csv', 'utf-8');
+    let raw_filters = csv_file.split("\n");
+    let filters: string[][] = [];
+    for (var i = 1; i < raw_filters.length; i++) {
+        filters.push(raw_filters[i].split(";"));
+    }
+    return filters
+}
 // CONTROL PLANE
 
 // CONTROL PLANE SERVER
 if (IS_MASTER == "true") {
     const config = readFileSync('./src/config.json', 'utf-8');
-    const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, config, REGION);
+    let filters: string[][] = parseCsv();
+    const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, config, REGION, filters);
     control_plane = controlPlaneServer;
     // Start server
     controlPlaneServer.start().catch((error: any) => {
@@ -314,3 +323,5 @@ app.get('/connections', (req: Request, res: Response) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+
