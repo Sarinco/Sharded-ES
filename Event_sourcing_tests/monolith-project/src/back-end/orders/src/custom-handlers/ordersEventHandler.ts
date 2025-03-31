@@ -1,5 +1,5 @@
 import Order from  "../types/order"
-import { OrderAddedEvent } from "../types/order-events";
+import { OrderAddedEvent } from "../types/events/order-events";
 import { RedisClientType } from "redis";
 
 export async function ordersEventHandler(redis: RedisClientType, event: any) {

@@ -169,12 +169,38 @@ export class GetStockEvent extends CQRSEvent {
             value: JSON.stringify({
                 type: "GetStock",
                 path: this.path,
-                header: this.auth,
+                auth: this.auth,
                 data: {
                     product: this.product,
                     warehouse: this.warehouse
                 }
             })
+        };
+    }
+}
+
+export class GetAllStockEvent extends CQRSEvent {
+    warehouses: string;
+    constructor(path: string, auth: string, warehouses: string) {
+        super(path, auth);
+        this.warehouses = warehouses;
+    }
+
+    fromJSON(json: { path: string; auth: string; warehouses: string; }) {
+        return new GetAllStockEvent(json.path, json.auth, json.warehouses);
+    }
+
+    toJSON() {
+        return {
+            key: "No key",
+            value: JSON.stringify({
+                type: "GetAllStock",
+                path: this.path,
+                auth: this.auth,
+                data: {
+                    warehouses: this.warehouses
+                }
+                })
         };
     }
 }

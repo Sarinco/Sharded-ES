@@ -1,3 +1,4 @@
+import { CQRSEvent } from './CQRS-events';
 
 export class OrderAddedEvent {
     id: string;
@@ -34,3 +35,27 @@ export class OrderAddedEvent {
         }
     }
 };
+
+export class GetAllOrderEvent extends CQRSEvent {
+    
+    constructor(path: string, auth: string) {
+        super(path, auth);
+    }
+
+    fromJSON(json: { path: string; auth: string; }) {
+        return new GetAllOrderEvent(json.path, json.auth);
+    }
+
+    toJSON() {
+        return {
+            key: "No Key",
+            value: JSON.stringify({
+                type: "GetAllOrder",
+                path: this.path,
+                auth: this.auth,
+                data: {
+                }
+            })
+        }
+    }
+}

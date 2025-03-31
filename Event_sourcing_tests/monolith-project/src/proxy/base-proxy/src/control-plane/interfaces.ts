@@ -31,6 +31,7 @@ export const defaultConfig = (event: Event) => {
 export interface Rule {
     action: string;
     region?: string[];
+    ask_all?: boolean;
 }
 
 export interface ShardRule extends Rule {

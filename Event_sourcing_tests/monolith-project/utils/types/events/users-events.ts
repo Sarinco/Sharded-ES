@@ -1,3 +1,4 @@
+import { CQRSEvent } from "./CQRS-events";
 
 // Adding a new user event
 export class UserAddedEvent {
@@ -16,7 +17,7 @@ export class UserAddedEvent {
     static fromJSON(json: any): UserAddedEvent {
         return new UserAddedEvent(json.email, json.hash, json.salt, json.role);
     }
-    
+
     toJSON(): any {
         // Return a JSON representation for KafkaJS
         return {
@@ -126,7 +127,7 @@ export class UserUpdatedEvent {
         this.role = role;
         this.modifiedBy = modifiedBy;
     }
-    
+
     static fromJSON(json: any): UserUpdatedEvent {
         return new UserUpdatedEvent(json.email, json.hash, json.salt, json.role, json.modifiedBy);
     }
@@ -143,6 +144,57 @@ export class UserUpdatedEvent {
                     salt: this.salt,
                     role: this.role,
                     modifiedBy: this.modifiedBy
+                }
+            })
+        }
+    }
+}
+
+export class GetUserEvent extends CQRSEvent {
+    email: string;
+
+    constructor(email: string, path: string, auth: string) {
+        super(path, auth);
+        this.email = email;
+    }
+
+    fromJSON(json: { email: string; path: string; auth: string; }) {
+        return new GetUserEvent(json.email, json.path, json.auth);
+    }
+
+    toJSON() {
+        return {
+            key: this.email,
+            value: JSON.stringify({
+                type: "GetUser",
+                path: this.path,
+                auth: this.auth,
+                data: {
+                    email: this.email
+                }
+            })
+        }
+    }
+}
+
+export class GetAllUserEvent extends CQRSEvent {
+
+    constructor(path: string, auth: string) {
+        super(path, auth);
+    }
+
+    fromJSON(json: { path: string; auth: string; }) {
+        return new GetAllUserEvent(json.path, json.auth);
+    }
+
+    toJSON() {
+        return {
+            key: "No Key",
+            value: JSON.stringify({
+                type: "GetAllUser",
+                path: this.path,
+                auth: this.auth,
+                data: {
                 }
             })
         }

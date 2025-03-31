@@ -14,6 +14,9 @@ router.put('/decrease/:id', stock.decreaseStock);
 // Get the stock of a product
 router.get('/:id', stock.getStock);
 
+// Get all stocks
+router.get('/', stock.getAllStock);
+
 // Set the stock of a product
 router.post('/set/:id', verifyAdmin, stock.setStock);
 
