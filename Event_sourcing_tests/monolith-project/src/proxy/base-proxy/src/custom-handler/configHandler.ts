@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid';
 import {
     SHARD,
     Event,
@@ -7,7 +6,6 @@ import {
     defaultRule,
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
-import { createClient, RedisClientType } from 'redis';
 
 export class ConfigManager {
 
