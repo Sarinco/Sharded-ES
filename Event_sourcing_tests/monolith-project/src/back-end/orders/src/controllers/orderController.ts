@@ -5,10 +5,8 @@ import { v4 as uuid } from 'uuid';
 import Order from "../types/order";
 import {
     OrderAddedEvent,
-    GetAllOrderEvent
 } from '@src/types/events/order-events';
 import { ordersEventHandler } from "@src/custom-handlers/ordersEventHandler";
-import { ProducerFactory } from '../handlers/kafkaHandler';
 import { producer } from "@src/handlers/proxyHandler";
 
 // create a client connected to your local kafka instance
@@ -77,34 +75,6 @@ const orders = {
     // Retrieve all stocks
     findAll: async (req: any, res: any) => {
         try {
-            const ask_proxy = req.query.ask_proxy;
-            if (!ask_proxy) {
-                console.log("Asking the proxy to get the stock");
-                const event: GetAllOrderEvent = new GetAllOrderEvent(
-                    req.originalUrl,
-                    req.headers.authorization
-                );
-                producer.send(
-                    topicList[0],
-                    event.toJSON()
-                ).then((result: any) => {
-                    if (result.status !== 200) {
-                        console.log("Error in findAll method: ", result);
-                        res.status(500).send("Error in findAll method");
-                    }
-                    result.json().then((data: any) => {
-                        res.status(200).send(data);
-                    }).catch((error: any) => {
-                        console.log("Error in findAll method when converting to json: ", error);
-                        res.status(500).send("Error in findAll method when converting to json");
-                    });
-                }).catch((error: any) => {
-                    console.log("Error in findAll method: ", error);
-                    res.status(500).send("Error in findAll method");
-                });
-                return;
-            }
-
             const orders: Order[] = [];
             for await (const id of redis.scanIterator()) {
                 const value = await redis.get(id);

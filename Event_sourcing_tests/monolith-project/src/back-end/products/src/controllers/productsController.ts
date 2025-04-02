@@ -7,7 +7,6 @@ import { Product } from "@src/types/product";
 import { productEventHandler } from "@src/custom-handlers/productEventHandler";
 import { verifyJWT } from '@src/middleware/token';
 import {
-    GetAllProductEvent,
     ProductAddedEvent,
     ProductDeletedEvent,
     ProductUpdatedEvent
@@ -95,34 +94,6 @@ const stock = {
     // Retrieve all stocks
     findAll: async (req: any, res: any) => {
         try {
-            const ask_proxy = req.query.ask_proxy;
-            if (!ask_proxy) {
-                console.log("Asking the proxy to get the stock");
-                const event: GetAllProductEvent = new GetAllProductEvent(
-                    req.originalUrl,
-                    req.headers.authorization
-                );
-                producer.send(
-                    topic[0],
-                    event.toJSON()
-                ).then((result: any) => {
-                    if (result.status !== 200) {
-                        console.log("Error in findAll method: ", result);
-                        res.status(500).send("Error in findAll method");
-                    }
-                    result.json().then((data: any) => {
-                        res.status(200).send(data);
-                    }).catch((error: any) => {
-                        console.log("Error in findAll method when converting to json: ", error);
-                        res.status(500).send("Error in findAll method when converting to json");
-                    });
-                }).catch((error: any) => {
-                    console.log("Error in findAll method: ", error);
-                    res.status(500).send("Error in findAll method");
-                });
-                return;
-            }
-
             // Get the products from the Cassandra database
             const products: Product[] = [];
             for await (const id of redis.scanIterator()) {

@@ -1,0 +1,25 @@
+{
+    "port": 80,
+    "routes": [
+        {
+            "path": "/",
+            "target": "http://frontend:5173"
+        },
+        {
+            "path": "/api/products",
+            "target": "http://products:5000"
+        },
+        {
+            "path": "/api/users",
+            "target": "http://users:5010"
+        },
+        {
+            "path": "/api/stock",
+            "target": "http://stock:5020"
+        },
+        {
+            "path": "/api/orders",
+            "target": "http://orders:5050"
+        }
+    ]
+}

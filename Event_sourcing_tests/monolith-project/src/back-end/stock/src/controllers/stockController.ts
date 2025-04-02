@@ -8,8 +8,6 @@ import {
     IncreaseStockEvent,
     DecreaseStockEvent,
     UpdateStockEvent,
-    GetStockEvent,
-    GetAllStockEvent,
 } from "@src/types/events/stock-event";
 import { producer } from "@src/handlers/proxyHandler";
 
@@ -146,42 +144,7 @@ const stock = {
     // Get the stock of a product
     getStock: async (req: any, res: any) => {
         // Check if the request need to get forwarded to the proxy
-        const ask_proxy = req.query.ask_proxy;
-        console.log(`Ask proxy: ${ask_proxy}`);
-        console.log(`Request: ${req.originalUrl}`);
-
         const warehouses = req.query.warehouse;
-        if (!ask_proxy) {
-            console.log("Asking the proxy to get the stock");
-            const event: GetStockEvent = new GetStockEvent(
-                req.params.id,
-                warehouses,
-                req.originalUrl,
-                '',
-            );
-
-            producer.send(
-                'stock',
-                event.toJSON(),
-            ).then((result: any) => {
-                if (result.status !== 200) {
-                    console.log("Error in findAll method: ", result);
-                    res.status(500).send("Error in findAll method");
-                }
-                result.json().then((data: any) => {
-                    res.status(200).send(data);
-                }).catch((error: any) => {
-                    console.log("Error in findAll method when converting to json: ", error);
-                    res.status(500).send("Error in findAll method when converting to json");
-                });
-            }).catch((error: any) => {
-                console.log("Error in sending stock get event: ", error);
-                res.status(500).send("Error in sending stock get event");
-            });
-            return;
-        }
-
-        console.log(`Path of the request: ${req.originalUrl}`);
         const id = req.params.id;
         if (!id) {
             res.status(400).send("Bad request");
@@ -234,38 +197,9 @@ const stock = {
     },
 
     getAllStock: async (req: any, res: any) => {
-        const ask_proxy = req.query.ask_proxy;
         const warehouses = req.query.warehouse;
-        if (!ask_proxy) {
-            console.log("Asking the proxy to get the stock");
-            const event: GetAllStockEvent = new GetAllStockEvent(
-                req.originalUrl,
-                req.headers.authorization,
-                warehouses,
-            );
-
-            producer.send(
-                'stock',
-                event.toJSON(),
-            ).then((result: any) => {
-                if (result.status !== 200) {
-                    console.log("Error in findAll method: ", result);
-                    res.status(500).send("Error in findAll method");
-                }
-                result.json().then((data: any) => {
-                    res.status(200).send(data);
-                }).catch((error: any) => {
-                    console.log("Error in findAll method when converting to json: ", error);
-                    res.status(500).send("Error in findAll method when converting to json");
-                });
-            }).catch((error: any) => {
-                console.log("Error in sending stock get event: ", error);
-                res.status(500).send("Error in sending stock get event");
-            });
-            return;
-        }
-
         const stocks: any = [];
+        console.log('Getting all the stock in local area');
         for await (const id of redis.scanIterator()) {
             // Check if the key is an list or a hash
             const type = await redis.type(id);

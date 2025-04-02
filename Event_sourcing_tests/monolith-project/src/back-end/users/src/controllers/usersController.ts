@@ -11,8 +11,6 @@ import {
     UserAuthenticatedEvent,
     UserDeletedEvent,
     UserUpdatedEvent,
-    GetUserEvent,
-    GetAllUserEvent,
 } from '@src/types/events/users-events';
 import { userEventHandler } from '@src/custom-handlers/usersEventHandler';
 import { producer } from "@src/handlers/proxyHandler";
@@ -99,18 +97,9 @@ const users = {
         try {
             // Check if the user already exists
             // Get the user
-            const event: GetUserEvent = new GetUserEvent(
-                email,
-                `/api/users/${email}`,
-                req.headers.authorization
-            );
+            const response = await redis.get(email);
 
-            const response = await producer.send(
-                topic[0],
-                event.toJSON()
-            );
-
-            if (response.status !== 404) {
+            if (response) {
                 console.log("User already exists");
                 return res.status(409).send("User already exists");
             }
@@ -151,21 +140,9 @@ const users = {
 
         try {
             // Get the user
-            const event: GetUserEvent = new GetUserEvent(
-                email,
-                `/api/users/${email}`,
-                req.headers.authorization
-            );
+            const response = await redis.get(email);
 
-            const response = await producer.send(
-                topic[0],
-                event.toJSON()
-            ).catch((error: any) => {
-                console.log("Error in get user by email method: ", error);
-                res.status(500).send("Error in get user by email method");
-            });
-
-            if (!response || response.status == 404) {
+            if (!response) {
                 console.log("User not found");
 
                 // Send an event to Kafka
@@ -176,7 +153,7 @@ const users = {
             }
 
             console.log("User found: ", response);
-            const user = await response.json();
+            const user = JSON.parse(response);
             const storedHash = user.hash;
             const storedSalt = user.salt;
 
@@ -219,31 +196,6 @@ const users = {
     // Get all users
     getAll: async (req: any, res: any) => {
         try {
-            const ask_proxy = req.query.ask_proxy;
-            if (!ask_proxy) {
-                console.log("Asking the proxy to get the stock");
-                const event: GetAllUserEvent = new GetAllUserEvent(
-                    req.originalUrl,
-                    SERVICE_TOKEN
-                );
-                console.log("Event: ", event);
-                producer.send(
-                    topic[0],
-                    event.toJSON()
-                ).then((result: any) => {
-                    console.log("Result from proxy", result);
-                    if (result.status !== 200) {
-                        res.status(result.status).send(result.message);
-                        return;
-                    }
-                    res.status(200).json(result);
-                }).catch((error: any) => {
-                    console.log("Error in get user by email method: ", error);
-                    res.status(500).send("Error in get user by email method");
-                });
-                return;
-            }
-
             // Get the users from the Cassandra database
             const users: User[] = [];
             for await (const email of redis.scanIterator()) {
@@ -268,31 +220,6 @@ const users = {
     // Get a user by email
     getByEmail: async (req: any, res: any) => {
         try {
-            const ask_proxy = req.query.ask_proxy;
-            if (!ask_proxy) {
-                console.log("Asking the proxy to get the stock");
-                const event: GetUserEvent = new GetUserEvent(
-                    req.params.email,
-                    req.originalUrl,
-                    req.headers.authorization
-                );
-                producer.send(
-                    topic[0],
-                    event.toJSON()
-                ).then((result: any) => {
-                    console.log("Result from proxy", result);
-                    if (result.status !== 200) {
-                        res.status(result.status).send(result.message);
-                        return;
-                    }
-                    res.status(200).json(result);
-                }).catch((error: any) => {
-                    console.log("Error in get user by email method: ", error);
-                    res.status(500).send("Error in get user by email method");
-                });
-                return;
-            }
-
             console.debug(`Looking for user ${req.params.email}`)
             const response = await redis.get(req.params.email);
             if (!response) {
