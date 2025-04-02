@@ -183,15 +183,14 @@ export class ControlPlaneServer extends ControlPlane {
         socket.write(JSON.stringify(packet) + "%end%");
 
         // send filter to the client
-
-        for (const filter in this.filters) {
+        this.filters.forEach(filter => {
             packet = {
                 type: NEW_FILTER_PACKET,
                 data: filter
             };
 
             socket.write(JSON.stringify(packet) + "%end%");
-        }
+        });
 
 
         // Add client to active sockets

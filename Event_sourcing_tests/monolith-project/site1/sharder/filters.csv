@@ -1,2 +1,3 @@
 topic;key;value;filter
-stock;warehouse;*;{"action":"shard", "region":["eu-be"]}
+stock;warehouse;charleroi-sud;{"action":"shard", "region":["eu-be"]}
+stock;warehouse;*;{"action":"shard", "region":["eu-spain"]}

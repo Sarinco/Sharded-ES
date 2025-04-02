@@ -44,8 +44,13 @@ export class ConfigManager {
         }
     }
 
-    addFilter(parameters: string[]): boolean{
-        return this.filter_tree.addFilter(parameters);
+    addFilter(parameters: string[]){
+         let b:boolean = this.filter_tree.addFilter(parameters);
+         if (b){
+            console.log("filter successfully added : ", parameters);
+         } else {
+            console.log("Failed to add filter : ", parameters);
+         }
     }
 
     /**
@@ -62,7 +67,9 @@ export class ConfigManager {
             return this.filter_tree.getDefault();
         }
         const extracted_data = callback(event.message.value);
+        console.log("EXTRACTED DATA : ", extracted_data);
         const result = this.filter_tree.getFilter(extracted_data);
+        console.log(result);
 
         return result;
     }

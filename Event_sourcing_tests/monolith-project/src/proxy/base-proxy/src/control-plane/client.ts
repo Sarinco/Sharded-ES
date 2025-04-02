@@ -7,6 +7,7 @@ import {
     NEW_CONNECTION_PACKET,
     NewConnectionPacket,
     LOST_CONNECTION_PACKET,
+    NEW_FILTER_PACKET
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
 
@@ -74,6 +75,10 @@ export class ControlPlaneClient extends ControlPlane {
             switch (data_json.type) {
                 case CONFIG_PACKET:
                     this.config_manager.setConfig(data_json.data);
+                    break;
+                
+                case NEW_FILTER_PACKET:
+                    this.config_manager.addFilter(data_json.data);
                     break;
 
                 case NEW_CONNECTION_PACKET:
