@@ -18,7 +18,7 @@ export class ControlPlane {
     constructor(region: string) {
         this.connections = new Map();
         this.ip_region = new Map();
-        this.config_manager = new ConfigManager(this);
+        this.config_manager = new ConfigManager();
         this.region = region;
         this.socket_buffer = "";
     }

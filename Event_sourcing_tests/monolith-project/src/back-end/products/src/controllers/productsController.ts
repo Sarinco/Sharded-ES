@@ -147,8 +147,13 @@ const stock = {
     // Add a new product
     add: async (req: any, res: any) => {
         try {
-            const added_by = req.decoded.email;
+            const { email: added_by } = verifyJWT(req.headers.authorization) as any;
 
+            console.log(added_by);
+            if (added_by == undefined) {
+                res.status(400).send("Problem with token");
+            }
+            console.log(req.body);
             if (req.body.name === undefined || req.body.name === "") {
                 res.status(400).send("Invalid name");
                 return;

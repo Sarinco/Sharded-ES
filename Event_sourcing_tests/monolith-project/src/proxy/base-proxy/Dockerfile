@@ -18,5 +18,5 @@ COPY . .
 ARG PORT
 
 # health check
-HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=5s --retries=10 \
   CMD curl --fail http://localhost:${PORT}/health || exit 1

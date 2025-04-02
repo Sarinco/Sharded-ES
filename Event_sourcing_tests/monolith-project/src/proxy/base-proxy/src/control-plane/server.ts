@@ -6,6 +6,7 @@ import {
     Config,
     RawControlPacket,
     CONFIG_PACKET,
+    NEW_FILTER_PACKET,
     NEW_CONNECTION_PACKET,
     ID_PACKET,
     LOST_CONNECTION_PACKET,
@@ -13,6 +14,7 @@ import {
     BROADCAST,
     defaultRule,
     NewConnectionPacket,
+    defaultConfig
 } from '@src/control-plane/interfaces';
 import {
     ControlPlane
@@ -38,16 +40,18 @@ export class ControlPlaneServer extends ControlPlane {
     private port: number;
     private config: Config[];
     private sockets: Map<string, net.Socket>;
+    private filters: string[][];
 
-    constructor(port: number, config: string, region: string) {
+    constructor(port: number, config: string, region: string, filters:string[][]) {
         super(region);
         this.port = port;
         this.server = net.createServer();
-        this.config = this.configFilters(JSON.parse(config));
+        this.config = this.configExtractor(JSON.parse(config));
         this.sockets = new Map();
+        this.filters = filters; 
     }
 
-    configFilters(RawConfig: Config[]): Config[] {
+    configExtractor(RawConfig: Config[]): Config[] {
         for (const conf of RawConfig) {
             switch (conf.action) {
                 case SHARD:
@@ -62,7 +66,7 @@ export class ControlPlaneServer extends ControlPlane {
                     conf.shardKeyProducer = new_rules;
                     break;
                 case BROADCAST:
-                    conf.shardKeyProducer = defaultRule.toString();
+                    conf.shardKeyProducer = defaultConfig.toString();
                     break;
                 default:
                     console.log('Unknown action');
@@ -73,7 +77,7 @@ export class ControlPlaneServer extends ControlPlane {
 
     // Start the server
     start(): Promise<void> {
-        this.config_manager.setConfig(this.config);
+        this.config_manager.setConfig(this.config, this.filters);
 
         return new Promise((resolve, reject) => {
             this.server.listen(this.port, () => {
@@ -177,6 +181,16 @@ export class ControlPlaneServer extends ControlPlane {
         };
 
         socket.write(JSON.stringify(packet) + "%end%");
+
+        // send filter to the client
+        this.filters.forEach(filter => {
+            packet = {
+                type: NEW_FILTER_PACKET,
+                data: filter
+            };
+
+            socket.write(JSON.stringify(packet) + "%end%");
+        });
 
 
         // Add client to active sockets
