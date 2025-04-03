@@ -6,7 +6,7 @@ require('module-alias/register');
 // Custom imports
 import { overrideConsole } from '@src/helper/console';
 import { ControlPlaneClient } from '@src/control-plane/client';
-import { ConfigManager } from '@src/custom-handler/configHandler';
+import { ConfigManager } from '@src/handlers/configHandler';
 import {
     ID_PACKET,
 } from '@src/control-plane/interfaces';

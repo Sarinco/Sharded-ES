@@ -1,7 +1,7 @@
 import net from 'net';
 import { readFileSync } from 'fs';
 
-import { ConfigManager } from "@src/custom-handler/configHandler";
+import { ConfigManager } from "@src/handlers/configHandler";
 import {
     Config,
     RawControlPacket,

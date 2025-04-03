@@ -7,7 +7,7 @@ require('module-alias/register');
 import { ProducerFactory } from '@src/handlers/kafkaHandler';
 import { ControlPlaneServer } from '@src/control-plane/server';
 import { ControlPlaneClient } from '@src/control-plane/client';
-import { ConfigManager } from '@src/custom-handler/configHandler';
+import { ConfigManager } from '@src/handlers/configHandler';
 import {
     ID_PACKET,
     BROADCAST,

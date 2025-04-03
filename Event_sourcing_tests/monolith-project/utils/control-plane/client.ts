@@ -1,5 +1,5 @@
 import net from 'net';
-import { ConfigManager } from "@src/custom-handler/configHandler";
+import { ConfigManager } from "@src/handlers/configHandler";
 import {
     RawControlPacket,
     CONFIG_PACKET,

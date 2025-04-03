@@ -9,8 +9,6 @@ import { ControlPlane } from '@src/control-plane/control-plane';
 
 export class ConfigManager {
 
-
-
     private rule_map: Map<string, Function>;
     private filter_tree: filterNodes;
 
@@ -73,21 +71,21 @@ export class ConfigManager {
     }
 }
 
-interface filterTree{
+interface FilterTree{
 
     addFilter(parameters: string[]): boolean;
 
     getFilter(parameters: string[]): Rule;
 }
 
-class filterNodes implements filterTree{
+class filterNodes implements FilterTree{
 
-    nodes: Map<string, filterTree>;
+    nodes: Map<string, FilterTree>;
     depth: number;
 
     constructor(depth: number = 0) {
         this.nodes = new Map();
-        this.nodes.set("default", new filterLeaf(defaultRule))
+        this.nodes.set("default", new FilterLeaf(defaultRule))
         this.depth = depth;
     }
 
@@ -109,12 +107,12 @@ class filterNodes implements filterTree{
                 return new_filter.addFilter(parameters);
             } else {
                 if (current_val == "*") current_val = "default";
-                this.nodes.set(current_val, new filterLeaf(JSON.parse(parameters[3])));
+                this.nodes.set(current_val, new FilterLeaf(JSON.parse(parameters[3])));
                 return true;   
             }
         }else {
 
-            let target: filterTree | undefined = this.nodes.get(current_val);
+            let target: FilterTree | undefined = this.nodes.get(current_val);
             if (!target) {
                 console.log("Error in the target retreival, addFilter Method");
                 return false;
@@ -150,7 +148,7 @@ class filterNodes implements filterTree{
     }
 }
 
-class filterLeaf implements filterTree{
+class FilterLeaf implements FilterTree {
 
     rule: JSON;
 
