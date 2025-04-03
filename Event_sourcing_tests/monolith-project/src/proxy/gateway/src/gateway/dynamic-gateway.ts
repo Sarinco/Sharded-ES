@@ -97,14 +97,11 @@ export class DynamicGateway {
                 (router as any)[method.toLowerCase()]('/', async (req: express.Request, res: express.Response) => {
                     try {
                         // Here you would implement the actual request forwarding
-                        let response: globalThis.Response;
                         if (method === 'GET') {
-                            response = await this.getRequestForward(req);
+                            await this.getRequestForward(req, res);
                         } else {
-                            response = await this.forwardRequest(req);
+                            await this.forwardRequest(req, res);
                         }
-                        const data = await response.json();
-                        res.status(response.status).send(data);
                     } catch (error) {
                         console.error('Error in forwarding request: ', error);
                         res.status(500).send({ error: 'Gateway error' });
@@ -114,15 +111,15 @@ export class DynamicGateway {
 
             this.app.use(route.path, router);
         });
-        this.printRoutes();
+        // this.printRoutes();
     }
 
-    private async forwardRequest(req: Request): Promise<globalThis.Response> {
+    private async forwardRequest(req: Request, res: Response) {
         const route = this.forwardingTree.getRoute(req.originalUrl);
         if (!route) throw new Error('Route not found');
 
         const target = route.target;
-        const path = route.path;
+        const path = req.originalUrl;
 
         if (!target) {
             throw new Error('No target found');
@@ -133,32 +130,41 @@ export class DynamicGateway {
 
         const url = `${target}/${path || ''}`.replace(/\/+/g, '/'); // Normalize URL
 
-        // Clone headers and remove 'host' (target server may reject it)
-        const headers = { ...req.headers } as Record<string, string>;
-        delete headers['host'];
-
-        // Handle body based on content-type
-        let body: BodyInit | undefined;
-        if (req.body) {
-            if (headers['content-type']?.includes('application/json')) {
-                body = JSON.stringify(req.body); // Stringify JSON
-            } else if (Buffer.isBuffer(req.body) || typeof req.body === 'string') {
-                body = req.body as BodyInit; // Use as-is for buffers/text
-            } else {
-                body = req.body.toString(); // Fallback
-            }
-        }
-
-        // Forward the request
-        return fetch(url, {
+        console.info(`Proxying to ${url}`);
+        const response = await axios({
             method: req.method,
-            headers,
-            body,
+            url: url,
+            data: req.body,
+            headers: { ...req.headers, host: new URL(url).host }
         });
+        res.status(response.status).send(response.data);
     }
 
-    private async getRequestForward(req: Request): Promise<globalThis.Response> {
-        throw new Error('Method not implemented.');
+    private async getRequestForward(req: Request, res: Response) {
+        const route = this.forwardingTree.getRoute(req.originalUrl);
+        if (!route) throw new Error('Route not found');
+
+        const target = route.target;
+        const path = req.originalUrl;
+
+        if (!target) {
+            throw new Error('No target found');
+        }
+        if (path === undefined) {
+            throw new Error('No path found');
+        }
+
+        const url = `${target}/${path || ''}`.replace(/\/+/g, '/'); // Normalize URL
+
+        console.debug(`Proxying to ${url}`);
+        const response = await axios({
+            method: req.method,
+            url: url,
+            data: req.body,
+            headers: { ...req.headers, host: new URL(url).host }
+        });
+        console.debug(`Response ${response.status}: ${response.data}`)
+        res.status(response.status).send(response.data);
     }
 
     public start() {
