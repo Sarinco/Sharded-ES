@@ -43,8 +43,15 @@ services:
       REGION: "eu-be"
       MASTER: "proxy-1"
       CONTROL_PORT: "7000"
+    networks:
+      - default
+      - proxy
+
 
 networks:
   default:
     name: site1
     driver: bridge
+  proxy:
+    name: proxy
+    external: true

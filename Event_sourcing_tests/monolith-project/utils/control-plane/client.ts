@@ -3,11 +3,11 @@ import { ConfigManager } from "@src/handlers/configHandler";
 import {
     RawControlPacket,
     CONFIG_PACKET,
-    ID_PACKET,
-    NEW_CONNECTION_PACKET,
-    NewConnectionPacket,
-    LOST_CONNECTION_PACKET,
-    NEW_FILTER_PACKET
+    NEW_PROXY_CONNECTION_PACKET,
+    LOST_PROXY_CONNECTION_PACKET,
+    NEW_FILTER_PACKET,
+    NEW_GATEWAY_CONNECTION_PACKET,
+    LOST_GATEWAY_CONNECTION_PACKET
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
 
@@ -81,33 +81,44 @@ export class ControlPlaneClient extends ControlPlane {
                     this.config_manager.addFilter(data_json.data);
                     break;
 
-                case NEW_CONNECTION_PACKET:
-                    const connections = data_json.data;
-                    for (let connection of connections) {
-                        const ip_address: string[] = connection.ip;
-                        const region = connection.region;
-
-                        if (!ip_address || !region) {
-                            console.log('Error getting the ip address or region');
-                            continue;
-                        }
-
-                        ip_address.forEach((ip) => {
-                            this.addConnection(region, ip);
-                        });
-                    }
+                case NEW_PROXY_CONNECTION_PACKET: {
+                    let callback = (region: string, ip_address: string) => {
+                        this.addProxyConnection(region, ip_address);
+                    };
+                    this.parseConnectionPacket(data_json, callback);
                     break;
+                }
 
-                case LOST_CONNECTION_PACKET:
+                case LOST_PROXY_CONNECTION_PACKET:
                     const lost_connection = data_json.data;
                     const ip_address = lost_connection.ip;
 
                     if (!ip_address) {
-                        console.log('Error getting the ip address for removal');
+                        console.error('Error getting the ip address for removal');
                         continue;
                     }
 
-                    this.removeConnection(ip_address);
+                    this.removeProxyConnection(ip_address);
+                    break;
+
+                case NEW_GATEWAY_CONNECTION_PACKET: {
+                    let callback = (region: string, ip_address: string) => {
+                        this.addGatewayConnection(region, ip_address);
+                    }
+                    this.parseConnectionPacket(data_json, callback);
+                    break;
+                }
+
+                case LOST_GATEWAY_CONNECTION_PACKET:
+                    const lost_gateway_connection = data_json.data;
+                    const gateway_ip_address = lost_gateway_connection.ip;
+
+                    if (!gateway_ip_address) {
+                        console.error('Error getting the gateway ip address for removal');
+                        continue;
+                    }
+
+                    this.removeGatewayConnection(gateway_ip_address);
                     break;
 
                 default:

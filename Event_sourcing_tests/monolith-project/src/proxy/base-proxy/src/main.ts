@@ -9,15 +9,18 @@ import { ControlPlaneServer } from '@src/control-plane/server';
 import { ControlPlaneClient } from '@src/control-plane/client';
 import { ConfigManager } from '@src/handlers/configHandler';
 import {
-    ID_PACKET,
+    ID_PROXY_PACKET,
     BROADCAST,
     SHARD,
     ShardRule,
     Event,
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from './control-plane/control-plane';
+import { overrideConsole } from '@src/helper/console';
 
 
+// For nice console logs
+overrideConsole();
 
 
 //Connection variables setup
@@ -82,7 +85,7 @@ if (IS_MASTER == "true") {
 
             // Send the ID packet to the server
             const id_packet: Buffer = Buffer.from(JSON.stringify({ region: REGION }));
-            control_plane_client.sendControl(id_packet, ID_PACKET);
+            control_plane_client.sendControl(id_packet, ID_PROXY_PACKET);
         });
     }, seconds * 1000);
 }
@@ -190,19 +193,23 @@ app.post('/direct-forward', (req: Request, res: Response) => {
 // DEBUG API ENDPOINT
 
 // Get all connected clients
-app.get('/connections', (_req: Request, res: Response) => {
-    console.log('Getting connections');
-    console.log('Connections: ', control_plane.getConnectedconnections());
-    const connections: string = JSON.stringify(control_plane.getConnectedconnections());
+app.get('/proxy-connections', (_req: Request, res: Response) => {
+    console.info('Connections: ', control_plane.getProxyConnections());
+    const connections: string = JSON.stringify(control_plane.getProxyConnections());
 
-    console.log('Connections: ', connections);
     res.status(200).send(connections);
 });
 
+app.get('/gateway-connections', (_req: Request, res: Response) => {
+    console.info('Connections: ', control_plane.getGatewayConnections());
+    const connections: string = JSON.stringify(control_plane.getGatewayConnections());
+
+    res.status(200).send(connections);
+});
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.info(`Server is running on port ${PORT}`);
 });
 
 

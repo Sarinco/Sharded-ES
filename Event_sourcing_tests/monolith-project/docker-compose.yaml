@@ -21,6 +21,7 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
+      - ./utils/helper:/app/src/helper
       - ./utils/control-plane:/app/src/control-plane
       - ./site1/config.json:/app/src/config.json
       - ./site1/sharder/:/app/src/sharder/
@@ -49,6 +50,7 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
+      - ./utils/helper:/app/src/helper
       - ./utils/control-plane:/app/src/control-plane
     ports:
       - "${PROXY_2_EXTERNAL_PORT}:${PROXY_PORT}"
@@ -74,6 +76,7 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
+      - ./utils/helper:/app/src/helper
       - ./utils/control-plane:/app/src/control-plane
     ports:
       - "${PROXY_3_EXTERNAL_PORT}:${PROXY_PORT}"

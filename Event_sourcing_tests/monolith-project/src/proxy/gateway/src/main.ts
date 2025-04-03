@@ -8,7 +8,7 @@ import { overrideConsole } from '@src/helper/console';
 import { ControlPlaneClient } from '@src/control-plane/client';
 import { ConfigManager } from '@src/handlers/configHandler';
 import {
-    ID_PACKET,
+    ID_GATEWAY_PACKET,
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
 import { DynamicGateway } from '@src/gateway/dynamic-gateway';
@@ -41,7 +41,7 @@ setTimeout(() => {
 
         // Send the ID packet to the server
         const id_packet: Buffer = Buffer.from(JSON.stringify({ region: REGION }));
-        control_plane_client.sendControl(id_packet, ID_PACKET);
+        control_plane_client.sendControl(id_packet, ID_GATEWAY_PACKET);
         console.info('Sent ID packet to Control Plane server');
     });
 }, seconds * 1000);

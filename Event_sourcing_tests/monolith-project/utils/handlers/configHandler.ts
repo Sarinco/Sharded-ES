@@ -5,17 +5,14 @@ import {
     Rule,
     defaultRule,
 } from '@src/control-plane/interfaces';
-import { ControlPlane } from '@src/control-plane/control-plane';
 
 export class ConfigManager {
 
     private rule_map: Map<string, Function>;
     private filter_tree: filterNodes;
 
-
     constructor() {
         this.rule_map = new Map();
-
         this.filter_tree = new filterNodes();
     }
 
@@ -26,7 +23,7 @@ export class ConfigManager {
      * @param config
      */
     setConfig(config: Config[], filters: string[][] = []) {
-        console.log("Setting config");
+        console.info("Setting config");
         for (const conf of config) {
             console.log("Creating extraction callback function for topic:", conf.topic);
             console.log("Rules:", conf.shardKeyProducer);
@@ -34,8 +31,8 @@ export class ConfigManager {
             this.rule_map.set(conf.topic, callback);
         }
         for (const filter of filters){
-            console.log("adding filter");
-            console.log("Filter :", filter);
+            console.info("Adding filter");
+            console.info("Filter :", filter);
             this.addFilter(filter);
         }
     }
@@ -56,10 +53,10 @@ export class ConfigManager {
      * @returns Rule
      */
     matchRule(event: Event): Rule {
-        console.log("Event:", event);
+        console.debug("Event:", event);
         const callback = this.rule_map.get(event.topic);
         if (!callback) {
-            console.log('No extraction callback found');
+            console.error('No extraction callback found');
             return this.filter_tree.getDefault();
         }
         const extracted_data = callback(event.message.value);
@@ -92,7 +89,7 @@ class filterNodes implements FilterTree{
 
     addFilter(parameters: string[]): boolean {
         if (parameters.length != 4){
-            console.log("Invalid filter config length : ", parameters);
+            console.error("Invalid filter config length : ", parameters);
             return false;
         }
 
@@ -114,7 +111,7 @@ class filterNodes implements FilterTree{
 
             let target: FilterTree | undefined = this.nodes.get(current_val);
             if (!target) {
-                console.log("Error in the target retreival, addFilter Method");
+                console.error("Error in the target retreival, addFilter Method");
                 return false;
             }
 
@@ -158,7 +155,7 @@ class FilterLeaf implements FilterTree {
 
     addFilter(parameters: string[]): boolean {
         if (parameters.length != 4){
-            console.log("Invalid filter config length : ", parameters);
+            console.error("Invalid filter config length : ", parameters);
             return false;
         }
 

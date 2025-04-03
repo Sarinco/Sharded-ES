@@ -5,7 +5,6 @@ import * as http from 'http';
 import httpProxy from 'http-proxy';
 
 import {
-    RouteConfig,
     GatewayConfig,
 } from '@src/gateway/interfaces';
 import {
@@ -63,7 +62,13 @@ export class DynamicGateway {
         this.forwardingTree = new ForwardingTree(this.gatewayConfig.routes);
     }
 
-    // Add WebSocket proxy handler
+    /**
+    * Setup the WebSocket proxy
+    * This method is called when the server receives an upgrade request
+    * It checks if the request URL matches any of the routes in the forwarding tree
+    * If it does, it forwards the request to the target server
+    * If it doesn't, it destroys the socket
+    */
     private setupWebSocketProxy() {
         this.server.on('upgrade', (req, socket, head) => {
             const route = this.forwardingTree.getRoute(req.url || '');
@@ -84,21 +89,21 @@ export class DynamicGateway {
         const config = JSON.parse(fs.readFileSync(this.configPath, 'utf-8'));
         return config;
     }
+
+    /**
+     * Reload the config file and update the routes
+     */
     private reloadConfig() {
         this.gatewayConfig = this.loadConfig();
         this.forwardingTree = new ForwardingTree(this.gatewayConfig.routes);
         this.setupRoutes();
     }
 
+    /**
+     * Setup the routes for the gateway
+     * This method is called when the server starts or when the config file is reloaded
+     */
     private setup() {
-        // Setup global middleware if any
-        // this.app.use(express.raw({
-        //     type: (req) => {
-        //         // Skip raw body parsing for WebSocket upgrades
-        //         return !req.headers.upgrade || req.headers.upgrade.toLowerCase() !== 'websocket';
-        //     },
-        //     limit: '10mb'
-        // }));
         this.setupRoutes();
 
         // Watch config file for changes
@@ -110,6 +115,10 @@ export class DynamicGateway {
         });
     }
 
+    /**
+     * Setup the routes for the gateway
+     * This method is called when the server starts or when the config file is reloaded
+     */
     private setupRoutes() {
         // Clear existing routes
         if (this.app._router) {
@@ -150,6 +159,12 @@ export class DynamicGateway {
         this.printRoutes();
     }
 
+    /**
+     * Forward the request to the target server
+     * This method is called when the request matches a route in the forwarding tree
+     * @param req
+     * @param res
+     */
     private async forwardRequest(req: Request, res: Response) {
         const route = this.forwardingTree.getRoute(req.originalUrl);
         if (!route) throw new Error('Route not found');
@@ -164,10 +179,10 @@ export class DynamicGateway {
             throw new Error('No path found');
         }
 
-        const url = `${target}/${path || ''}`.replace(/\/+/g, '/'); // Normalize URL
+        const url = `${target}${path || ''}` // Normalize URL
         const targetUrl = new URL(url);
 
-        console.info(`Proxying to ${url}`);
+        console.info(`Proxying to ${targetUrl.toString()}`);
         this.proxy.web(req, res, {
             target: route.target,
             secure: false,
@@ -176,17 +191,13 @@ export class DynamicGateway {
                 host: targetUrl.host
             }
         });
-
-        // console.info(`Proxying to ${url}`);
-        // const response = await axios({
-        //     method: req.method,
-        //     url: url,
-        //     data: req.body,
-        //     headers: { ...req.headers, host: new URL(url).host }
-        // });
-        // res.status(response.status).send(response.data);
     }
 
+    /**
+     * Handle GET requests
+     * @param req
+     * @param res
+     */
     private async getRequestForward(req: Request, res: Response) {
         const route = this.forwardingTree.getRoute(req.originalUrl);
         if (!route) throw new Error('Route not found');
@@ -201,10 +212,10 @@ export class DynamicGateway {
             throw new Error('No path found');
         }
 
-        const url = `${target}/${path || ''}`.replace(/\/+/g, '/'); // Normalize URL
+        const url = `${target}${path || ''}`; // Normalize URL
         const targetUrl = new URL(url);
 
-        console.debug(`Proxying to ${url}`);
+        console.debug(`Proxying to ${targetUrl.toString()}`);
         this.proxy.web(req, res, {
             target: route.target,
             secure: false,
@@ -215,6 +226,9 @@ export class DynamicGateway {
         });
     }
 
+    /**
+     * Start the gateway server
+     */
     public start() {
         this.setup();
         this.app.listen(this.gatewayConfig.port, () => {
@@ -222,6 +236,9 @@ export class DynamicGateway {
         })
     }
 
+    /**
+     * Stop the gateway server
+     */
     public printRoutes() {
         this.app._router.stack.forEach(print.bind(null, []));
     }

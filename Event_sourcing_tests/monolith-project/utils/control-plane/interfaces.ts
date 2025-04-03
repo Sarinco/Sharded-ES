@@ -1,18 +1,22 @@
 export const CONFIG_PACKET = 'config';
 export const NEW_FILTER_PACKET = 'new_filter';
 
-export const NEW_CONNECTION_PACKET = 'new_connection';
-export const LOST_CONNECTION_PACKET = 'lost_connection';
+export const NEW_PROXY_CONNECTION_PACKET = 'new_proxy_connection';
+export const LOST_PROXY_CONNECTION_PACKET = 'lost_proxy_connection';
+export const NEW_GATEWAY_CONNECTION_PACKET = 'new_gateway_connection';
+export const LOST_GATEWAY_CONNECTION_PACKET = 'lost_gateway_connection';
+
 export interface NewConnectionPacket {
     region: string;
     ip: string[];
 }
 
-export const ID_PACKET = 'identity';
+export const ID_PROXY_PACKET = 'proxy_identity';
+export const ID_GATEWAY_PACKET = 'gateway_identity';
 
 export const BROADCAST = 'broadcast';
 export const SHARD = 'shard';
-
+ID_PROXY_PACKET
 export const defaultRule: JSON = JSON.parse('{"action": "broadcast"}');
 
 export const defaultConfig = (event: Event) => {

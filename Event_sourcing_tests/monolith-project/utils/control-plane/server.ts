@@ -7,9 +7,12 @@ import {
     RawControlPacket,
     CONFIG_PACKET,
     NEW_FILTER_PACKET,
-    NEW_CONNECTION_PACKET,
-    ID_PACKET,
-    LOST_CONNECTION_PACKET,
+    NEW_PROXY_CONNECTION_PACKET,
+    LOST_PROXY_CONNECTION_PACKET,
+    NEW_GATEWAY_CONNECTION_PACKET,
+    LOST_GATEWAY_CONNECTION_PACKET,
+    ID_PROXY_PACKET,
+    ID_GATEWAY_PACKET,
     SHARD,
     BROADCAST,
     defaultRule,
@@ -42,15 +45,28 @@ export class ControlPlaneServer extends ControlPlane {
     private sockets: Map<string, net.Socket>;
     private filters: string[][];
 
-    constructor(port: number, config: string, region: string, filters:string[][]) {
+    /**
+      * @constructor Creates a new ControlPlane Server instance
+      * @param {number} port - The port number to listen on
+      * @param {string} config - JSON string containing raw configuration data
+      * @param {string} region - The region identifier for this server
+      * @param {string[][]} filters - Two-dimensional array of network filters
+      */
+    constructor(port: number, config: string, region: string, filters: string[][]) {
         super(region);
         this.port = port;
         this.server = net.createServer();
         this.config = this.configExtractor(JSON.parse(config));
         this.sockets = new Map();
-        this.filters = filters; 
+        this.filters = filters;
     }
 
+    /**
+     * Processes raw configuration data and extracts necessary resources
+     * @param {Config[]} RawConfig - Array of unprocessed configuration objects
+     * @returns {Config[]} Processed configuration array with resolved resources
+     * @note Modifies shardKeyProducer property for SHARD actions by reading specified files
+     */
     configExtractor(RawConfig: Config[]): Config[] {
         for (const conf of RawConfig) {
             switch (conf.action) {
@@ -74,8 +90,11 @@ export class ControlPlaneServer extends ControlPlane {
         }
         return RawConfig;
     }
-
-    // Start the server
+    /**
+     * Starts the control plane server and initializes configuration
+     * @returns {Promise<void>} Resolves when server starts successfully, rejects on error
+     * @throws {Error} If server fails to start
+     */
     start(): Promise<void> {
         this.config_manager.setConfig(this.config, this.filters);
 
@@ -91,7 +110,10 @@ export class ControlPlaneServer extends ControlPlane {
         });
     }
 
-    // Stop the server
+    /**
+     * Stops the control plane server and cleans up resources
+     * @returns {Promise<void>} Resolves when server stops successfully
+     */
     stop(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.server.close(() => {
@@ -105,16 +127,19 @@ export class ControlPlaneServer extends ControlPlane {
         });
     }
 
-    // Handle incoming sockets
+    /**
+     * Handles new incoming connections and sets up client event listeners
+     * @listens net.Server#connection
+     */
     onConnection() {
         this.server.on('connection', (socket) => {
             const remote_address = getSimpleIPAddress(socket.remoteAddress);
             if (!remote_address) {
-                console.log('Error getting the remote address');
+                console.error('Error getting the remote address');
                 return;
             }
             const clientId = `${remote_address}:${socket.remotePort}`;
-            console.log(`New client connected: ${clientId}`);
+            console.info(`New client connected: ${clientId}`);
 
             this.onConnectionFunction(socket, clientId);
 
@@ -140,6 +165,12 @@ export class ControlPlaneServer extends ControlPlane {
         });
     }
 
+    /**
+     * Handles initial connection setup for new clients
+     * @param {net.Socket} socket - The connected socket object
+     * @param {string} clientId - Unique client identifier (IP:PORT format)
+     * @sends NEW_PROXY_CONNECTION_PACKET, NEW_GATEWAY_CONNECTION_PACKET, CONFIG_PACKET, and NEW_FILTER_PACKET
+     */
     onConnectionFunction(socket: net.Socket, clientId: string) {
         // Send filter to the client
         const ip_address = getSimpleIPAddress(socket.localAddress);
@@ -149,10 +180,9 @@ export class ControlPlaneServer extends ControlPlane {
             return;
         }
 
-        //send known ip's to the client 
-        let data: NewConnectionPacket[] = this.getConnectedconnections();
-        console.log("Data: ", data);
-        let ips = this.connections.get(this.region);
+        // Send known gateway ip's to the client 
+        let data: NewConnectionPacket[] = this.getProxyConnections();
+        let ips = this.proxy_connections.get(this.region)?.slice();
         if (ips) {
             ips.push(ip_address)
             data.push({
@@ -167,12 +197,27 @@ export class ControlPlaneServer extends ControlPlane {
         }
 
         let packet: RawControlPacket = {
-            type: NEW_CONNECTION_PACKET,
+            type: NEW_PROXY_CONNECTION_PACKET,
             data: data
         };
 
 
         socket.write(JSON.stringify(packet) + "%end%");
+
+        // Send known gateway ip's to the client
+        data = this.getGatewayConnections();
+        ips = this.gateway_connections.get(this.region);
+        if (ips) {
+            data.push({
+                region: this.region,
+                ip: ips
+            });
+            packet = {
+                type: NEW_GATEWAY_CONNECTION_PACKET,
+                data: data
+            };
+            socket.write(JSON.stringify(packet) + "%end%");
+        }
 
         // Send config to the client
         packet = {
@@ -197,32 +242,38 @@ export class ControlPlaneServer extends ControlPlane {
         this.sockets.set(clientId, socket);
     }
 
+    /**
+     * Processes incoming data from client connections
+     * @param {Buffer} data - Raw received data buffer
+     * @param {string} clientId - Unique identifier of sending client
+     * @emits ID_PROXY_PACKET | ID_GATEWAY_PACKET handling
+     */
     onDataFunction(data: Buffer, clientId: string) {
         let full_data = this.socket_buffer + data.toString();
         let split_queries = full_data.split("%end%");
 
         if (split_queries.length < 2) {
-            console.log("Data not complete");
+            console.error("Data not complete");
             this.socket_buffer = full_data;
             return;
         }
         const own_ip = getSimpleIPAddress(this.sockets.get(clientId)?.localAddress);
         if (!own_ip) {
-            console.log('Error getting the own IP address');
+            console.error('Error getting the own IP address');
             return;
         }
 
         for (let i = 0; i < split_queries.length - 1; i++) {
-            console.log("Full data packet received: ", split_queries[i]);
+            console.debug("Full data packet received: ", split_queries[i]);
             const data_json = JSON.parse(split_queries[i]);
 
             this.parentDataFunction(data_json);
             switch (data_json.type) {
-                case ID_PACKET:
+                case ID_PROXY_PACKET: {
                     const ip_address = clientId.split(':')[0];
                     const region = data_json.data.region;
 
-                    this.addConnection(region, ip_address);
+                    this.addProxyConnection(region, ip_address);
 
                     // Broadcast the new connection to all clients
                     let connection_data: NewConnectionPacket[] = [{
@@ -231,53 +282,111 @@ export class ControlPlaneServer extends ControlPlane {
                     }];
 
                     const packet: RawControlPacket = {
-                        type: NEW_CONNECTION_PACKET,
-                        data: connection_data 
+                        type: NEW_PROXY_CONNECTION_PACKET,
+                        data: connection_data
                     };
 
                     console.log("Packet: ", packet);
                     this.controlBroadcast(JSON.stringify(packet), clientId);
                     break;
+                }
+                case ID_GATEWAY_PACKET: {
+                    const ip_address = clientId.split(':')[0];
+                    const region = data_json.data.region;
+
+                    this.addGatewayConnection(region, ip_address);
+
+                    // Broadcast the new connection to all clients
+                    let connection_data: NewConnectionPacket[] = [{
+                        region: region,
+                        ip: [ip_address]
+                    }];
+
+                    const packet: RawControlPacket = {
+                        type: NEW_GATEWAY_CONNECTION_PACKET,
+                        data: connection_data
+                    };
+
+                    console.log("Packet: ", packet);
+                    this.controlBroadcast(JSON.stringify(packet), clientId);
+                    break;
+                }
                 default:
-                    console.log('Unknown packet type');
+                    console.warn('Unknown packet type');
             }
         }
         this.socket_buffer = split_queries[split_queries.length - 1];
     }
 
+    /**
+     * Handles client connection closure cleanup
+     * @param {string} clientId - Unique identifier of disconnected client
+     * @emits LOST_GATEWAY_CONNECTION_PACKET | LOST_PROXY_CONNECTION_PACKET
+     */
     shutdownConnection(clientId: string) {
-        const packet: RawControlPacket = {
-            type: LOST_CONNECTION_PACKET,
+        let packet: RawControlPacket = {
+            type: "not_defined",
             data: {
                 ip: clientId.split(':')[0]
             }
         };
+        let region = this.ip_region.get(clientId.split(':')[0]);
+        if (!region) {
+            console.error('Error getting the region');
+            return;
+        }
+        let ip_in_region = this.gateway_connections.get(region);
+        console.debug(`IP in region: ${ip_in_region}`);
+        console.debug(`Gateway connections:`);
+        console.debug(this.getGatewayConnections());
+        if (ip_in_region && ip_in_region.includes(clientId.split(':')[0])) {
+            console.info(`Removing gateway client ${clientId}`);
+            packet.type = LOST_GATEWAY_CONNECTION_PACKET;
+            this.removeGatewayConnection(clientId.split(':')[0]);
+        } else {
+            console.info(`Removing proxy client ${clientId}`);
+            packet.type = LOST_PROXY_CONNECTION_PACKET;
+            this.removeProxyConnection(clientId.split(':')[0]);
+        }
         this.controlBroadcast(JSON.stringify(packet), clientId);
-        console.log(`removal packet for client ${clientId} broadcasted`);
-
     }
 
+    /**
+     * Handles socket timeout events
+     * @param {string} clientId - Unique identifier of timed-out client
+     */
     onTimeoutFunction(clientId: string) {
-        console.log(`Client timed out: ${clientId}`);
+        console.info(`Client timed out: ${clientId}`);
         this.sockets.delete(clientId);
         this.shutdownConnection(clientId);
-        this.removeConnection(clientId.split(':')[0]);
     }
 
+    /**
+     * Handles socket error events
+     * @param {Error} err - Received error object
+     * @param {string} clientId - Unique identifier of errored client
+     */
     onErrorFunction(err: Error, clientId: string) {
-        console.log(`Error on client ${clientId}: ${err.message}`);
+        console.error(`Error on client ${clientId}: ${err.message}`);
         this.sockets.delete(clientId);
         this.shutdownConnection(clientId);
-        this.removeConnection(clientId.split(':')[0]);
     }
 
+    /**
+     * Handles socket close events
+     * @param {string} clientId - Unique identifier of disconnected client
+     */
     onCloseFunction(clientId: string) {
-        console.log(`Client disconnected: ${clientId}`);
+        console.info(`Client disconnected: ${clientId}`);
         this.sockets.delete(clientId);
         this.shutdownConnection(clientId);
-        this.removeConnection(clientId.split(':')[0]);
     }
 
+    /**
+     * Broadcasts messages to all connected clients
+     * @param {string} message - The message to broadcast
+     * @param {string} [excludeClientId] - Optional client ID to exclude from broadcast
+     */
     controlBroadcast(message: string, excludeClientId?: string) {
         this.sockets.forEach((socket, key) => {
             if (key !== excludeClientId) {
