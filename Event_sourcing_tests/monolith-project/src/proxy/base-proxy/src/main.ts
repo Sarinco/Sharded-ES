@@ -106,46 +106,6 @@ app.get('/health', (_req: Request, res: Response) => {
     res.status(200).send('Server is running');
 });
 
-// Forwards the message to the gateway and returns the response
-app.post('/gateway-forward', (req: Request, res: Response) => {
-    if (GATEWAY_PORT == undefined || GATEWAY_ADDRESS == undefined) {
-        console.log('Please provide the gateway address and port sending empty array');
-        res.status(200).json([]);
-        return;
-    }
-
-    let { path, auth } = req.body;
-    // Remove the first / from the path
-    // Add the query parameters ask_proxy=no
-    let url = new URL(GATEWAY + path);
-    url.searchParams.append('ask_proxy', 'no');
-    path = url.pathname + url.search;
-    path = path.substring(1);
-
-    console.log(`Forwarding the message to the gateway: ${url.toString()}`);
-
-    fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'authorization': auth,
-        },
-    }).then((response) => {
-        if (response.status !== 200) {
-            console.log(`Response: ${response}`);
-            console.log('Error forwarding the message to the gateway');
-            res.status(500).send('Error forwarding the message to the gateway');
-            return;
-        }
-        response.json().then((data) => {
-            console.log('Response from the gateway: ', data);
-            res.status(200).json(data);
-        });
-    }).catch((error: any) => {
-        console.log('Error forwarding the message to the gateway: ', error);
-        res.status(500).send('Error forwarding the message to the gateway');
-    });
-});
 
 // Logging all the requests made to the server
 app.post('/', (req: Request, res: Response) => {
@@ -158,48 +118,8 @@ app.post('/', (req: Request, res: Response) => {
     const routing_instructions = config_manager.matchRule(event);
     console.log('Rule: ', routing_instructions);
 
-    const value = JSON.parse(message.value);
-    const is_cqrs = value.path != undefined;
-    let path = '';
-    let auth = '';
-    let ask_all = routing_instructions.ask_all == undefined ? false : routing_instructions.ask_all;
-    if (is_cqrs) {
-        console.log('CQRS message');
-        path = value.path;
-        auth = value.auth;
-    }
-
     switch (routing_instructions.action) {
         case BROADCAST:
-            if (is_cqrs) {
-                // Send the message to own gateway
-                let url = new URL(GATEWAY + path);
-                url.searchParams.append('ask_proxy', 'no');
-                path = url.pathname + url.search;
-                path = path.substring(1);
-                fetch(url.toString(), {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'authorization': auth
-                    },
-                }).then((response) => {
-                    console.log('Response from the gateway: ', response);
-                    if (response.status !== 200) {
-                        console.log('Error forwarding the message to the gateway');
-                        res.status(response.status).send('Error forwarding the message to the gateway');
-                        return;
-                    }
-                    response.json().then((data) => {
-                        res.status(200).send(data);
-                    });
-                }).catch((error: any) => {
-                    console.log('Error forwarding the message to the gateway: ', error);
-                    res.status(500).send('Error forwarding the message to the gateway');
-                });
-                return;
-            }
-
             producer.send(topic, message).then(() => {
                 control_plane.broadcast(JSON.stringify(event));
                 res.status(200).send('Message broadcasted');
@@ -225,7 +145,7 @@ app.post('/', (req: Request, res: Response) => {
             const index = region.indexOf(REGION);
             let include_myself = index != -1;
 
-            if (include_myself && !is_cqrs) {
+            if (include_myself) {
                 producer.send(topic, message).then(() => {
                     console.log('Message sent to my region');
                 }).catch((error: any) => {
@@ -234,100 +154,6 @@ app.post('/', (req: Request, res: Response) => {
                 });
                 region.splice(index, 1);
             }
-
-            // If the message is a CQRS message, forward it to all the other regions 
-            // at the /gateway-forward endpoint
-            if (is_cqrs) {
-                // Forward the message to the gateway
-                let request = {
-                    path,
-                    auth
-                }
-                let promises;
-                if (ask_all) {
-                    console.log('Asking all');
-                    promises = control_plane.sendToAllRegionsWithEndpoint(JSON.stringify(request), 'gateway-forward');
-                    include_myself = true;
-                } else {
-                    promises = control_plane.sendToRegionWithEndpoint(JSON.stringify(request), region, 'gateway-forward');
-                }
-
-                if (include_myself) {
-                    console.log('Including myself');
-                    let url = new URL(GATEWAY + path);
-                    url.searchParams.append('ask_proxy', 'no');
-                    path = url.pathname + url.search;
-                    path = path.substring(1);
-                    promises.push(fetch(url.toString(), {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'authorization': auth
-                        },
-                    }));
-                }
-
-                Promise.all(promises).then(async (responses) => {
-                    let data = await Promise.all(responses.map((response) => response.json()));
-                    // If data is an array of arrays, flatten it
-                    if (data.length > 0 && data[0].length > 0) {
-                        data = data.flat();
-                    }
-                    // INFO: If the data has id field, it will be merged
-
-                    // Create a map to store all objects by id
-                    const mergedMap = new Map();
-
-                    // Helper function to merge two objects
-                    const mergeObjects = (obj1: any, obj2: any) => {
-                        const result = { ...obj1 };
-                        for (const key of Object.keys(obj2)) {
-                            if (Array.isArray(result[key]) && Array.isArray(obj2[key])) {
-                                // If both properties are arrays, concatenate them
-                                result[key] = [...result[key], ...obj2[key]];
-                            } else if (typeof result[key] === 'object' && typeof obj2[key] === 'object') {
-                                // If both properties are objects, merge them recursively
-                                result[key] = mergeObjects(result[key], obj2[key]);
-                            } else {
-                                // Otherwise, overwrite the property
-                                result[key] = obj2[key];
-                            }
-                        }
-                        return result;
-                    };
-
-                    // Iterate through all objects and merge them
-                    data.forEach((item) => {
-                        if (item.id !== undefined) {
-                            const existingItem = mergedMap.get(item.id);
-
-                            if (existingItem) {
-                                // Merge the existing item with the new one
-                                mergedMap.set(item.id, mergeObjects(existingItem, item));
-                            } else {
-                                // Add the new item to the map
-                                mergedMap.set(item.id, item);
-                            }
-                        } else {
-                            // If the item doesn't have an id, add it to the map with a unique key
-                            const uniqueKey = `no-id-${mergedMap.size}`;
-                            mergedMap.set(uniqueKey, item);
-                        }
-                    });
-
-                    // Convert the map back to an array
-                    const combinedData = Array.from(mergedMap.values());
-
-                    console.log('Combined Data (FULL OUTER JOIN): ', combinedData);
-                    res.status(200).send(combinedData);
-                }).catch((error: any) => {
-                    console.log('Error forwarding the message to all regions: ', error);
-                    res.status(500).send('Error forwarding the message to all regions');
-                });
-                return;
-            }
-
-
 
             // Forward the message to the correct region
             let responses = control_plane.sendToRegion(JSON.stringify(event), region);
