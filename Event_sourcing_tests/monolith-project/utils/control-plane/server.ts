@@ -41,7 +41,9 @@ function getSimpleIPAddress(remote_address: string | undefined): string | null {
 export class ControlPlaneServer extends ControlPlane {
     private server: net.Server;
     private port: number;
-    private config: Config[];
+    private proxy_config: Config[];
+    private gateway_config: Config[];
+
     private sockets: Map<string, net.Socket>;
     private filters: string[][];
 
@@ -52,51 +54,23 @@ export class ControlPlaneServer extends ControlPlane {
       * @param {string} region - The region identifier for this server
       * @param {string[][]} filters - Two-dimensional array of network filters
       */
-    constructor(port: number, config: string, region: string, filters: string[][]) {
+    constructor(port: number, proxy_config: string, gateway_proxy: string, region: string, filters: string[][]) {
         super(region);
         this.port = port;
         this.server = net.createServer();
-        this.config = this.configExtractor(JSON.parse(config));
+        this.proxy_config = this.configExtractor(JSON.parse(proxy_config));
+        this.gateway_config = this.configExtractor(JSON.parse(gateway_proxy));
         this.sockets = new Map();
         this.filters = filters;
     }
 
-    /**
-     * Processes raw configuration data and extracts necessary resources
-     * @param {Config[]} RawConfig - Array of unprocessed configuration objects
-     * @returns {Config[]} Processed configuration array with resolved resources
-     * @note Modifies shardKeyProducer property for SHARD actions by reading specified files
-     */
-    configExtractor(RawConfig: Config[]): Config[] {
-        for (const conf of RawConfig) {
-            switch (conf.action) {
-                case SHARD:
-                    // Read the file specify in rule
-                    const file = conf.shardKeyProducer;
-                    if (!file) {
-                        console.log('No file specified');
-                        break;
-                    }
-                    // list current directory
-                    const new_rules = readFileSync(file, 'utf-8');
-                    conf.shardKeyProducer = new_rules;
-                    break;
-                case BROADCAST:
-                    conf.shardKeyProducer = defaultConfig.toString();
-                    break;
-                default:
-                    console.log('Unknown action');
-            }
-        }
-        return RawConfig;
-    }
     /**
      * Starts the control plane server and initializes configuration
      * @returns {Promise<void>} Resolves when server starts successfully, rejects on error
      * @throws {Error} If server fails to start
      */
     start(): Promise<void> {
-        this.config_manager.setConfig(this.config, this.filters);
+        this.config_manager.setConfig(this.proxy_config, this.filters);
 
         return new Promise((resolve, reject) => {
             this.server.listen(this.port, () => {
@@ -219,25 +193,6 @@ export class ControlPlaneServer extends ControlPlane {
             socket.write(JSON.stringify(packet) + "%end%");
         }
 
-        // Send config to the client
-        packet = {
-            type: CONFIG_PACKET,
-            data: this.config
-        };
-
-        socket.write(JSON.stringify(packet) + "%end%");
-
-        // send filter to the client
-        this.filters.forEach(filter => {
-            packet = {
-                type: NEW_FILTER_PACKET,
-                data: filter
-            };
-
-            socket.write(JSON.stringify(packet) + "%end%");
-        });
-
-
         // Add client to active sockets
         this.sockets.set(clientId, socket);
     }
@@ -275,13 +230,37 @@ export class ControlPlaneServer extends ControlPlane {
 
                     this.addProxyConnection(region, ip_address);
 
+                    // Send config to the client
+                    let packet: RawControlPacket = {
+                        type: CONFIG_PACKET,
+                        data: this.proxy_config
+                    };
+
+                    
+                    let socket = this.sockets.get(clientId);
+                    if (!socket) {
+                        console.error('Error getting the socket');
+                        return;
+                    }
+                    socket.write(JSON.stringify(packet) + "%end%");
+
+                    // send filter to the client
+                    this.filters.forEach(filter => {
+                        packet = {
+                            type: NEW_FILTER_PACKET,
+                            data: filter
+                        };
+
+                        socket.write(JSON.stringify(packet) + "%end%");
+                    });
+
                     // Broadcast the new connection to all clients
                     let connection_data: NewConnectionPacket[] = [{
                         region: region,
                         ip: [ip_address]
                     }];
 
-                    const packet: RawControlPacket = {
+                    packet = {
                         type: NEW_PROXY_CONNECTION_PACKET,
                         data: connection_data
                     };
@@ -296,13 +275,37 @@ export class ControlPlaneServer extends ControlPlane {
 
                     this.addGatewayConnection(region, ip_address);
 
+                    // Send config to the client
+                    let packet: RawControlPacket = {
+                        type: CONFIG_PACKET,
+                        data: this.gateway_config
+                    };
+                    
+                    let socket = this.sockets.get(clientId);
+                    if (!socket) {
+                        console.error('Error getting the socket');
+                        return;
+                    }
+                    socket.write(JSON.stringify(packet) + "%end%");
+
+
+                    // send filter to the client
+                    this.filters.forEach(filter => {
+                        packet = {
+                            type: NEW_FILTER_PACKET,
+                            data: filter
+                        };
+
+                        socket.write(JSON.stringify(packet) + "%end%");
+                    });
+
                     // Broadcast the new connection to all clients
                     let connection_data: NewConnectionPacket[] = [{
                         region: region,
                         ip: [ip_address]
                     }];
 
-                    const packet: RawControlPacket = {
+                    packet = {
                         type: NEW_GATEWAY_CONNECTION_PACKET,
                         data: connection_data
                     };

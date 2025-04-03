@@ -1,9 +1,12 @@
-import net from 'net';
+import { readFileSync } from 'fs';
 
 import { ConfigManager } from "@src/handlers/configHandler";
 import {
+    BROADCAST,
+    Config,
+    defaultConfig,
     NewConnectionPacket,
-    RawConfig,
+    SHARD,
 } from '@src/control-plane/interfaces';
 
 export class ControlPlane {
@@ -22,6 +25,36 @@ export class ControlPlane {
         this.config_manager = new ConfigManager();
         this.region = region;
         this.socket_buffer = "";
+    }
+
+    /**
+     * Processes raw configuration data and extracts necessary resources
+     * @param {Config[]} RawConfig - Array of unprocessed configuration objects
+     * @returns {Config[]} Processed configuration array with resolved resources
+     * @note Modifies shardKeyProducer property for SHARD actions by reading specified files
+     */
+    configExtractor(RawConfig: Config[]): Config[] {
+        for (const conf of RawConfig) {
+            switch (conf.action) {
+                case SHARD:
+                    // Read the file specify in rule
+                    const file = conf.shardKeyProducer;
+                    if (!file) {
+                        console.log('No file specified');
+                        break;
+                    }
+                    // list current directory
+                    const new_rules = readFileSync(file, 'utf-8');
+                    conf.shardKeyProducer = new_rules;
+                    break;
+                case BROADCAST:
+                    conf.shardKeyProducer = defaultConfig.toString();
+                    break;
+                default:
+                    console.log('Unknown action');
+            }
+        }
+        return RawConfig;
     }
 
     parentDataFunction(packet: any) {

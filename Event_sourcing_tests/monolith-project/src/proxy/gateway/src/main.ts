@@ -38,6 +38,11 @@ setTimeout(() => {
         console.error('Error connecting to the Control Plane server: ', error);
     }).then(() => {
         config_manager = control_plane_client.config_manager;
+        // const config = readFileSync('./src/config.json', 'utf-8');
+        // const extracted_config = control_plane.configExtractor(JSON.parse(config));
+        //
+        // // Set the config in the config manager for Gateway
+        // config_manager.setConfig(extracted_config);
 
         // Send the ID packet to the server
         const id_packet: Buffer = Buffer.from(JSON.stringify({ region: REGION }));

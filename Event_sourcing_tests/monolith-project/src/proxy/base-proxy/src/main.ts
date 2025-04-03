@@ -59,9 +59,10 @@ function parseCsv() {
 
 // CONTROL PLANE SERVER
 if (IS_MASTER == "true") {
-    const config = readFileSync('./src/config.json', 'utf-8');
+    const proxy_config = readFileSync('./src/proxy_config.json', 'utf-8');
+    const gateway_config = readFileSync('./src/gateway_config.json', 'utf-8');
     let filters: string[][] = parseCsv();
-    const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, config, REGION, filters);
+    const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, proxy_config, gateway_config, REGION, filters);
     control_plane = controlPlaneServer;
     // Start server
     controlPlaneServer.start().catch((error: any) => {
@@ -113,13 +114,12 @@ app.get('/health', (_req: Request, res: Response) => {
 // Logging all the requests made to the server
 app.post('/', (req: Request, res: Response) => {
     const body = req.body;
-    console.log('Received request: ', body);
 
     const { topic, message } = body;
 
     const event: Event = body;
     const routing_instructions = config_manager.matchRule(event);
-    console.log('Rule: ', routing_instructions);
+    console.info('Rule: ', routing_instructions);
 
     switch (routing_instructions.action) {
         case BROADCAST:

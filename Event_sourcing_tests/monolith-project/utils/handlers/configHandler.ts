@@ -9,11 +9,11 @@ import {
 export class ConfigManager {
 
     private rule_map: Map<string, Function>;
-    private filter_tree: filterNodes;
+    private filter_tree: FilterNodes;
 
     constructor() {
         this.rule_map = new Map();
-        this.filter_tree = new filterNodes();
+        this.filter_tree = new FilterNodes();
     }
 
     /**
@@ -59,8 +59,9 @@ export class ConfigManager {
             console.error('No extraction callback found');
             return this.filter_tree.getDefault();
         }
+
         const extracted_data = callback(event.message.value);
-        console.log("EXTRACTED DATA : ", extracted_data);
+        console.info("EXTRACTED DATA : ", extracted_data);
         const result = this.filter_tree.getFilter(extracted_data);
         console.log(result);
 
@@ -75,7 +76,7 @@ interface FilterTree{
     getFilter(parameters: string[]): Rule;
 }
 
-class filterNodes implements FilterTree{
+class FilterNodes implements FilterTree{
 
     nodes: Map<string, FilterTree>;
     depth: number;
@@ -99,7 +100,7 @@ class filterNodes implements FilterTree{
         if (!this.nodes.has(current_val)) {
             
             if (this.depth != 2 && current_val != "*"){
-                let new_filter =  new filterNodes(this.depth + 1)
+                let new_filter =  new FilterNodes(this.depth + 1)
                 this.nodes.set(current_val, new_filter);
                 return new_filter.addFilter(parameters);
             } else {
