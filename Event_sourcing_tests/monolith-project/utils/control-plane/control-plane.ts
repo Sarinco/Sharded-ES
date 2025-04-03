@@ -6,8 +6,6 @@ import {
     RawConfig,
 } from '@src/control-plane/interfaces';
 
-import { createClient, RedisClientType } from 'redis';
-
 export class ControlPlane {
     public connections: Map<string, string[]>;
     private ip_region: Map<string, string>;

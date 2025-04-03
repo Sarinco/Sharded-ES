@@ -34,6 +34,7 @@ services:
       - ../utils/handlers:/app/src/handlers
       - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
       - ../utils/helper:/app/src/helper
+      - ../utils/control-plane:/app/src/control-plane
     ports:
       - "${GATEWAY_PORT}:80"
     command: sh -c "npm install && npm run watch"

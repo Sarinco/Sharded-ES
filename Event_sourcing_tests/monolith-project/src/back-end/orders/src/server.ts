@@ -12,8 +12,8 @@ const PORT: number = parseInt(process.env.PORT as string);
 
 app.use(express.json());
 
-app.get('/', (req: Request, res: Response) => {
-    res.send('Debug message');
+app.get('/health', (req: Request, res: Response) => {
+    res.send('Server is healthy');
 });
 
 app.use('/api/orders', orderRoute);

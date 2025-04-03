@@ -1,5 +1,8 @@
 import express, { Request, Response } from 'express';
 import fs from 'fs';
+import axios from 'axios';
+import * as http from 'http';
+import httpProxy from 'http-proxy';
 
 import {
     RouteConfig,
@@ -41,6 +44,8 @@ function split(thing: any) {
 
 export class DynamicGateway {
     private app: express.Application;
+    private server: http.Server;
+    private proxy: httpProxy;
     private configPath: string;
     private gatewayConfig: GatewayConfig;
     private forwardingTree: ForwardingTree;
@@ -48,11 +53,31 @@ export class DynamicGateway {
 
     constructor(configPath: string) {
         this.app = express();
-        // Parse JSON bodies
-        this.app.use(express.json());
+        // this.app.use(express.raw({ type: '*/*' })); // Handle raw body first
+        this.server = http.createServer(this.app);
+        this.proxy = httpProxy.createProxyServer();
+        this.setupWebSocketProxy();
+
         this.configPath = configPath;
         this.gatewayConfig = this.loadConfig();
         this.forwardingTree = new ForwardingTree(this.gatewayConfig.routes);
+    }
+
+    // Add WebSocket proxy handler
+    private setupWebSocketProxy() {
+        this.server.on('upgrade', (req, socket, head) => {
+            const route = this.forwardingTree.getRoute(req.url || '');
+            if (!route?.target) {
+                socket.destroy();
+                return;
+            }
+
+            const target = new URL(route.target);
+            this.proxy.ws(req, socket, head, {
+                target: `ws://${target.host}`,
+                headers: { host: target.host }
+            });
+        });
     }
 
     private loadConfig(): GatewayConfig {
@@ -67,6 +92,13 @@ export class DynamicGateway {
 
     private setup() {
         // Setup global middleware if any
+        // this.app.use(express.raw({
+        //     type: (req) => {
+        //         // Skip raw body parsing for WebSocket upgrades
+        //         return !req.headers.upgrade || req.headers.upgrade.toLowerCase() !== 'websocket';
+        //     },
+        //     limit: '10mb'
+        // }));
         this.setupRoutes();
 
         // Watch config file for changes
@@ -80,38 +112,42 @@ export class DynamicGateway {
 
     private setupRoutes() {
         // Clear existing routes
-        this.app._router.stack = this.app._router.stack.filter(
-            (layer: any) => {
-                return !layer.route;
-            }
-        );
+        if (this.app._router) {
+            console.info('Clearing existing routes');
+            this.app._router.stack = this.app._router.stack.filter(
+                (layer: any) => {
+                    return !layer.route;
+                }
+            );
+            return;
+        }
 
         // Add new routes from config
-        this.gatewayConfig.routes.forEach(route => {
-            const router = express.Router();
+        const router = express.Router();
+        const methods = this.forwardMethods;
 
-            console.info(`Setting up ${route.path} to ${route.target}`);
-            const methods = this.forwardMethods;
-
-            methods.forEach(method => {
-                (router as any)[method.toLowerCase()]('/', async (req: express.Request, res: express.Response) => {
-                    try {
-                        // Here you would implement the actual request forwarding
-                        if (method === 'GET') {
-                            await this.getRequestForward(req, res);
-                        } else {
-                            await this.forwardRequest(req, res);
+        methods.forEach(method => {
+            (router as any)[method.toLowerCase()]('/*', async (req: express.Request, res: express.Response) => {
+                try {
+                    // Here you would implement the actual request forwarding
+                    if (method === 'GET') {
+                        if (req.originalUrl === '/health') {
+                            res.status(200).send('Gateway is healthy');
+                            return;
                         }
-                    } catch (error) {
-                        console.error('Error in forwarding request: ', error);
-                        res.status(500).send({ error: 'Gateway error' });
+                        await this.getRequestForward(req, res);
+                    } else {
+                        await this.forwardRequest(req, res);
                     }
-                });
+                } catch (error) {
+                    console.error('Error in forwarding request: ', error);
+                    res.status(500).send({ error: 'Gateway error' });
+                }
             });
-
-            this.app.use(route.path, router);
         });
-        // this.printRoutes();
+        this.app.use('/', router);
+
+        this.printRoutes();
     }
 
     private async forwardRequest(req: Request, res: Response) {
@@ -129,15 +165,26 @@ export class DynamicGateway {
         }
 
         const url = `${target}/${path || ''}`.replace(/\/+/g, '/'); // Normalize URL
+        const targetUrl = new URL(url);
 
         console.info(`Proxying to ${url}`);
-        const response = await axios({
-            method: req.method,
-            url: url,
-            data: req.body,
-            headers: { ...req.headers, host: new URL(url).host }
+        this.proxy.web(req, res, {
+            target: route.target,
+            secure: false,
+            changeOrigin: true,
+            headers: {
+                host: targetUrl.host
+            }
         });
-        res.status(response.status).send(response.data);
+
+        // console.info(`Proxying to ${url}`);
+        // const response = await axios({
+        //     method: req.method,
+        //     url: url,
+        //     data: req.body,
+        //     headers: { ...req.headers, host: new URL(url).host }
+        // });
+        // res.status(response.status).send(response.data);
     }
 
     private async getRequestForward(req: Request, res: Response) {
@@ -155,23 +202,21 @@ export class DynamicGateway {
         }
 
         const url = `${target}/${path || ''}`.replace(/\/+/g, '/'); // Normalize URL
+        const targetUrl = new URL(url);
 
         console.debug(`Proxying to ${url}`);
-        const response = await axios({
-            method: req.method,
-            url: url,
-            data: req.body,
-            headers: { ...req.headers, host: new URL(url).host }
+        this.proxy.web(req, res, {
+            target: route.target,
+            secure: false,
+            changeOrigin: true,
+            headers: {
+                host: targetUrl.host
+            }
         });
-        console.debug(`Response ${response.status}: ${response.data}`)
-        res.status(response.status).send(response.data);
     }
 
     public start() {
         this.setup();
-        this.app.get('/health', (_req, res) => {
-            res.status(200).send('Gateway is healthy');
-        });
         this.app.listen(this.gatewayConfig.port, () => {
             console.log(`Server is running on port ${this.gatewayConfig.port}`);
         })

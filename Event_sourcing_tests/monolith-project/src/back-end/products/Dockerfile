@@ -21,4 +21,4 @@ ENTRYPOINT npm install && npm run watch
 
 # health check
 HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
-  CMD curl --fail http://localhost:${PORT} || exit 1
+  CMD curl --fail http://localhost:${PORT}/health || exit 1

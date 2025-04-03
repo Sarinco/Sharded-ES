@@ -164,7 +164,7 @@ const stock = {
     // Update a product
     update: async (req: any, res: any) => {
         try {
-            const { role, email: updatedBy, exp } = req.decoded;
+            const { role, email: updatedBy, exp } = verifyJWT(req.headers.authorization) as any;
 
             if (req.params.id === undefined || req.params.id === "") {
                 res.status(400).send("Invalid id");
@@ -202,7 +202,7 @@ const stock = {
     // Delete a product
     delete: async (req: any, res: any) => {
         try {
-            const { role, email: deletedBy, exp } = req.decoded;
+            const { role, email: deletedBy, exp } = verifyJWT(req.headers.authorization) as any;
 
             console.log("Calling the delete method with id: ", req.params.id);
             if (req.params.id === undefined || req.params.id === "") {

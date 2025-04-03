@@ -13,8 +13,8 @@ const PORT: number = parseInt(process.env.PORT as string) || 5000;
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-app.get('/', (req: Request, res: Response) => {
-    res.send('Hello World!');
+app.get('/health', (_req: Request, res: Response) => {
+    res.send('Server is healthy');
 });
 
 // Use users routes

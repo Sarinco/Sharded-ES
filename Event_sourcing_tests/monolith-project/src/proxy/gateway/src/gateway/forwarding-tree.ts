@@ -52,6 +52,13 @@ export class ForwardingNode {
             return;
         }
 
+        if (this.parent === null && path[0] === '') {
+            // If the path is empty, we are at the root node
+            console.debug('Adding target to root node');
+            this.target = target;
+            return;
+        }
+
         // Check if the path already exists
         const currentPath = path[0];
         const child = this.children.get(currentPath);
@@ -75,14 +82,15 @@ export class ForwardingNode {
 
         const currentPath = path[0];
         const child = this.children.get(currentPath);
-        if (!child && this.target) {
-            console.debug('No child found, returning target: ', this.target);
-            return { target: this.target, path: path.join('/') };
-        }
 
         if (child) {
             console.debug('Child found, moving to next level');
             return child.findRoute(path.slice(1));
+        }
+
+        if (this.target) {
+            console.debug('No child found, returning target: ', this.target);
+            return { target: this.target, path: path.join('/') };
         }
 
         console.error('Route not found');

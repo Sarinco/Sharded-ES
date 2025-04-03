@@ -12,8 +12,8 @@ const PORT: number = parseInt(process.env.PORT as string);
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-app.get('/', (_req: Request, res: Response) => {
-    res.send('Hello World!');
+app.get('/health', (_req: Request, res: Response) => {
+    res.send('Server is healthy');
 });
 
 // Use stock routes

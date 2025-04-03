@@ -21,6 +21,7 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
+      - ./utils/control-plane:/app/src/control-plane
       - ./site1/config.json:/app/src/config.json
       - ./site1/sharder/:/app/src/sharder/
     ports:
@@ -48,6 +49,7 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
+      - ./utils/control-plane:/app/src/control-plane
     ports:
       - "${PROXY_2_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server
@@ -72,6 +74,7 @@ services:
     volumes:
       - ./src/proxy/base-proxy:/app
       - ./utils/handlers:/app/src/handlers
+      - ./utils/control-plane:/app/src/control-plane
     ports:
       - "${PROXY_3_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server

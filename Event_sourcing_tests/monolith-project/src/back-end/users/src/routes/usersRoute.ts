@@ -3,7 +3,6 @@ import { Router } from 'express';
 import users from '@src/controllers/usersController';
 import { 
     verifyAdmin, 
-    verifyUser,
     verifyUserOrAdmin
 } from '@src/middleware/auth';
 
