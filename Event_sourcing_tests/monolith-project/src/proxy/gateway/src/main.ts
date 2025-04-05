@@ -20,7 +20,6 @@ const REGION = process.env.REGION || 'no_region';
 
 const MASTER = process.env.MASTER || 'proxy-1';
 const CONTROL_PORT = parseInt(process.env.CONTROL_PORT as string) || 6000;
-const IS_MASTER = process.env.IS_MASTER || 'false';
 
 let config_manager: ConfigManager;
 let control_plane: ControlPlane;
@@ -38,21 +37,16 @@ setTimeout(() => {
         console.error('Error connecting to the Control Plane server: ', error);
     }).then(() => {
         config_manager = control_plane_client.config_manager;
-        // const config = readFileSync('./src/config.json', 'utf-8');
-        // const extracted_config = control_plane.configExtractor(JSON.parse(config));
-        //
-        // // Set the config in the config manager for Gateway
-        // config_manager.setConfig(extracted_config);
 
         // Send the ID packet to the server
         const id_packet: Buffer = Buffer.from(JSON.stringify({ region: REGION }));
         control_plane_client.sendControl(id_packet, ID_GATEWAY_PACKET);
         console.info('Sent ID packet to Control Plane server');
+
+        // GATEWAY
+        const gateway = new DynamicGateway('/app/src/config.json', control_plane_client);
+        console.info('Starting gateway');
+        gateway.start();
     });
 }, seconds * 1000);
 
-
-// GATEWAY
-const gateway = new DynamicGateway('/app/src/config.json');
-console.info('Starting gateway');
-gateway.start();

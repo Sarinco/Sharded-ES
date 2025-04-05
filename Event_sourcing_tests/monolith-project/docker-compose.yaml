@@ -23,7 +23,6 @@ services:
       - ./utils/handlers:/app/src/handlers
       - ./utils/helper:/app/src/helper
       - ./utils/control-plane:/app/src/control-plane
-      - ./site1/config.json:/app/src/config.json
       - ./site1/sharder/:/app/src/sharder/
     ports:
       - "${PROXY_1_EXTERNAL_PORT}:${PROXY_PORT}"

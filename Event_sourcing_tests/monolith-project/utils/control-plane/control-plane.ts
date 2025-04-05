@@ -6,6 +6,8 @@ import {
     Config,
     defaultConfig,
     NewConnectionPacket,
+    Rule,
+    Event,
     SHARD,
 } from '@src/control-plane/interfaces';
 
@@ -26,6 +28,36 @@ export class ControlPlane {
         this.region = region;
         this.socket_buffer = "";
     }
+
+    matchCallback(event: Event): string[] {
+        return this.config_manager.matchCallback(event);
+    }
+
+    matchFilter(extracted_data: any): any {
+        return this.config_manager.matchFilter(extracted_data);
+    }
+
+    matchRule(event: any): Rule {
+        return this.config_manager.matchRule(event);
+    }
+
+    getTargetGateway(region: string): string | undefined {
+        if (this.region === region) {
+            console.warn(`Target region is the same as local region ${region}`);
+            return undefined;
+        }
+
+        const connections = this.gateway_connections.get(region);
+        if (!connections) {
+            console.warn(`No connections found for region ${region}`);
+            return undefined;
+        }
+        // Get a random IP address from the region
+        const randomIndex = Math.floor(Math.random() * connections.length);
+        const ip = connections[randomIndex];
+        return `http://${ip}`;
+    }
+    
 
     /**
      * Processes raw configuration data and extracts necessary resources
@@ -75,6 +107,18 @@ export class ControlPlane {
                 'Content-Type': 'application/json'
             },
             body: data
+        })
+    }
+
+    forward(url: string, ip: string): Promise<Response> {
+        // Forward the data to the client
+        const uri = `http://${ip}${url}`;
+        console.debug(`Forwarding data to ${uri}`);
+        return fetch(uri, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         })
     }
 
@@ -129,6 +173,26 @@ export class ControlPlane {
         return this.sendToRegionWithEndpoint(data, regions, endpoint);
     }
 
+    async forwardToRegion(url: string, region: string): Promise<Response | undefined> {
+        let promises: Promise<Response>[] = [];
+        const connections = this.gateway_connections.get(region);
+        console.debug(`Connections for region ${region}: `, connections);
+        console.debug(Array.from(this.gateway_connections.keys()));
+        if (!connections) {
+            console.warn(`No connections found for region ${region} defaulting to local`);
+            return undefined;
+        }
+
+        let result: Response | undefined;
+        if (connections) {
+            // Get a random IP address from the region
+            const randomIndex = Math.floor(Math.random() * connections.length);
+            const ip = connections[randomIndex];
+            result = await this.forward(url, ip);
+        }
+        return result;
+    }
+
     /**
      * Get the regions with theNewProxyConnectionPacketctions
      * if connections is empty return an empty array
@@ -147,12 +211,19 @@ export class ControlPlane {
     }
 
     addProxyConnection(region: string, ip: string) {
-        if (!this.proxy_connections.has(region)) {
-            this.proxy_connections.set(region, []);
+        let connections = this.proxy_connections.get(region);
+        if (!connections) {
+            console.info(`Adding new region ${region}`);
+            connections = [];
         }
-
-        this.proxy_connections.get(region)?.push(ip);
-        this.ip_region.set(ip, region);
+        
+        if (connections.includes(ip)) {
+            console.warn(`Proxy ${ip} already exists in region ${region}`);
+            this.ip_region.set(ip, region);
+            return;
+        }
+        connections.push(ip);
+        this.proxy_connections.set(region, connections);
         console.info(`Proxy ${ip} added to region ${region}`);
     }
 
@@ -198,16 +269,19 @@ export class ControlPlane {
     }
 
     addGatewayConnection(region: string, ip: string) {
-        if (!this.gateway_connections.has(region)) {
+        let connections = this.gateway_connections.get(region);
+        if (!connections) {
             console.info(`Adding new region ${region}`);
-            this.gateway_connections.set(region, []);
+            connections = [];
         }
-
-        // DEBUG:
-        console.debug(`Adding new gateway connection ${ip} to region ${region}`);
-
-        this.gateway_connections.get(region)?.push(ip);
-        this.ip_region.set(ip, region);
+        
+        if (connections.includes(ip)) {
+            console.warn(`Gateway ${ip} already exists in region ${region}`);
+            this.ip_region.set(ip, region);
+            return;
+        }
+        connections.push(ip);
+        this.gateway_connections.set(region, connections);
         console.info(`Gateway ${ip} added to region ${region}`);
     }
 

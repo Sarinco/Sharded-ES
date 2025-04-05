@@ -38,11 +38,6 @@ const MASTER = process.env.MASTER || 'proxy-1';
 const CONTROL_PORT = parseInt(process.env.CONTROL_PORT as string) || 6000;
 const IS_MASTER = process.env.IS_MASTER || 'false';
 
-// Gateway 
-const GATEWAY_ADDRESS = process.env.GATEWAY_ADDRESS;
-const GATEWAY_PORT = process.env.GATEWAY_PORT;
-const GATEWAY = `http://${GATEWAY_ADDRESS}:${GATEWAY_PORT}`;
-
 let config_manager: ConfigManager;
 let control_plane: ControlPlane;
 
@@ -59,8 +54,8 @@ function parseCsv() {
 
 // CONTROL PLANE SERVER
 if (IS_MASTER == "true") {
-    const proxy_config = readFileSync('./src/proxy_config.json', 'utf-8');
-    const gateway_config = readFileSync('./src/gateway_config.json', 'utf-8');
+    const proxy_config = readFileSync('./src/sharder/proxy_config.json', 'utf-8');
+    const gateway_config = readFileSync('./src/sharder/gateway_config.json', 'utf-8');
     let filters: string[][] = parseCsv();
     const controlPlaneServer = new ControlPlaneServer(CONTROL_PORT, proxy_config, gateway_config, REGION, filters);
     control_plane = controlPlaneServer;

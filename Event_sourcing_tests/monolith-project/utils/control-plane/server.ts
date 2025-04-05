@@ -154,45 +154,6 @@ export class ControlPlaneServer extends ControlPlane {
             return;
         }
 
-        // Send known gateway ip's to the client 
-        let data: NewConnectionPacket[] = this.getProxyConnections();
-        let ips = this.proxy_connections.get(this.region)?.slice();
-        if (ips) {
-            ips.push(ip_address)
-            data.push({
-                region: this.region,
-                ip: ips
-            });
-        } else {
-            data.push({
-                region: this.region,
-                ip: [ip_address]
-            });
-        }
-
-        let packet: RawControlPacket = {
-            type: NEW_PROXY_CONNECTION_PACKET,
-            data: data
-        };
-
-
-        socket.write(JSON.stringify(packet) + "%end%");
-
-        // Send known gateway ip's to the client
-        data = this.getGatewayConnections();
-        ips = this.gateway_connections.get(this.region);
-        if (ips) {
-            data.push({
-                region: this.region,
-                ip: ips
-            });
-            packet = {
-                type: NEW_GATEWAY_CONNECTION_PACKET,
-                data: data
-            };
-            socket.write(JSON.stringify(packet) + "%end%");
-        }
-
         // Add client to active sockets
         this.sockets.set(clientId, socket);
     }
@@ -228,16 +189,28 @@ export class ControlPlaneServer extends ControlPlane {
                     const ip_address = clientId.split(':')[0];
                     const region = data_json.data.region;
 
+                    // Send known proxy ip's to the client
+                    let data = this.getProxyConnections();
+                    let packet: RawControlPacket = {
+                        type: NEW_PROXY_CONNECTION_PACKET,
+                        data: data
+                    };
+                    let socket = this.sockets.get(clientId);
+                    if (!socket) {
+                        console.error('Error getting the socket');
+                        return;
+                    }
+                    socket.write(JSON.stringify(packet) + "%end%");
+
                     this.addProxyConnection(region, ip_address);
 
                     // Send config to the client
-                    let packet: RawControlPacket = {
+                    packet = {
                         type: CONFIG_PACKET,
                         data: this.proxy_config
                     };
 
-                    
-                    let socket = this.sockets.get(clientId);
+
                     if (!socket) {
                         console.error('Error getting the socket');
                         return;
@@ -280,7 +253,7 @@ export class ControlPlaneServer extends ControlPlane {
                         type: CONFIG_PACKET,
                         data: this.gateway_config
                     };
-                    
+
                     let socket = this.sockets.get(clientId);
                     if (!socket) {
                         console.error('Error getting the socket');
@@ -288,6 +261,14 @@ export class ControlPlaneServer extends ControlPlane {
                     }
                     socket.write(JSON.stringify(packet) + "%end%");
 
+                    // Send known gateway ip's to the client
+                    let data = this.getGatewayConnections();
+                    
+                    packet = {
+                        type: NEW_GATEWAY_CONNECTION_PACKET,
+                        data: data
+                    };
+                    socket.write(JSON.stringify(packet) + "%end%");
 
                     // send filter to the client
                     this.filters.forEach(filter => {

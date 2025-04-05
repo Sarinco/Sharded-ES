@@ -1,6 +1,7 @@
 
 export interface RouteConfig {
     path: string;
+    topic: string;
     target: string;
 }
 

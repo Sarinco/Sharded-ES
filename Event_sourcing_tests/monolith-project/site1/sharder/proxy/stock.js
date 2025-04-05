@@ -1,4 +1,4 @@
-(event) => {
-    event = JSON.parse(event);
-    return ["stock", "warehouse", event.data.warehouse]
+(value) => {
+    value = JSON.parse(value);
+    return ["stock", "warehouse", value.data.warehouse]
 }

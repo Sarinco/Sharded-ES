@@ -64,8 +64,12 @@ export interface Message {
     key: string;
     value: string;
 }
+
 export interface Event {
     topic: string;
     message: Message;
 }
 
+export interface RequestInfo {
+    url: string;
+}

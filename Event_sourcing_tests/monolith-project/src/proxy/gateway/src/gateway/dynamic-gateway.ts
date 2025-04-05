@@ -10,6 +10,8 @@ import {
 import {
     ForwardingTree,
 } from '@src/gateway/forwarding-tree';
+import { ControlPlane } from '@src/control-plane/control-plane';
+import { Event, RequestInfo } from '@src/control-plane/interfaces';
 
 
 function print(path: any, layer: any) {
@@ -50,7 +52,9 @@ export class DynamicGateway {
     private forwardingTree: ForwardingTree;
     private forwardMethods: string[] = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT'];
 
-    constructor(configPath: string) {
+    private control_plane: ControlPlane;
+
+    constructor(configPath: string, control_plane: ControlPlane) {
         this.app = express();
         // this.app.use(express.raw({ type: '*/*' })); // Handle raw body first
         this.server = http.createServer(this.app);
@@ -60,6 +64,8 @@ export class DynamicGateway {
         this.configPath = configPath;
         this.gatewayConfig = this.loadConfig();
         this.forwardingTree = new ForwardingTree(this.gatewayConfig.routes);
+
+        this.control_plane = control_plane;
     }
 
     /**
@@ -179,8 +185,8 @@ export class DynamicGateway {
             throw new Error('No path found');
         }
 
-        const url = `${target}${path || ''}` // Normalize URL
-        const targetUrl = new URL(url);
+        const uri = `${target}${path || ''}` // Normalize URL
+        const targetUrl = new URL(uri);
 
         console.info(`Proxying to ${targetUrl.toString()}`);
         this.proxy.web(req, res, {
@@ -201,9 +207,34 @@ export class DynamicGateway {
     private async getRequestForward(req: Request, res: Response) {
         const route = this.forwardingTree.getRoute(req.originalUrl);
         if (!route) throw new Error('Route not found');
+        if (!route.target) throw new Error('No target found');
+        if (!route.topic) throw new Error('No topic found');
 
-        const target = route.target;
+        let target = route.target;
         const path = req.originalUrl;
+
+        // Check if the request need to be forwarded to another gateway
+        const request_info: RequestInfo = {
+            url: req.originalUrl,
+        }
+        const event: Event = {
+            topic: route.topic,
+            message: {
+                key: 'N/A',
+                value: JSON.stringify(request_info) 
+            }
+        };
+        const extracted_data: string[] = this.control_plane.matchCallback(event);
+        // Check if the extracted data matches any of the filters
+        if (extracted_data.length > 0) {
+            const rule = this.control_plane.matchFilter(extracted_data);
+            const new_target = this.control_plane.getTargetGateway(rule.region[0])
+            if (new_target) {
+                console.debug('New target:', new_target);
+                target = new_target;
+            }
+        }
+
 
         if (!target) {
             throw new Error('No target found');
@@ -212,12 +243,12 @@ export class DynamicGateway {
             throw new Error('No path found');
         }
 
-        const url = `${target}${path || ''}`; // Normalize URL
-        const targetUrl = new URL(url);
+        const uri = `${target}${path || ''}`; // Normalize URL
+        const targetUrl = new URL(uri);
 
-        console.debug(`Proxying to ${targetUrl.toString()}`);
+        console.info(`Proxying to ${targetUrl.toString()}`);
         this.proxy.web(req, res, {
-            target: route.target,
+            target: target,
             secure: false,
             changeOrigin: true,
             headers: {
@@ -230,10 +261,37 @@ export class DynamicGateway {
      * Start the gateway server
      */
     public start() {
+        this.setupDebugRoutes();
         this.setup();
         this.app.listen(this.gatewayConfig.port, () => {
             console.log(`Server is running on port ${this.gatewayConfig.port}`);
         })
+    }
+
+    private setupDebugRoutes() {
+        const debugRouter = express.Router();
+
+        // Get all connected clients
+        debugRouter.get('/proxy-connections', (_req: Request, res: Response) => {
+            console.info('Connections: ', this.control_plane.getProxyConnections());
+            const connections: string = JSON.stringify(this.control_plane.getProxyConnections());
+
+            res.status(200).send(connections);
+        });
+
+        debugRouter.get('/gateway-connections', (_req: Request, res: Response) => {
+            console.info('Connections: ', this.control_plane.getGatewayConnections());
+            const connections: string = JSON.stringify(this.control_plane.getGatewayConnections());
+
+            res.status(200).send(connections);
+        });
+
+        const DEBUG_PORT = process.env.DEBUG_PORT || 7000;
+        const app = express();
+        app.use('/', debugRouter);
+        app.listen(DEBUG_PORT, () => {
+            console.info(`Debug server is running on port ${DEBUG_PORT}`);
+        });
     }
 
     /**

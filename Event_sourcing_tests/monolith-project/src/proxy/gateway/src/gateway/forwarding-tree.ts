@@ -16,12 +16,12 @@ export class ForwardingTree {
     buildTree() {
         this.routes.forEach(route => {
             const path = route.path.split('/');
-            this.root.addChild(path.slice(1), route.target);
+            this.root.addChild(path.slice(1), route);
         });
         this.printTree();
     }
 
-    getRoute(path: string): { target: string, path: string } | undefined {
+    getRoute(path: string): { target: string, path: string, topic: string } | undefined {
         const pathParts = path.split('/');
         return this.root.findRoute(pathParts.slice(1));
     }
@@ -36,26 +36,29 @@ export class ForwardingNode {
     private children: Map<string, ForwardingNode> = new Map();
     private parent: ForwardingNode | null = null;
     private target: string | undefined;
+    private topic: string | undefined;
 
     constructor(parent: ForwardingNode | null = null) {
         this.parent = parent;
     }
 
-    addChild(path: string[], target: string) {
+    addChild(path: string[], route: RouteConfig) {
         if (path.length === 0 && this.target) {
             console.error('Duplicate route found');
             return;
         }
 
         if (path.length === 0) {
-            this.target = target;
+            this.target = route.target;
+            this.topic = route.topic;
             return;
         }
 
         if (this.parent === null && path[0] === '') {
             // If the path is empty, we are at the root node
             console.debug('Adding target to root node');
-            this.target = target;
+            this.target = route.target;
+            this.topic = route.topic;
             return;
         }
 
@@ -67,17 +70,17 @@ export class ForwardingNode {
             // If the path does not exist, create a new node with rest of the path
             const newNode = new ForwardingNode(this);
             this.children.set(currentPath, newNode);
-            newNode.addChild(path.slice(1), target);
+            newNode.addChild(path.slice(1), route);
         } else {
             // If the path exists, add the rest of the path to the existing node
-            child.addChild(path.slice(1), target);
+            child.addChild(path.slice(1), route);
         }
     }
 
-    findRoute(path: string[]): { target: string, path: string } | undefined {
+    findRoute(path: string[]): { target: string, path: string, topic: string } | undefined {
         console.debug('Looking for route: ', path);
         if (path.length === 0 && this.target) {
-            return { target: this.target, path: '' };
+            return { target: this.target, path: '', topic: this.topic || '' };
         }
 
         const currentPath = path[0];
@@ -90,7 +93,7 @@ export class ForwardingNode {
 
         if (this.target) {
             console.debug('No child found, returning target: ', this.target);
-            return { target: this.target, path: path.join('/') };
+            return { target: this.target, path: path.join('/'), topic: this.topic || '' };
         }
 
         console.error('Route not found');
@@ -101,7 +104,8 @@ export class ForwardingNode {
         let result: any = {}
         if (this.target && this.parent !== null) {
             result = {
-                target: this.target
+                target: this.target,
+                topic: this.topic
             };
         }
         this.children.forEach((child, key) => {

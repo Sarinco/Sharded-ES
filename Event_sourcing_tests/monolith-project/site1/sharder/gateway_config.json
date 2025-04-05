@@ -14,6 +14,6 @@
     {
         "topic": "stock",
         "action": "shard",
-        "shardKeyProducer": "/app/src/sharder/stock.js"
+        "shardKeyProducer": "/app/src/sharder/gateway/stock.js"
     }
 ]

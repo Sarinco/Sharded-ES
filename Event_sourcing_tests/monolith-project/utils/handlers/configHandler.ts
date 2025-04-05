@@ -37,6 +37,11 @@ export class ConfigManager {
         }
     }
 
+    /**
+     * Add a filter to the filter tree
+     *
+     * @param parameters
+     */
     addFilter(parameters: string[]){
          let b:boolean = this.filter_tree.addFilter(parameters);
          if (b){
@@ -47,12 +52,12 @@ export class ConfigManager {
     }
 
     /**
-     * Match the event with the corresponding rule
+     * Match the event with the corresponding extraction callback
      *
      * @param event
      * @returns Rule
      */
-    matchRule(event: Event): Rule {
+    matchCallback(event: Event) {
         console.debug("Event:", event);
         const callback = this.rule_map.get(event.topic);
         if (!callback) {
@@ -61,11 +66,25 @@ export class ConfigManager {
         }
 
         const extracted_data = callback(event.message.value);
-        console.info("EXTRACTED DATA : ", extracted_data);
-        const result = this.filter_tree.getFilter(extracted_data);
-        console.log(result);
+        console.debug('Extracted data:', extracted_data);
+        return extracted_data;
+    }
 
+    matchFilter(extracted_data: any) {
+        const result = this.filter_tree.getFilter(extracted_data);
+        console.info("Result of the filter: ", result);
         return result;
+    }
+
+    /**
+     * Match the event with the corresponding rule
+     *
+     * @param event
+     * @returns Rule
+     */
+    matchRule(event: Event): Rule {
+        const extracted_data = this.matchCallback(event);
+        return this.matchFilter(extracted_data);
     }
 }
 
