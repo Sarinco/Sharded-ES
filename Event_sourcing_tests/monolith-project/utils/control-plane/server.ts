@@ -74,7 +74,7 @@ export class ControlPlaneServer extends ControlPlane {
 
         return new Promise((resolve, reject) => {
             this.server.listen(this.port, () => {
-                console.log(`Control Plane server started on port ${this.port}`);
+                console.info(`Control Plane server started on port ${this.port}`);
                 resolve();
             });
 
@@ -91,7 +91,7 @@ export class ControlPlaneServer extends ControlPlane {
     stop(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.server.close(() => {
-                console.log('Control Plane server stopped');
+                console.info('Control Plane server stopped');
                 resolve();
             });
 
@@ -150,7 +150,7 @@ export class ControlPlaneServer extends ControlPlane {
         const ip_address = getSimpleIPAddress(socket.localAddress);
         const port = socket.remotePort;
         if (!ip_address || !port) {
-            console.log('Error getting the IP address or port');
+            console.error('Error getting the IP address or port');
             return;
         }
 
@@ -238,7 +238,6 @@ export class ControlPlaneServer extends ControlPlane {
                         data: connection_data
                     };
 
-                    console.log("Packet: ", packet);
                     this.controlBroadcast(JSON.stringify(packet), clientId);
                     break;
                 }
@@ -291,7 +290,6 @@ export class ControlPlaneServer extends ControlPlane {
                         data: connection_data
                     };
 
-                    console.log("Packet: ", packet);
                     this.controlBroadcast(JSON.stringify(packet), clientId);
                     break;
                 }

@@ -28,7 +28,7 @@ export class ControlPlaneClient extends ControlPlane {
         const address = `${this.host}:${this.port}`;
         return new Promise((resolve, reject) => {
             this.socket.connect(this.port, this.host, () => {
-                console.log(`Control Plane client connected to port ${this.port}`);
+                console.info(`Control Plane client connected to port ${this.port}`);
                 resolve();
             });
 
@@ -62,12 +62,11 @@ export class ControlPlaneClient extends ControlPlane {
         }
 
         for (let i = 0; i < split_queries.length - 1; i++) {
-            console.log("full data packet received : ", split_queries[i]);
             let data_json;
             try {
                 data_json = JSON.parse(split_queries[i]);
             } catch (e) {
-                console.log('Error parsing JSON data');
+                console.error('Error parsing JSON data');
                 continue;
             }
 
@@ -122,7 +121,7 @@ export class ControlPlaneClient extends ControlPlane {
                     break;
 
                 default:
-                    console.log(`Unknown packet type : ${data_json.type}`);
+                    console.warn(`Unknown packet type : ${data_json.type}`);
             }
         }
 
@@ -134,7 +133,7 @@ export class ControlPlaneClient extends ControlPlane {
     disconnect(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.socket.end(() => {
-                console.log('Control Plane client disconnected');
+                console.info('Control Plane client disconnected');
                 resolve();
             });
         });

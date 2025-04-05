@@ -230,7 +230,7 @@ export class DynamicGateway {
             const rule = this.control_plane.matchFilter(extracted_data);
             const new_target = this.control_plane.getTargetGateway(rule.region[0])
             if (new_target) {
-                console.debug('New target:', new_target);
+                console.info('Proxying to another region');
                 target = new_target;
             }
         }

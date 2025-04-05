@@ -72,7 +72,7 @@ export class ControlPlane {
                     // Read the file specify in rule
                     const file = conf.shardKeyProducer;
                     if (!file) {
-                        console.log('No file specified');
+                        console.error('No file specified');
                         break;
                     }
                     // list current directory
@@ -83,7 +83,7 @@ export class ControlPlane {
                     conf.shardKeyProducer = defaultConfig.toString();
                     break;
                 default:
-                    console.log('Unknown action');
+                    console.error('Unknown action');
             }
         }
         return RawConfig;
@@ -110,22 +110,10 @@ export class ControlPlane {
         })
     }
 
-    forward(url: string, ip: string): Promise<Response> {
-        // Forward the data to the client
-        const uri = `http://${ip}${url}`;
-        console.debug(`Forwarding data to ${uri}`);
-        return fetch(uri, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-    }
-
     // Broadcast a message to all connected connections
     broadcast(event: string) {
         const all_ips = Array.from(this.ip_region.keys());
-        console.log('Broadcasting message to: ', all_ips);
+        console.info('Broadcasting message to: ', all_ips);
         all_ips.forEach((ip) => {
             this.send(event, ip);
         });
@@ -171,26 +159,6 @@ export class ControlPlane {
     sendToAllRegionsWithEndpoint(data: string, endpoint: string): Promise<Response>[] {
         let regions = Array.from(this.proxy_connections.keys());
         return this.sendToRegionWithEndpoint(data, regions, endpoint);
-    }
-
-    async forwardToRegion(url: string, region: string): Promise<Response | undefined> {
-        let promises: Promise<Response>[] = [];
-        const connections = this.gateway_connections.get(region);
-        console.debug(`Connections for region ${region}: `, connections);
-        console.debug(Array.from(this.gateway_connections.keys()));
-        if (!connections) {
-            console.warn(`No connections found for region ${region} defaulting to local`);
-            return undefined;
-        }
-
-        let result: Response | undefined;
-        if (connections) {
-            // Get a random IP address from the region
-            const randomIndex = Math.floor(Math.random() * connections.length);
-            const ip = connections[randomIndex];
-            result = await this.forward(url, ip);
-        }
-        return result;
     }
 
     /**

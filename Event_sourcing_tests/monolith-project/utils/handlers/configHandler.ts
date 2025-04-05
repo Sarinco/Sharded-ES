@@ -25,8 +25,8 @@ export class ConfigManager {
     setConfig(config: Config[], filters: string[][] = []) {
         console.info("Setting config");
         for (const conf of config) {
-            console.log("Creating extraction callback function for topic:", conf.topic);
-            console.log("Rules:", conf.shardKeyProducer);
+            console.info("Creating extraction callback function for topic:", conf.topic);
+            console.info("Rules:", conf.shardKeyProducer);
             const callback = eval(conf.shardKeyProducer);
             this.rule_map.set(conf.topic, callback);
         }
@@ -45,9 +45,9 @@ export class ConfigManager {
     addFilter(parameters: string[]){
          let b:boolean = this.filter_tree.addFilter(parameters);
          if (b){
-            console.log("filter successfully added : ", parameters);
+            console.info("Filter successfully added : ", parameters);
          } else {
-            console.log("Failed to add filter : ", parameters);
+            console.error("Failed to add filter : ", parameters);
          }
     }
 
