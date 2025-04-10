@@ -46,11 +46,11 @@ export class ControlPlane {
     }
 
     // Broadcast a message to all connected connections
-    broadcast(event: string) {
+    broadcast(event: string, endpoint: string="direct-forward") {
         const all_ips = Array.from(this.ip_region.keys());
         console.log('Broadcasting message to: ', all_ips);
         all_ips.forEach((ip) => {
-            this.send(event, ip);
+            this.send(event, ip, endpoint);
         });
     }
 

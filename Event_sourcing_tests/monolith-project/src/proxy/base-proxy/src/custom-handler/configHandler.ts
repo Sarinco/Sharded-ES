@@ -7,6 +7,10 @@ import {
 } from '@src/control-plane/interfaces';
 import { ControlPlane } from '@src/control-plane/control-plane';
 
+/*
+* This class handles the filter tree and the filter matching when an
+* event is received by the proxy
+*/
 export class ConfigManager {
 
 
