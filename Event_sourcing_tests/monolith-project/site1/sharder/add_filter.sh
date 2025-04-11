@@ -1,5 +1,3 @@
-# TODO : make a dynamic filter management tool, responding to 
-# user inputs
 
 if [[ "$#" -ne 4 ]]; then
    echo "This script needs 4 arguments : "
