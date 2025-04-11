@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { readFileSync, appendFile} from 'node:fs';
+import { readFileSync, appendFile, readFile, writeFile} from 'node:fs';
 // For module aliasing
 require('module-alias/register');
 
@@ -394,7 +394,42 @@ app.post('/filter', (req: Request, res: Response) => {
 })
 
 app.delete('/filter', (req:Request, res:Response) => {
-    //TODO
+    const body = req.body;
+    console.log('Received DELETE filter request : ', body);
+    let { topic, key, value } = body;
+
+    //if master, do extra steps
+    if (IS_MASTER == "true"){
+        // broadcast messages to the others
+        console.log("Delete command at the master, broadcasting to other proxies...")
+        control_plane.broadcast(JSON.stringify(body), "filter", "DELETE");
+        console.log("done");
+        // delete the filter from the csv
+        //
+        readFile("./src/sharder/filters.csv", "utf-8", function (err, data) {
+            if (err) throw err;
+
+            let lines = data.split("\n")
+            let new_file: string[] = [];
+            lines.forEach(line => {
+                let parameters = line.split(";");
+                if (parameters[0] != topic || parameters[1] != key || parameters[2] != value){
+                    new_file.push(line);
+                }
+            });
+            let new_file_string = new_file.join("\n");
+            console.log("here's the new csv : \n", new_file_string);
+            writeFile("./src/sharder/filters.csv", new_file_string, function (err) {
+                if (err) throw err;
+            });
+        })
+
+    }
+
+    config_manager.deleteFilter([topic, key, value]);
+
+    res.status(200).send("Filter deleted successfully");
+
 })
 
 

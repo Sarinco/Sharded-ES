@@ -33,11 +33,11 @@ export class ControlPlane {
     }
 
 
-    send(data: string, ip: string, endpoint: string = "direct-forward"): Promise<Response> {
+    send(data: string, ip: string, endpoint: string = "direct-forward", method: string = "POST"): Promise<Response> {
         console.debug(`Sending data to ${ip}`);
         // Send the data to the client
         return fetch(`http://${ip}/${endpoint}`, {
-            method: 'POST',
+            method: `${method}`,
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -46,11 +46,11 @@ export class ControlPlane {
     }
 
     // Broadcast a message to all connected connections
-    broadcast(event: string, endpoint: string="direct-forward") {
+    broadcast(event: string, endpoint: string="direct-forward", method: string = "POST") {
         const all_ips = Array.from(this.ip_region.keys());
         console.log('Broadcasting message to: ', all_ips);
         all_ips.forEach((ip) => {
-            this.send(event, ip, endpoint);
+            this.send(event, ip, endpoint, method);
         });
     }
 
