@@ -112,3 +112,16 @@ Example for orders the location need to be a valid stock location.
 curl http://localhost:80/api/orders/ \
    -H "Content-Type: application/json" \-d '{"customer": "012345", "location": "louvain-west", "product": "456789", "count": "10"}'
 ```
+
+
+### Filter management
+
+To be able to add or remove filter, you need to executes curl requests
+inside one of the docker container of the proxies and send the filter 
+management query TO THE MASTER PROXY, or this won't work (for now)
+
+
+```bash
+curl -X POST proxy-1/filter \
+   -H "Content-Type: application/json" \
+   -d '{"topic": "test", "key": "test", "value": "test", "filter": {"test":"test"}}'

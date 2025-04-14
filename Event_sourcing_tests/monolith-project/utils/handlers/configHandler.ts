@@ -6,6 +6,10 @@ import {
     defaultRule,
 } from '@src/control-plane/interfaces';
 
+/*
+* This class handles the filter tree and the filter matching when an
+* event is received by the proxy
+*/
 export class ConfigManager {
 
     private rule_map: Map<string, Function>;
@@ -77,6 +81,15 @@ export class ConfigManager {
         return result;
     }
 
+    deleteFilter(parameters: string[]){
+        let b:boolean = this.filter_tree.deleteFilter(parameters);
+        if (b){
+            console.log("Filter successfully deleted : ", parameters);
+        } else {
+            console.log("Failed to remove filter, filter not found : ", parameters);
+        }
+    }
+
     /**
      * Match the event with the corresponding rule
      *
@@ -93,7 +106,11 @@ interface FilterTree {
 
     addFilter(parameters: string[]): boolean;
 
+    deleteFilter(parameters: string[]): boolean;
+
     getFilter(parameters: string[]): Rule;
+
+    getSize(): number;
 }
 
 class FilterNodes implements FilterTree {
@@ -107,6 +124,9 @@ class FilterNodes implements FilterTree {
         this.depth = depth;
     }
 
+    getSize(): number {
+        return this.nodes.size
+    }
 
     addFilter(parameters: string[]): boolean {
         if (parameters.length != 4) {
@@ -140,6 +160,32 @@ class FilterNodes implements FilterTree {
         }
 
 
+    }
+
+    deleteFilter(parameters: string[]): boolean {
+        if (parameters.length != 3){
+            console.log("Invalid parameters size for filter removal");
+            return false;
+        } 
+
+        let current_val = parameters[this.depth];
+        if (!this.nodes.has(current_val) && current_val != "*"){
+            return false;
+        }
+
+        if (current_val == "*"){
+            this.nodes.set("default", new filterLeaf(defaultRule));
+            console.log("default filter reverted back to original parameters");
+            return true;
+        }
+
+        let size = this.nodes.get(current_val)!.getSize();
+        if (size <= 1){
+            this.nodes.delete(current_val);
+            return true;
+        } else {
+            return this.nodes.get(current_val)!.deleteFilter(parameters);
+        }
     }
 
 
@@ -179,6 +225,10 @@ class FilterLeaf implements FilterTree {
         this.rule = filter;
     }
 
+    getSize(): number {
+        return 0;
+    }
+
     addFilter(parameters: string[]): boolean {
         if (parameters.length != 4) {
             console.error("Invalid filter config length : ", parameters);
@@ -187,6 +237,11 @@ class FilterLeaf implements FilterTree {
 
         this.rule = JSON.parse(parameters[3]);
         return true;
+    }
+
+    deleteFilter(parameters: string[]): boolean {
+        
+        return false;
     }
 
     getFilter(parameters: string[]): Rule {
