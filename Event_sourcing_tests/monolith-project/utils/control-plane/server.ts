@@ -24,6 +24,8 @@ import {
 } from '@src/control-plane/control-plane';
 
 
+const REGION = process.env.REGION || 'no_region';
+
 function getSimpleIPAddress(remote_address: string | undefined): string | null {
     if (!remote_address) {
         return null;
@@ -200,6 +202,16 @@ export class ControlPlaneServer extends ControlPlane {
                         console.error('Error getting the socket');
                         return;
                     }
+                    socket.write(JSON.stringify(packet) + "%end%");
+
+
+                    packet = {
+                        type: NEW_PROXY_CONNECTION_PACKET,
+                        data: [{
+                            region: REGION,
+                            ip: [own_ip]
+                        }]
+                    };
                     socket.write(JSON.stringify(packet) + "%end%");
 
                     this.addProxyConnection(region, ip_address);

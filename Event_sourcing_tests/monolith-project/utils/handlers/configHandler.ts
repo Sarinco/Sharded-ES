@@ -30,7 +30,7 @@ export class ConfigManager {
             const callback = eval(conf.shardKeyProducer);
             this.rule_map.set(conf.topic, callback);
         }
-        for (const filter of filters){
+        for (const filter of filters) {
             console.info("Adding filter");
             console.info("Filter :", filter);
             this.addFilter(filter);
@@ -42,13 +42,13 @@ export class ConfigManager {
      *
      * @param parameters
      */
-    addFilter(parameters: string[]){
-         let b:boolean = this.filter_tree.addFilter(parameters);
-         if (b){
+    addFilter(parameters: string[]) {
+        let b: boolean = this.filter_tree.addFilter(parameters);
+        if (b) {
             console.info("Filter successfully added : ", parameters);
-         } else {
+        } else {
             console.error("Failed to add filter : ", parameters);
-         }
+        }
     }
 
     /**
@@ -60,6 +60,7 @@ export class ConfigManager {
     matchCallback(event: Event) {
         console.debug("Event:", event);
         const callback = this.rule_map.get(event.topic);
+        console.debug("Callback:", callback);
         if (!callback) {
             console.error('No extraction callback found');
             return this.filter_tree.getDefault();
@@ -88,14 +89,14 @@ export class ConfigManager {
     }
 }
 
-interface FilterTree{
+interface FilterTree {
 
     addFilter(parameters: string[]): boolean;
 
     getFilter(parameters: string[]): Rule;
 }
 
-class FilterNodes implements FilterTree{
+class FilterNodes implements FilterTree {
 
     nodes: Map<string, FilterTree>;
     depth: number;
@@ -108,26 +109,26 @@ class FilterNodes implements FilterTree{
 
 
     addFilter(parameters: string[]): boolean {
-        if (parameters.length != 4){
+        if (parameters.length != 4) {
             console.error("Invalid filter config length : ", parameters);
             return false;
         }
 
         if (parameters[3] == "*") parameters[3] = JSON.stringify(defaultRule);
-        
+
         let current_val = parameters[this.depth];
         if (!this.nodes.has(current_val)) {
-            
-            if (this.depth != 2 && current_val != "*"){
-                let new_filter =  new FilterNodes(this.depth + 1)
+
+            if (this.depth != 2 && current_val != "*") {
+                let new_filter = new FilterNodes(this.depth + 1)
                 this.nodes.set(current_val, new_filter);
                 return new_filter.addFilter(parameters);
             } else {
                 if (current_val == "*") current_val = "default";
                 this.nodes.set(current_val, new FilterLeaf(JSON.parse(parameters[3])));
-                return true;   
+                return true;
             }
-        }else {
+        } else {
 
             let target: FilterTree | undefined = this.nodes.get(current_val);
             if (!target) {
@@ -143,23 +144,28 @@ class FilterNodes implements FilterTree{
 
 
     getFilter(parameters: string[]): Rule {
-        if (parameters.length != 3){
+        if (parameters.length == 0) {
+            return this.getDefault();
+        }
+
+        if (parameters.length != 3) {
             throw new Error(`Invalid getFilter content : ${parameters}`);
         }
+
         let next_node = this.nodes.get(parameters[this.depth]);
-        if (!next_node){
+        if (!next_node) {
             next_node = this.nodes.get("default");
-            if (!next_node){
+            if (!next_node) {
                 throw new Error("Node not found when retreiving filter");
             }
         }
         return next_node.getFilter(parameters);
     }
 
-    getDefault(): Rule{
+    getDefault(): Rule {
         let def = this.nodes.get("default");
-        if (!def){
-             throw new Error("failed to get default");
+        if (!def) {
+            throw new Error("failed to get default");
         }
         return def.getFilter([]);
     }
@@ -169,12 +175,12 @@ class FilterLeaf implements FilterTree {
 
     rule: JSON;
 
-    constructor(filter: JSON){
+    constructor(filter: JSON) {
         this.rule = filter;
     }
 
     addFilter(parameters: string[]): boolean {
-        if (parameters.length != 4){
+        if (parameters.length != 4) {
             console.error("Invalid filter config length : ", parameters);
             return false;
         }

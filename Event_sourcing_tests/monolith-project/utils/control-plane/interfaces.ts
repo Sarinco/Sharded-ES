@@ -20,7 +20,7 @@ ID_PROXY_PACKET
 export const defaultRule: JSON = JSON.parse('{"action": "broadcast"}');
 
 export const defaultConfig = (event: Event) => {
-    return ["default", "", ""];
+    return [];
 }
 
 /*

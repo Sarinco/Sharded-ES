@@ -221,9 +221,10 @@ export class DynamicGateway {
             topic: route.topic,
             message: {
                 key: 'N/A',
-                value: JSON.stringify(request_info) 
+                value: JSON.stringify(request_info)
             }
         };
+
         const extracted_data: string[] = this.control_plane.matchCallback(event);
         // Check if the extracted data matches any of the filters
         if (extracted_data.length > 0) {

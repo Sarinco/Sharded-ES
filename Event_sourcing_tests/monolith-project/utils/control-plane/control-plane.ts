@@ -110,9 +110,15 @@ export class ControlPlane {
         })
     }
 
-    // Broadcast a message to all connected connections
+    // Broadcast a message to all connected proxy connections 
     broadcast(event: string) {
-        const all_ips = Array.from(this.ip_region.keys());
+        const all_ips: string[] = [];
+        this.proxy_connections.forEach((connections) => {
+            const randomIndex = Math.floor(Math.random() * connections.length);
+            const ip = connections[randomIndex];
+            all_ips.push(ip);
+        });
+
         console.info('Broadcasting message to: ', all_ips);
         all_ips.forEach((ip) => {
             this.send(event, ip);
@@ -140,10 +146,12 @@ export class ControlPlane {
         let promises: Promise<Response>[] = [];
         region.forEach((r) => {
             const connections = this.proxy_connections.get(r);
+            console.debug(`Connections for region ${r}: `, connections);
             if (connections) {
                 // Get a random IP address from the region
                 const randomIndex = Math.floor(Math.random() * connections.length);
                 const ip = connections[randomIndex];
+                console.debug(`Sending data to ${ip}`);
                 promises.push(this.send(data, ip, endpoint));
             }
         });
