@@ -1,0 +1,11 @@
+[
+    {
+        "type": "users",
+        "action": "broadcast"
+    },
+    {
+        "type": "stock",
+        "action": "shard",
+        "rules": ".src/filters/productHandler.js"
+    }
+]

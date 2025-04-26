@@ -1,0 +1,66 @@
+services:
+  products:
+    build:
+      context: ../src/back-end/products
+      dockerfile: Dockerfile
+    volumes:
+      - ../src/back-end/products:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      #- ../utils/middleware/token.ts:/app/src/middleware/token.ts
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+    ports:
+      - "${PRODUCTS_EXTERNAL_PORT}:${PRODUCTS_PORT}"
+    # The watch command will check for changes in the code and restart the server
+    command: sh -c "npm install && npm run watch" 
+    environment:
+      PORT: ${PRODUCTS_PORT} 
+      DB_ADDRESS: ${DB_PRODUCTS_HOST}
+      EVENT_ADDRESS: ${EVENT_HOST} 
+      EVENT_PORT: ${EVENT_PORT} 
+      PROXY_ADDRESS: ${PROXY_HOST}
+      PROXY_PORT: ${PROXY_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      REGION: ${REGION}
+      EVENT_CLIENT_ID: "product-service"
+    depends_on:
+      broker:
+        condition: service_healthy
+      db-products:
+        condition: service_healthy
+      db-products-init:
+        condition: service_completed_successfully
+
+  db-products-init:
+    build:
+      context: ../src/back-end/products
+      dockerfile: Dockerfile.init-db
+    volumes:
+      - ../src/back-end/products:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+    environment:
+      PORT: ${PRODUCTS_PORT}
+      EVENT_ADDRESS: ${EVENT_HOST}
+      EVENT_PORT: ${EVENT_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      EVENT_CLIENT_ID: "product-service"
+    depends_on:
+      broker:
+        condition: service_healthy
+      db-products:
+        condition: service_healthy
+
+  db-products:
+    image: redis:alpine
+    ports:
+      - "${DB_PRODUCTS_EXTERNAL_PORT}:${DB_PRODUCTS_PORT}"
+    volumes:
+      - ../src/back-end/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5

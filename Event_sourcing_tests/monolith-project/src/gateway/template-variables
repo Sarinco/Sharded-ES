@@ -1,0 +1,3 @@
+map $host $frontend_url {
+  default "$FRONTEND_URL";
+}

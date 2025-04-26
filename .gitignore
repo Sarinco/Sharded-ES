@@ -1,1 +1,7 @@
 node_modules/
+yarn.lock
+
+.svelte-kit/
+
+build/
+Event_sourcing_tests/monolith-project/src/back-end/stock/dist

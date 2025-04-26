@@ -1,0 +1,19 @@
+[
+    {
+        "topic": "users",
+        "action": "broadcast"
+    },
+    {
+        "topic": "products",
+        "action": "broadcast"
+    },
+    {
+        "topic": "orders",
+        "action": "broadcast"
+    },
+    {
+        "topic": "stock",
+        "action": "shard",
+        "shardKeyProducer": "/app/src/sharder/gateway/stock.js"
+    }
+]

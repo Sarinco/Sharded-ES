@@ -1,0 +1,7 @@
+include:
+  - ../src/back-end/event-pipeline/docker-compose.yaml # Event pipeline service (Kafka)
+
+networks:
+  default:
+    name: site3
+    driver: bridge

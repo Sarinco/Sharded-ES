@@ -1,0 +1,17 @@
+services:
+  email:
+    build:
+      context: ../src/back-end/email-service
+      dockerfile: Dockerfile
+    volumes:
+      - ../src/back-end/email-service:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+    command: sh -c "npm install && npm run watch"
+    environment:
+      EVENT_ADDRESS: ${EVENT_HOST} 
+      EVENT_PORT: ${EVENT_PORT} 
+    depends_on:
+      broker:
+        condition: service_healthy
+

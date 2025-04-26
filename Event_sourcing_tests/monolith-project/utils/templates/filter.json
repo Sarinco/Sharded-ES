@@ -1,0 +1,59 @@
+[
+    {
+        "name": "filter",
+        "proxy_address": "SET BY CONTROL PLANE",
+        "region": "site1",
+        "topic": "*",
+        "filters": [
+            {
+                "type": "ProductAdded",
+                "filter": [
+                    {
+                        "logic": "or",
+                        "filters": [
+                            {
+                                "type": "price",
+                                "operation": "greater",
+                                "value": "10"
+                            },
+                            {
+                                "type": "count",
+                                "operation": "less",
+                                "value": "20"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "filter",
+        "proxy_address": "SET BY CONTROL PLANE",
+        "region": "site1",
+        "topic": "*",
+        "filters": [
+            {
+                "type": "ProductAdded",
+                "filter": [
+                    {
+                        "logic": "or",
+                        "filters": [
+                            {
+                                "type": "price",
+                                "operation": "greater",
+                                "value": "10"
+                            },
+                            {
+                                "type": "count",
+                                "operation": "less",
+                                "value": "20"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+
+]

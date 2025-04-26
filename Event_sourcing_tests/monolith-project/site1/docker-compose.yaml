@@ -1,0 +1,58 @@
+include:
+  - ../src/back-end/event-pipeline/docker-compose.yaml # Event pipeline service (Kafka)
+  - ../compose/products-compose.yaml # Product services
+  - ../compose/stock-compose.yaml
+  - ../compose/order-compose.yaml
+  - ../compose/email-compose.yaml
+  - ../compose/users-compose.yaml
+
+services:
+  frontend:
+    build: 
+      context: ../src/front-end
+      dockerfile: Dockerfile
+    volumes:
+      - ../src/front-end:/app
+      - ../utils/types/product.ts:/app/src/types/product.ts
+    ports:
+      - "${FRONTEND_EXTERNAL_PORT}:${FRONTEND_PORT}"
+    environment:
+      - PUBLIC_AUTH_SERVICE_URL=http://localhost:80
+      # Because running on host machine 
+      - VITE_GATEWAY_URL=http://localhost:${GATEWAY_PORT}
+    command: npm run dev -- --host
+    depends_on:
+      products:  
+        condition: service_healthy
+  gateway:
+    build:
+      context: ../src/proxy/gateway
+      dockerfile: Dockerfile
+    volumes:
+      - ../src/proxy/gateway:/app
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+      - ../utils/helper:/app/src/helper
+      - ../utils/control-plane:/app/src/control-plane
+    ports:
+      - "${GATEWAY_PORT}:80"
+      - "7000:7000"
+    command: sh -c "npm install && npm run watch"
+    environment:
+      PORT: 80 
+      REGION: "eu-be"
+      MASTER: "proxy-1"
+      CONTROL_PORT: "7000"
+    networks:
+      - default
+      - proxy
+
+
+networks:
+  default:
+    name: site1
+    driver: bridge
+  proxy:
+    name: proxy
+    external: true
