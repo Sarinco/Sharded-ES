@@ -15,7 +15,7 @@ import {
     ID_GATEWAY_PACKET,
     SHARD,
     BROADCAST,
-    defaultRule,
+    defaultAction,
     NewConnectionPacket,
     defaultConfig
 } from '@src/control-plane/interfaces';

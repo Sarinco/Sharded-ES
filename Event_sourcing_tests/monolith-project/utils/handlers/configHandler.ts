@@ -3,7 +3,7 @@ import {
     Event,
     Config,
     Rule,
-    defaultRule,
+    defaultAction,
 } from '@src/control-plane/interfaces';
 
 /*
@@ -46,13 +46,12 @@ export class ConfigManager {
      *
      * @param parameters
      */
-    addFilter(parameters: string[]) {
+    addFilter(parameters: string[]): boolean {
         let b: boolean = this.filter_tree.addFilter(parameters);
-        if (b) {
-            console.info("Filter successfully added : ", parameters);
-        } else {
+        if(!b) {
             console.error("Failed to add filter : ", parameters);
         }
+        return b;
     }
 
     /**
@@ -76,18 +75,17 @@ export class ConfigManager {
     }
 
     matchFilter(extracted_data: any) {
-        const result = this.filter_tree.getFilter(extracted_data);
-        console.info("Result of the filter: ", result);
-        return result;
+        const target_regions = this.filter_tree.getRule(extracted_data);
+        const generated_filter = {action: `[${target_regions}]`};
+        return generated_filter;
     }
 
-    deleteFilter(parameters: string[]){
+    deleteFilter(parameters: string[]): boolean{
         let b:boolean = this.filter_tree.deleteFilter(parameters);
-        if (b){
-            console.log("Filter successfully deleted : ", parameters);
-        } else {
+        if (!b){
             console.log("Failed to remove filter, filter not found : ", parameters);
         }
+        return b;
     }
 
     /**
@@ -108,7 +106,7 @@ interface FilterTree {
 
     deleteFilter(parameters: string[]): boolean;
 
-    getFilter(parameters: string[]): Rule;
+    getRule(parameters: string[]): string[];
 
     getSize(): number;
 }
@@ -120,7 +118,7 @@ class FilterNodes implements FilterTree {
 
     constructor(depth: number = 0) {
         this.nodes = new Map();
-        this.nodes.set("default", new FilterLeaf(defaultRule))
+        this.nodes.set("default", new FilterLeaf(defaultAction))
         this.depth = depth;
     }
 
@@ -134,18 +132,18 @@ class FilterNodes implements FilterTree {
             return false;
         }
 
-        if (parameters[3] == "*") parameters[3] = JSON.stringify(defaultRule);
+        if (parameters[3] == "*") parameters[3] = defaultAction;
 
         let current_val = parameters[this.depth];
         if (!this.nodes.has(current_val)) {
 
-            if (this.depth != 2 && current_val != "*") {
+            if (this.depth != 2 && current_val != "*" && current_val != "%") {
                 let new_filter = new FilterNodes(this.depth + 1)
                 this.nodes.set(current_val, new_filter);
                 return new_filter.addFilter(parameters);
             } else {
                 if (current_val == "*") current_val = "default";
-                this.nodes.set(current_val, new FilterLeaf(JSON.parse(parameters[3])));
+                this.nodes.set(current_val, new FilterLeaf(parameters[3]));
                 return true;
             }
         } else {
@@ -174,7 +172,7 @@ class FilterNodes implements FilterTree {
         }
 
         if (current_val == "*"){
-            this.nodes.set("default", new filterLeaf(defaultRule));
+            this.nodes.set("default", new FilterLeaf(defaultAction));
             console.log("default filter reverted back to original parameters");
             return true;
         }
@@ -189,7 +187,7 @@ class FilterNodes implements FilterTree {
     }
 
 
-    getFilter(parameters: string[]): Rule {
+    getRule(parameters: string[]): string[] {
         if (parameters.length == 0) {
             return this.getDefault();
         }
@@ -205,24 +203,30 @@ class FilterNodes implements FilterTree {
                 throw new Error("Node not found when retreiving filter");
             }
         }
-        return next_node.getFilter(parameters);
+
+        let mandatory_node = this.nodes.get("%");
+        if (mandatory_node){
+            return next_node.getRule(parameters).concat(mandatory_node.getRule(parameters))
+        } else {
+            return next_node.getRule(parameters);
+        }
     }
 
-    getDefault(): Rule {
+    getDefault(): string[] {
         let def = this.nodes.get("default");
         if (!def) {
             throw new Error("failed to get default");
         }
-        return def.getFilter([]);
+        return def.getRule([]);
     }
 }
 
 class FilterLeaf implements FilterTree {
 
-    rule: JSON;
+    rule: string[];
 
-    constructor(filter: JSON) {
-        this.rule = filter;
+    constructor(action: string) {
+        this.rule = action.split(",");
     }
 
     getSize(): number {
@@ -234,8 +238,8 @@ class FilterLeaf implements FilterTree {
             console.error("Invalid filter config length : ", parameters);
             return false;
         }
-
-        this.rule = JSON.parse(parameters[3]);
+        let new_rule = parameters[3].split(",");
+        this.rule = this.rule.concat(new_rule);
         return true;
     }
 
@@ -244,10 +248,8 @@ class FilterLeaf implements FilterTree {
         return false;
     }
 
-    getFilter(parameters: string[]): Rule {
-        let to_return = this.rule as unknown as Rule;
-        return to_return;
-
+    getRule(parameters: string[]): string[] {
+        return this.rule;
     }
 
 }

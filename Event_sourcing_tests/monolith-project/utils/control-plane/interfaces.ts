@@ -17,7 +17,7 @@ export const ID_GATEWAY_PACKET = 'gateway_identity';
 export const BROADCAST = 'broadcast';
 export const SHARD = 'shard';
 ID_PROXY_PACKET
-export const defaultRule: JSON = JSON.parse('{"action": "broadcast"}');
+export const defaultAction = "broadcast";
 
 export const defaultConfig = (event: Event) => {
     return [];

@@ -98,11 +98,11 @@ export class ControlPlane {
     }
 
 
-    send(data: string, ip: string, endpoint: string = "direct-forward"): Promise<Response> {
+    send(data: string, ip: string, endpoint: string = "direct-forward", instruction: string = "POST"): Promise<Response> {
         console.debug(`Sending data to ${ip}`);
         // Send the data to the client
         return fetch(`http://${ip}/${endpoint}`, {
-            method: 'POST',
+            method: `${instruction}`,
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -111,7 +111,7 @@ export class ControlPlane {
     }
 
     // Broadcast a message to all connected proxy connections 
-    broadcast(event: string) {
+    broadcast(event: string, endpoint: string = "direct-forward", instruction: string = "POST") {
         const all_ips: string[] = [];
         this.proxy_connections.forEach((connections) => {
             const randomIndex = Math.floor(Math.random() * connections.length);
@@ -120,8 +120,10 @@ export class ControlPlane {
         });
 
         console.info('Broadcasting message to: ', all_ips);
+        console.info("Enpoint of the broadcast: ", endpoint);
+        console.info("Instruction : ", instruction);
         all_ips.forEach((ip) => {
-            this.send(event, ip);
+            this.send(event, ip, endpoint, instruction);
         });
     }
 
