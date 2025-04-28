@@ -1,0 +1,38 @@
+
+  █ TOTAL RESULTS
+
+    checks_total.......................: 3080    14.618276/s
+    checks_succeeded...................: 100.00% 3080 out of 3080
+    checks_failed......................: 0.00%   0 out of 3080
+
+    ✓ Successful login
+    ✓ Product created
+    ✓ Product recieved
+    ✓ Product is in the list
+    ✓ Product price is correct
+    ✓ Product updated
+    ✓ Product price is updated
+    ✓ Product deleted
+    ✓ Product is not in the list
+
+    HTTP
+    http_req_duration.......................................................: avg=6.4ms min=1.96ms med=5.91ms max=22.17ms p(90)=10.85ms p(95)=12.62ms
+      { expected_response:true }............................................: avg=6.4ms min=1.96ms med=5.91ms max=22.17ms p(90)=10.85ms p(95)=12.62ms
+    http_req_failed.........................................................: 0.00%  0 out of 1960
+    http_reqs...............................................................: 1960   9.30254/s
+
+    EXECUTION
+    iteration_duration......................................................: avg=4.05s min=4.03s  med=4.04s  max=4.08s   p(90)=4.05s   p(95)=4.06s
+    iterations..............................................................: 280    1.328934/s
+    vus.....................................................................: 1      min=1         max=10
+    vus_max.................................................................: 10     min=10        max=10
+
+    NETWORK
+    data_received...........................................................: 1.6 MB 7.8 kB/s
+    data_sent...............................................................: 513 kB 2.4 kB/s
+
+
+
+
+running (3m30.7s), 00/10 VUs, 280 complete and 0 interrupted iterations
+default ✓ [======================================] 00/10 VUs  3m30s
