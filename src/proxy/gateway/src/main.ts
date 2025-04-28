@@ -15,6 +15,7 @@ import { ControlPlane } from '@src/control-plane/control-plane';
 import { DynamicGateway } from '@src/gateway/dynamic-gateway';
 
 
+
 overrideConsole();
 
 const REGION = process.env.REGION || 'no_region';

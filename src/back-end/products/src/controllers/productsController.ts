@@ -150,7 +150,16 @@ const stock = {
                 event.toJSON(),
             ).then(() => {
                 console.log("Product added successfully by ", added_by);
-                res.send("Product added successfully");
+                let response = {
+                    id: event.id,
+                    name: event.name,
+                    price: event.price,
+                    description: event.description,
+                    image: event.image,
+                    category: event.category,
+                    added_by: added_by
+                }
+                res.send(response);
             }).catch((error: any) => {
                 console.log("Error in add method: ", error);
                 res.status(500).send(error);
