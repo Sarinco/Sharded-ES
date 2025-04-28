@@ -20,9 +20,9 @@ export const options = {
     },
     // Add stages for ramp-up/down testing
     stages: [
-        { duration: '30s', target: 10 },  // Ramp-up
+        { duration: '0s', target: 0 },  // Ramp-up
         { duration: '1m', target: 50 },   // Sustained load
-        { duration: '30s', target: 0 },   // Ramp-down
+        { duration: '0s', target: 0 },   // Ramp-down
     ],
 };
 
