@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { readFileSync } from 'node:fs';
+
 // For module aliasing
 require('module-alias/register');
 
