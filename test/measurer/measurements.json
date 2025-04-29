@@ -1,10 +1,122 @@
 [
   {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 8825575,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 5824121,
+    "gateway": "http://localhost:81"
+  },
+  {
+    "topic": "products",
+    "name": "postProduct",
+    "description": "Post product",
+    "unit": "ns",
+    "value": 12836790,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "products",
+    "name": "postProduct",
+    "description": "Post product",
+    "unit": "ns",
+    "value": 11005128,
+    "gateway": "http://localhost:81"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 6363042,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 6939010,
+    "gateway": "http://localhost:81"
+  },
+  {
+    "topic": "products",
+    "name": "updateProduct",
+    "description": "Update product",
+    "unit": "ns",
+    "value": 9654198,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "products",
+    "name": "updateProduct",
+    "description": "Update product",
+    "unit": "ns",
+    "value": 9583435,
+    "gateway": "http://localhost:81"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 6443062,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 6709920,
+    "gateway": "http://localhost:81"
+  },
+  {
+    "topic": "products",
+    "name": "deleteProduct",
+    "description": "Delete product",
+    "unit": "ns",
+    "value": 8639266,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "products",
+    "name": "deleteProduct",
+    "description": "Delete product",
+    "unit": "ns",
+    "value": 9250050,
+    "gateway": "http://localhost:81"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 5001020,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 5499444,
+    "gateway": "http://localhost:81"
+  },
+  {
     "topic": "users",
     "name": "adminLogin",
     "description": "Login the admin",
     "unit": "ns",
-    "value": 35712783,
+    "value": 11309990,
     "gateway": "http://localhost:80"
   },
   {
@@ -12,7 +124,7 @@
     "name": "adminLogin",
     "description": "Login the admin",
     "unit": "ns",
-    "value": 10914726,
+    "value": 10546489,
     "gateway": "http://localhost:81"
   }
 ]
