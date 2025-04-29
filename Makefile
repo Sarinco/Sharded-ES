@@ -2,7 +2,7 @@
 
 up: up-sites up-proxy
 
-down: down-sites down-proxy
+down: down-proxy down-sites
 
 stop: stop-sites stop-proxy
 

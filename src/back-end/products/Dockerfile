@@ -20,5 +20,5 @@ ARG PORT
 ENTRYPOINT npm install && npm run watch
 
 # health check
-HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
   CMD curl --fail http://localhost:${PORT}/health || exit 1
