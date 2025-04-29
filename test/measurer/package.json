@@ -2,18 +2,23 @@
     "name": "measurer",
     "version": "1.0.0",
     "description": "",
+    "type": "module",
     "main": "main.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "mocha --require ts-node/register src/**/*.test.ts",
         "start": "ts-node src/main.ts"
     },
     "keywords": [],
     "author": "Maxime Delacroix",
     "license": "ISC",
     "dependencies": {
+        "chai": "^5.2.0",
         "fs-extra": "^11.3.0"
     },
     "devDependencies": {
+        "@types/chai": "^4.3.10",
+        "@types/mocha": "^10.0.10",
+        "mocha": "^11.1.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.8.3"
     }
