@@ -1,4 +1,6 @@
-import { MeasurementService } from "./measurer";
+import { MeasurementService } from "./measurer.ts";
 
-console.log("MeasurementService initialized");
 
+const measurementService = MeasurementService.getInstance();
+const filePath = "measurements.json";
+measurementService.writeToFile(filePath);

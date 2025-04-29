@@ -6,6 +6,7 @@ import {
     loginUser,
     registerUser,
 } from "./index.ts";
+import { MeasurementService } from "../measurer.ts";
 
 
 const gateways = [
@@ -17,11 +18,15 @@ let admin_token = "";
 const email = "mocha@test.be";
 const password = "password";
 
+const measurementService = MeasurementService.getInstance();
+const measurementServiceUser = measurementService.createChild("users");
+
+
 describe("Login the admin", () => {
     it("Should return a token on successful login", async () => {
         for (const gateway of gateways) {
             try {
-                const token = await adminLogin(gateway);
+                const token = await measurementServiceUser.measure(() => adminLogin(gateway), "adminLogin", "Login the admin", gateway);
                 expect(token).to.be.a("string");
                 expect(token).to.not.be.empty;
                 admin_token = token;

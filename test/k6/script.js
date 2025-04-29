@@ -5,23 +5,10 @@ const GATEWAY_1 = 'http://localhost:80';
 const GATEWAY_2 = 'http://localhost:81';
 
 export const options = {
-    // stages: [
-    //     { duration: '10s', target: 3 }, // simulate ramp-up of traffic from 0 to 5 users over 1 minute
-    // ],
-    // Enable metrics output to InfluxDB
-    ext: {
-        influxdb: {
-            url: "http://localhost:8086", // Change if InfluxDB is remote
-            token: "admin",          // InfluxDB v2 auth token
-            org: "k6",
-            bucket: "k6",
-            tags: ["gateway", "endpoint"], // Tag requests for filtering
-        },
-    },
     // Add stages for ramp-up/down testing
     stages: [
         { duration: '0s', target: 0 },  // Ramp-up
-        { duration: '1m', target: 50 },   // Sustained load
+        { duration: '4s', target: 2 },   // Sustained load
         { duration: '0s', target: 0 },   // Ramp-down
     ],
 };
@@ -38,7 +25,7 @@ function setup() {
             'Content-Type': 'application/json',
         },
     };
-    let res = http.post(GATEWAY_1 + '/api/users/login', payload, params, { tags: { name: 'login' } });
+    let res = http.post(GATEWAY_1 + '/api/users/login', payload, params, { tags: { topic: 'users', endpoint: 'login' } });
 
     let token = res.headers['Authorization'];
     check(res, {
@@ -67,7 +54,7 @@ function createProduct(token, randomPrice) {
         },
     };
 
-    let res = http.post(GATEWAY_1 + '/api/products', payload, params, { tags: { name: 'create' } });
+    let res = http.post(GATEWAY_1 + '/api/products', payload, params, { tags: { topic: 'product', endpoint: '/' } });
 
     check(res, {
         'Product created': (r) => {
@@ -96,7 +83,7 @@ function updateProduct(token, randomPrice, productId) {
         },
     };
 
-    let res = http.put(GATEWAY_1 + '/api/products/' + productId, payload, params);
+    let res = http.put(GATEWAY_1 + '/api/products/' + productId, payload, params, { tags: { topic: 'product', endpoint: '/' } });
 
     check(res, {
         'Product updated': (r) => r.status === 200,
@@ -111,7 +98,7 @@ function deleteProduct(token, productId) {
         },
     };
 
-    let res = http.del(GATEWAY_1 + '/api/products/' + productId, null, params);
+    let res = http.del(GATEWAY_1 + '/api/products/' + productId, null, params, { tags: { topic: 'product', endpoint: '/' } });
 
     check(res, {
         'Product deleted': (r) => r.status === 200,
@@ -129,7 +116,7 @@ export default function() {
     let id = createProduct(token, randomPrice);
 
     sleep(delay);
-    let res = http.get('' + GATEWAY_1 + '/api/products');
+    let res = http.get('' + GATEWAY_1 + '/api/products', { tags: { topic: 'product', endpoint: '/' } });
     check(res, {
         'Product recieved': (r) => r.status === 200,
         'Product is in the list': (r) => {
@@ -160,7 +147,7 @@ export default function() {
     updateProduct(token, randomPrice, id);
 
     sleep(delay);
-    res = http.get('' + GATEWAY_1 + '/api/products');
+    res = http.get('' + GATEWAY_1 + '/api/products', { tags: { topic: 'product', endpoint: '/' } });
     check(res, {
         'Product updated': (r) => r.status === 200,
         'Product price is updated': (r) => {
@@ -179,7 +166,7 @@ export default function() {
     deleteProduct(token, id);
 
     sleep(delay);
-    res = http.get('' + GATEWAY_1 + '/api/products');
+    res = http.get('' + GATEWAY_1 + '/api/products', { tags: { topic: 'product', endpoint: '/' } });
     check(res, {
         'Product deleted': (r) => r.status === 200,
         'Product is not in the list': (r) => {
