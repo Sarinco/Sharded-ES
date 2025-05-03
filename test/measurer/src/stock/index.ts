@@ -65,9 +65,9 @@ export async function setStock(gateway: string, id: string, warehouse: string, c
             'Authorization': token,
         },
     };
-    const url = `${gateway}/api/stock/set/${id}`;
+    const url = `${gateway}/api/stock/${id}`;
     const res = await fetch(url, {
-        method: 'POST',
+        method: 'PUT',
         body: payload,
         ...params,
     });
@@ -89,7 +89,7 @@ export async function increaseStock(gateway: string, id: string, warehouse: stri
             'Authorization': token,
         },
     };
-    const url = `${gateway}/api/stock/increase/${id}`;
+    const url = `${gateway}/api/stock/${id}/increase`;
     const res = await fetch(url, {
         method: 'PUT',
         body: payload,
@@ -113,7 +113,7 @@ export async function decreaseStock(gateway: string, id: string, warehouse: stri
             'Authorization': token,
         },
     };
-    const url = `${gateway}/api/stock/decrease/${id}`;
+    const url = `${gateway}/api/stock/${id}/decrease`;
     const res = await fetch(url, {
         method: 'PUT',
         body: payload,
@@ -122,5 +122,27 @@ export async function decreaseStock(gateway: string, id: string, warehouse: stri
 
     if (res.status != 200) {
         throw new Error(`Failed to decrease stock: ${res.status} ${res.statusText}`);
+    }
+}
+
+export async function deleteStock(gateway: string, id: string, warehouse: string, token: string) {
+    const payload = JSON.stringify({
+        warehouse,
+    });
+    const params = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token,
+        },
+    };
+    const url = `${gateway}/api/stock/${id}`;
+    const res = await fetch(url, {
+        method: 'DELETE',
+        body: payload,
+        ...params,
+    });
+
+    if (res.status != 200) {
+        throw new Error(`Failed to delete stock: ${res.status} ${res.statusText}`);
     }
 }

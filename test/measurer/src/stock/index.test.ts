@@ -6,7 +6,8 @@ import {
     getStockOfWarehouse,
     setStock,
     increaseStock,
-    decreaseStock
+    decreaseStock,
+    deleteStock,
 } from "./index.ts";
 import { adminLogin } from "../users/index.ts";
 import { deleteProduct, postProduct } from "../products/index.ts";
@@ -54,14 +55,9 @@ describe("Adding stock", () => {
             } catch (error) {
                 expect.fail(`Add stock failed for ${gateway}: ${error}`);
             }
-            // Wait a bit to let the stock be added
-            let seconds = 1;
-            await new Promise(resolve => setTimeout(resolve, seconds * 1000));
             try {
                 // Finally, check if the stock is correctly 
                 const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(gateway, test_product_id, warehouse), "getStock", "Get stock", gateway);
-                console.log("Stock: ", stock);
-
             } catch (error) {
                 expect.fail(`Get stock failed for ${gateway}: ${error}`);
             }
@@ -73,6 +69,19 @@ describe("Adding stock", () => {
 
 
 describe("Removing the test product", () => {
+    it("Should remove the stock of the test product in the correct gateway", async () => {
+        for (const gateway of gateways) {
+            const warehouse = gateway_stock_map.get(gateway);
+            if (!warehouse) {
+                expect.fail(`No warehouse found for gateway ${gateway}, bad test setup`);
+            }
+            try {
+                await measurementServiceStock.measure(() => deleteStock(gateway, test_product_id, warehouse, admin_token), "deleteStock", "Delete stock", gateway);
+            } catch (error) {
+                expect.fail(`Delete stock failed for ${gateway}: ${error}`);
+            }
+        }
+    });
     it("Should remove the test product in the correct gateway", async () => {
         try {
             await deleteProduct(gateways[0], test_product_id, admin_token);

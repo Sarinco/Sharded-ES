@@ -10,6 +10,7 @@ import {
     UpdateStockEvent,
 } from "@src/types/events/stock-event";
 import { producer } from "@src/handlers/proxyHandler";
+import { productEventHandler } from '@src/custom-handlers/productEventHandler';
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -28,7 +29,7 @@ const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
 const DB_ADDRESS = process.env.DB_ADDRESS;
 const DB_PORT = "6379";
 
-const topic = ['stock', 'orders'];
+const topic = ['stock', 'orders', 'products'];
 
 
 // REDIS 
@@ -82,6 +83,12 @@ const consumerConnect = async () => {
                     const orderEvent = JSON.parse(message.value.toString());
                     console.log("Order event : ", orderEvent);
                     await orderEventHandler(redis, orderEvent);
+                    break;
+
+                case 'products':
+                    const productEvent = JSON.parse(message.value.toString());
+                    console.log("Product event : ", productEvent);
+                    await productEventHandler(redis, productEvent);
                     break;
 
                 default:
@@ -243,6 +250,28 @@ const stock = {
         }).catch((error: any) => {
             console.log("Error in sending stock update event: ", error);
             res.status(500).send("Error in sending stock update event");
+        });
+    },
+
+    deleteStock: async (req: any, res: any) => {
+        const { warehouse } = req.body;
+        const id = req.params.id;
+        if (!id) {
+            res.status(400).send("Bad request");
+            return;
+        }
+
+        const event: UpdateStockEvent = new UpdateStockEvent(id, 0, warehouse);
+
+        producer.send(
+            'stock',
+            event.toJSON()
+        ).then(() => {
+            console.log("Stock delete event sent");
+            res.status(200).send("Stock delete event sent");
+        }).catch((error: any) => {
+            console.log("Error in sending stock delete event: ", error);
+            res.status(500).send("Error in sending stock delete event");
         });
     }
 }
