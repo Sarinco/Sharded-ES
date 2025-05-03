@@ -4,7 +4,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 8825575,
+    "value": 5849836,
     "gateway": "http://localhost:80"
   },
   {
@@ -12,7 +12,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 5824121,
+    "value": 4556574,
     "gateway": "http://localhost:81"
   },
   {
@@ -20,7 +20,7 @@
     "name": "postProduct",
     "description": "Post product",
     "unit": "ns",
-    "value": 12836790,
+    "value": 9763888,
     "gateway": "http://localhost:80"
   },
   {
@@ -28,7 +28,7 @@
     "name": "postProduct",
     "description": "Post product",
     "unit": "ns",
-    "value": 11005128,
+    "value": 8534625,
     "gateway": "http://localhost:81"
   },
   {
@@ -36,7 +36,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 6363042,
+    "value": 4023867,
     "gateway": "http://localhost:80"
   },
   {
@@ -44,7 +44,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 6939010,
+    "value": 5020964,
     "gateway": "http://localhost:81"
   },
   {
@@ -52,7 +52,7 @@
     "name": "updateProduct",
     "description": "Update product",
     "unit": "ns",
-    "value": 9654198,
+    "value": 9840180,
     "gateway": "http://localhost:80"
   },
   {
@@ -60,7 +60,7 @@
     "name": "updateProduct",
     "description": "Update product",
     "unit": "ns",
-    "value": 9583435,
+    "value": 7840926,
     "gateway": "http://localhost:81"
   },
   {
@@ -68,7 +68,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 6443062,
+    "value": 3609110,
     "gateway": "http://localhost:80"
   },
   {
@@ -76,7 +76,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 6709920,
+    "value": 4065114,
     "gateway": "http://localhost:81"
   },
   {
@@ -84,7 +84,7 @@
     "name": "deleteProduct",
     "description": "Delete product",
     "unit": "ns",
-    "value": 8639266,
+    "value": 8568058,
     "gateway": "http://localhost:80"
   },
   {
@@ -92,7 +92,7 @@
     "name": "deleteProduct",
     "description": "Delete product",
     "unit": "ns",
-    "value": 9250050,
+    "value": 7066355,
     "gateway": "http://localhost:81"
   },
   {
@@ -100,7 +100,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 5001020,
+    "value": 3419866,
     "gateway": "http://localhost:80"
   },
   {
@@ -108,7 +108,31 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 5499444,
+    "value": 5134376,
+    "gateway": "http://localhost:81"
+  },
+  {
+    "topic": "stock",
+    "name": "addStock",
+    "description": "Add stock",
+    "unit": "ns",
+    "value": 6731007,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "stock",
+    "name": "getStock",
+    "description": "Get stock",
+    "unit": "ns",
+    "value": 7148439,
+    "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "stock",
+    "name": "addStock",
+    "description": "Add stock",
+    "unit": "ns",
+    "value": 10433522,
     "gateway": "http://localhost:81"
   },
   {
@@ -116,15 +140,23 @@
     "name": "adminLogin",
     "description": "Login the admin",
     "unit": "ns",
-    "value": 11309990,
+    "value": 12888139,
     "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "stock",
+    "name": "getStock",
+    "description": "Get stock",
+    "unit": "ns",
+    "value": 6269512,
+    "gateway": "http://localhost:81"
   },
   {
     "topic": "users",
     "name": "adminLogin",
     "description": "Login the admin",
     "unit": "ns",
-    "value": 10546489,
+    "value": 13331700,
     "gateway": "http://localhost:81"
   }
 ]
