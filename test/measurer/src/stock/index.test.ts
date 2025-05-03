@@ -47,7 +47,7 @@ describe("Setting stock", () => {
                 expect.fail(`No warehouse found for gateway ${gateway}, bad test setup`);
             }
             try {
-                await measurementServiceStock.measure(() => setStock(gateway, test_product_id, warehouse, 10, admin_token), "addStockBasic", "Add stock", gateway, gateway);
+                await measurementServiceStock.measure(() => setStock(gateway, test_product_id, warehouse, 10, admin_token), "addStock", "Add stock", gateway, gateway);
             } catch (error) {
                 expect.fail(`Add stock failed for ${gateway}: ${error}`);
             }
@@ -73,7 +73,7 @@ describe("Setting stock", () => {
                     continue;
                 }
                 try {
-                    await measurementServiceStock.measure(() => setStock(other_gateway, test_product_id, warehouse, 20, admin_token), "addStockWrongGateway", "Add stock to the wrong gateway to see the time of the forwarding between sites", gateway, other_gateway);
+                    await measurementServiceStock.measure(() => setStock(other_gateway, test_product_id, warehouse, 20, admin_token), "addStock", "Add stock to the wrong gateway to see the time of the forwarding between sites", gateway, other_gateway);
                 } catch (error) {
                     expect.fail(`Add stock failed for ${gateway}: ${error}`);
                 }
@@ -115,7 +115,7 @@ describe("Getting stock", () => {
                     continue;
                 }
                 try {
-                    const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(other_gateway, test_product_id, warehouse), "getStockWrongGateway", "Get stock in the wrong gateway to test the gateway latency", other_gateway, gateway);
+                    const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(other_gateway, test_product_id, warehouse), "getStock", "Get stock in the wrong gateway to test the gateway latency", other_gateway, gateway);
                     // Should be an array of objects
                     expect(stock).to.be.an("array");
                     expect(stock.length).to.be.greaterThan(0);

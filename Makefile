@@ -1,4 +1,4 @@
-.PHONY : up down stop up-proxy down-proxy up-sites down-sites stop-sites stop-proxy tests
+.PHONY : up down stop up-proxy down-proxy up-sites down-sites stop-sites stop-proxy tests clean-tests
 
 NB_TESTS ?= 10
 
@@ -39,4 +39,7 @@ stop-sites:
 # make tests --> Will use default value of 10
 tests:
 	cd test; bash run.sh $(NB_TESTS)
+
+clean-tests:
+	rm test/measurements/*.json
 

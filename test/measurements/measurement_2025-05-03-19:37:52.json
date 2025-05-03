@@ -4,7 +4,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 4917285,
+    "value": 4973229,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -13,7 +13,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 5544769,
+    "value": 3929338,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
@@ -22,7 +22,7 @@
     "name": "postProduct",
     "description": "Post product",
     "unit": "ns",
-    "value": 8606702,
+    "value": 7597379,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -31,7 +31,7 @@
     "name": "postProduct",
     "description": "Post product",
     "unit": "ns",
-    "value": 8598056,
+    "value": 14401105,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
@@ -40,7 +40,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 4286214,
+    "value": 8025338,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -49,7 +49,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 4992616,
+    "value": 5412659,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
@@ -58,7 +58,7 @@
     "name": "updateProduct",
     "description": "Update product",
     "unit": "ns",
-    "value": 8643410,
+    "value": 16110438,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -67,7 +67,7 @@
     "name": "updateProduct",
     "description": "Update product",
     "unit": "ns",
-    "value": 7281601,
+    "value": 14978854,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
@@ -76,7 +76,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 4491689,
+    "value": 4959433,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -85,7 +85,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 5202840,
+    "value": 4181128,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
@@ -94,7 +94,7 @@
     "name": "deleteProduct",
     "description": "Delete product",
     "unit": "ns",
-    "value": 8455299,
+    "value": 6984564,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -103,7 +103,7 @@
     "name": "deleteProduct",
     "description": "Delete product",
     "unit": "ns",
-    "value": 7232459,
+    "value": 6238672,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
@@ -112,7 +112,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 3315095,
+    "value": 3817539,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -121,16 +121,16 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 4187088,
+    "value": 4136746,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
   {
     "topic": "stock",
-    "name": "addStockBasic",
+    "name": "addStock",
     "description": "Add stock",
     "unit": "ns",
-    "value": 6220696,
+    "value": 5534887,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -139,16 +139,16 @@
     "name": "getStock",
     "description": "Get stock",
     "unit": "ns",
-    "value": 2961153,
+    "value": 3785871,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
   {
     "topic": "stock",
-    "name": "addStockBasic",
+    "name": "addStock",
     "description": "Add stock",
     "unit": "ns",
-    "value": 5815807,
+    "value": 5419912,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
@@ -157,16 +157,16 @@
     "name": "getStock",
     "description": "Get stock",
     "unit": "ns",
-    "value": 3789464,
+    "value": 2674224,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
   {
     "topic": "stock",
-    "name": "addStockWrongGateway",
+    "name": "addStock",
     "description": "Add stock to the wrong gateway to see the time of the forwarding between sites",
     "unit": "ns",
-    "value": 7958849,
+    "value": 6551947,
     "source_site": "eu-be",
     "destination_site": "eu-spain"
   },
@@ -175,16 +175,16 @@
     "name": "getStock",
     "description": "Get stock",
     "unit": "ns",
-    "value": 2915768,
+    "value": 3054885,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
   {
     "topic": "stock",
-    "name": "addStockWrongGateway",
+    "name": "addStock",
     "description": "Add stock to the wrong gateway to see the time of the forwarding between sites",
     "unit": "ns",
-    "value": 6989535,
+    "value": 6676049,
     "source_site": "eu-spain",
     "destination_site": "eu-be"
   },
@@ -193,25 +193,25 @@
     "name": "getStock",
     "description": "Get stock",
     "unit": "ns",
-    "value": 3239995,
+    "value": 3137850,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
   {
     "topic": "stock",
-    "name": "getStockWrongGateway",
+    "name": "getStock",
     "description": "Get stock in the wrong gateway to test the gateway latency",
     "unit": "ns",
-    "value": 5540411,
+    "value": 3902619,
     "source_site": "eu-spain",
     "destination_site": "eu-be"
   },
   {
     "topic": "stock",
-    "name": "getStockWrongGateway",
+    "name": "getStock",
     "description": "Get stock in the wrong gateway to test the gateway latency",
     "unit": "ns",
-    "value": 4457815,
+    "value": 3691926,
     "source_site": "eu-be",
     "destination_site": "eu-spain"
   },
@@ -220,7 +220,7 @@
     "name": "deleteStock",
     "description": "Delete stock",
     "unit": "ns",
-    "value": 5539960,
+    "value": 4324055,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -229,7 +229,7 @@
     "name": "deleteStock",
     "description": "Delete stock",
     "unit": "ns",
-    "value": 6560882,
+    "value": 4579593,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   },
@@ -238,7 +238,7 @@
     "name": "adminLogin",
     "description": "Login the admin",
     "unit": "ns",
-    "value": 10441586,
+    "value": 10921517,
     "source_site": "eu-be",
     "destination_site": "eu-be"
   },
@@ -247,7 +247,7 @@
     "name": "adminLogin",
     "description": "Login the admin",
     "unit": "ns",
-    "value": 9206284,
+    "value": 9001722,
     "source_site": "eu-spain",
     "destination_site": "eu-spain"
   }
