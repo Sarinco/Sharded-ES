@@ -11,18 +11,14 @@ import {
 } from "./index.ts";
 import { adminLogin } from "../users/index.ts";
 import { deleteProduct, postProduct } from "../products/index.ts";
-import { MeasurementService } from "../measurer.ts";
+import { 
+    MeasurementService,
+    gateways,
+    gateway_stock_map,
+} from "../measurer.ts";
 
-const gateways = [
-    "http://localhost:80",
-    "http://localhost:81",
-];
 let admin_token = await adminLogin(gateways[0]);
 let test_product_id = "";
-
-const gateway_stock_map = new Map<string, string>();
-gateway_stock_map.set(gateways[0], "charleroi-sud");
-gateway_stock_map.set(gateways[1], "barcelone");
 
 const measurementService = MeasurementService.getInstance();
 const measurementServiceStock = measurementService.createChild("stock");
@@ -41,9 +37,9 @@ describe("Adding the test product", () => {
     });
 });
 
-describe("Adding stock", () => {
-    it("Should add the stock of the product in the correct gateway", async () => {
-
+//INFO: Test of proxy latency
+describe("Setting stock", () => {
+    it("Should set the stock of the product in the correct gateway without sharding", async () => {
         // Then add stock to the product to the correct gateway
         for (const gateway of gateways) {
             const warehouse = gateway_stock_map.get(gateway);
@@ -51,17 +47,92 @@ describe("Adding stock", () => {
                 expect.fail(`No warehouse found for gateway ${gateway}, bad test setup`);
             }
             try {
-                await measurementServiceStock.measure(() => setStock(gateway, test_product_id, warehouse, 10, admin_token), "addStock", "Add stock", gateway);
+                await measurementServiceStock.measure(() => setStock(gateway, test_product_id, warehouse, 10, admin_token), "addStockBasic", "Add stock", gateway, gateway);
             } catch (error) {
                 expect.fail(`Add stock failed for ${gateway}: ${error}`);
             }
             try {
                 // Finally, check if the stock is correctly 
-                const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(gateway, test_product_id, warehouse), "getStock", "Get stock", gateway);
+                const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(gateway, test_product_id, warehouse), "getStock", "Get stock", gateway, gateway);
             } catch (error) {
                 expect.fail(`Get stock failed for ${gateway}: ${error}`);
             }
 
+        }
+    });
+    it("Should set the stock of the product in the correct gateway with sharding", async () => {
+        // Ex: Sending stock to barcelone to the gateway 0 in order to see if the 
+        // stock is correctly forwarded to gateway 1
+        for (const gateway of gateways) {
+            const warehouse = gateway_stock_map.get(gateway);
+            if (!warehouse) {
+                expect.fail(`No warehouse found for gateway ${gateway}, bad test setup`);
+            }
+            for (const other_gateway of gateways) {
+                if (other_gateway === gateway) {
+                    continue;
+                }
+                try {
+                    await measurementServiceStock.measure(() => setStock(other_gateway, test_product_id, warehouse, 20, admin_token), "addStockWrongGateway", "Add stock to the wrong gateway to see the time of the forwarding between sites", gateway, other_gateway);
+                } catch (error) {
+                    expect.fail(`Add stock failed for ${gateway}: ${error}`);
+                }
+                try {
+                    // Finally, check if the stock is correctly 
+                    const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(gateway, test_product_id, warehouse), "getStock", "Get stock", gateway, gateway);
+                    // Should be an array of objects
+                    expect(stock).to.be.an("array");
+                    expect(stock.length).to.be.greaterThan(0);
+                    // Check if the stock is correctly 
+                    for (const stock_entry of stock) {
+                        expect(stock_entry).to.have.property("warehouse", warehouse);
+                        expect(stock_entry).to.have.property("stock");
+                        expect(stock_entry.stock).to.be.a("string");
+                        expect(parseInt(stock_entry.stock)).to.be.greaterThan(0);
+                        if (stock_entry.warehouse === warehouse) {
+                            expect(parseInt(stock_entry.stock)).to.be.equal(20);
+                        }
+                    }
+                    
+                } catch (error) {
+                    expect.fail(`Get stock failed for ${gateway}: ${error}`);
+                }
+            }
+        }
+    });
+});
+
+//INFO: Test of gateway latency
+describe("Getting stock", () => {
+    it("Should get the stock of the product in the wrong gateway", async () => {
+        for (const gateway of gateways) {
+            const warehouse = gateway_stock_map.get(gateway);
+            if (!warehouse) {
+                expect.fail(`No warehouse found for gateway ${gateway}, bad test setup`);
+            }
+            for (const other_gateway of gateways) {
+                if (other_gateway === gateway) {
+                    continue;
+                }
+                try {
+                    const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(other_gateway, test_product_id, warehouse), "getStockWrongGateway", "Get stock in the wrong gateway to test the gateway latency", other_gateway, gateway);
+                    // Should be an array of objects
+                    expect(stock).to.be.an("array");
+                    expect(stock.length).to.be.greaterThan(0);
+                    // Check if the stock is correctly 
+                    for (const stock_entry of stock) {
+                        expect(stock_entry).to.have.property("warehouse", warehouse);
+                        expect(stock_entry).to.have.property("stock");
+                        expect(stock_entry.stock).to.be.a("string");
+                        expect(parseInt(stock_entry.stock)).to.be.greaterThan(0);
+                        if (stock_entry.warehouse === warehouse) {
+                            expect(parseInt(stock_entry.stock)).to.be.equal(20);
+                        }
+                    }
+                } catch (error) {
+                    expect.fail(`Get stock failed for ${other_gateway}: ${error}`);
+                }
+            }
         }
     });
 });
@@ -76,7 +147,7 @@ describe("Removing the test product", () => {
                 expect.fail(`No warehouse found for gateway ${gateway}, bad test setup`);
             }
             try {
-                await measurementServiceStock.measure(() => deleteStock(gateway, test_product_id, warehouse, admin_token), "deleteStock", "Delete stock", gateway);
+                await measurementServiceStock.measure(() => deleteStock(gateway, test_product_id, warehouse, admin_token), "deleteStock", "Delete stock", gateway, gateway);
             } catch (error) {
                 expect.fail(`Delete stock failed for ${gateway}: ${error}`);
             }

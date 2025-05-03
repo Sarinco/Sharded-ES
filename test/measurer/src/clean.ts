@@ -15,6 +15,7 @@ function cleanProduct() {
         },
     };
     const url = `${gateways[0]}/api/products`;
+
     fetch(url, {
         method: 'GET',
         ...params,
@@ -42,8 +43,29 @@ function cleanProduct() {
                         console.log(`Product ${product.id} deleted successfully`);
                     });
             });
+            return data.filter((product: any) => product.name !== "Test Product");
         });
 }
 
+function cleanStock(remainingProducts: any[]) {
+    remainingProducts.forEach((product: any) => {
+        const deleteUrl = `${gateways[0]}/api/stock/${product.id}`;
+        fetch(deleteUrl, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `${admin_token}`,
+            },
+        })
+            .then(res => {
+                if (res.status != 200) {
+                    throw new Error(`Failed to delete stock (${product.id}): ${res.status} ${res.statusText}`);
+                }
+                console.log(`Stock for product ${product.id} deleted successfully`);
+            });
+    });
+}
 
-cleanProduct();
+
+let remaingProducts = cleanProduct();
+

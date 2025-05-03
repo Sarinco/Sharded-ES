@@ -1,4 +1,6 @@
-.PHONY : up down stop up-proxy down-proxy up-sites down-sites stop-sites stop-proxy
+.PHONY : up down stop up-proxy down-proxy up-sites down-sites stop-sites stop-proxy tests
+
+NB_TESTS ?= 10
 
 up: up-sites up-proxy
 
@@ -30,3 +32,11 @@ stop-sites:
 	cd site1; docker compose stop
 	cd site2; docker compose stop
 	cd site3; docker compose stop
+
+# Use like this:
+# make tests NB_TESTS=5 --> will run 5 tests
+# or
+# make tests --> Will use default value of 10
+tests:
+	cd test; bash run.sh $(NB_TESTS)
+

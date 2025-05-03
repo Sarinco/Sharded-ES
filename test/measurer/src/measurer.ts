@@ -1,20 +1,37 @@
 import fs from "fs-extra"
 
+export const gateways = [
+    "http://localhost:80",
+    "http://localhost:81",
+];
+
+export const gateway_site_map = new Map<string, string>([
+    ["http://localhost:80", "eu-be"],
+    ["http://localhost:81", "eu-spain"],
+]);
+
+export const gateway_stock_map = new Map<string, string>([
+    ["http://localhost:80", "charleroi-sud"],
+    ["http://localhost:81", "barcelone"],
+]);
+
 export class Measurement {
     public topic: string;
     public name: string;
     public description: string;
     public value: number;
     public unit: string;
-    public gateway: string;
+    public source_site: string;
+    public destination_site: string;
 
-    constructor(topic: string, name: string, description: string, value: number, unit: string, gateway: string) {
+    constructor(topic: string, name: string, description: string, value: number, unit: string, source_site: string, destination_site: string) {
         this.topic = topic;
         this.name = name;
         this.description = description;
         this.value = value;
         this.unit = unit;
-        this.gateway = gateway;
+        this.source_site = source_site;
+        this.destination_site = destination_site;
     }
 }
 
@@ -54,7 +71,8 @@ export class MeasurementService {
         topic: string,
         name: string,
         description: string,
-        gateway: string
+        source_gateway: string,
+        destination_gateway: string
     ) {
         const start = process.hrtime();
         const res = await callback();
@@ -62,13 +80,20 @@ export class MeasurementService {
         const duration = end[0] * 1e9 + end[1]; // Convert to nanoseconds
         const unit = "ns";
 
+        const source_site = gateway_site_map.get(source_gateway);
+        const destination_site = gateway_site_map.get(destination_gateway);
+        if (!source_site || !destination_site) {
+            throw new Error(`Invalid gateway: ${source_gateway} or ${destination_gateway}`);
+        }
+
         const measurement: Measurement = {
             topic,
             name,
             description,
             unit,
             value: duration,
-            gateway,
+            source_site,
+            destination_site,
         };
 
         this.addMeasurement(measurement);
@@ -94,14 +119,16 @@ export class MeasurementServiceChild {
         callback: () => Promise<any>,
         name: string,
         description: string,
-        gateway: string
+        source_gateway: string,
+        destination_gateway: string
     ) {
         return this.measurement_service.measure(
             callback,
             this.topic,
             name,
             description,
-            gateway
+            source_gateway,
+            destination_gateway
         );
     }
 }

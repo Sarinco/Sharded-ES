@@ -6,13 +6,11 @@ import {
     updateProduct,
     deleteProduct,
 } from "./index.ts";
-import { MeasurementService } from "../measurer.ts";
+import { 
+    MeasurementService,
+    gateways,
+} from "../measurer.ts";
 import { adminLogin } from "../users/index.ts";
-
-const gateways = [
-    "http://localhost:80",
-    "http://localhost:81",
-];
 
 let admin_token = await adminLogin(gateways[0]);
 
@@ -25,7 +23,7 @@ describe("Get products", () => {
     it("Should return a list of products", async () => {
         for (const gateway of gateways) {
             try {
-                const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway);
+                const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway, gateway);
                 expect(products).to.be.an("array");
                 expect(products.length).to.be.greaterThan(0);
             } catch (error) {
@@ -40,7 +38,7 @@ describe("Post product", () => {
         for (const gateway of gateways) {
             try {
                 const random_price = Math.floor(Math.random() * 100);
-                const product = await measurementServiceProduct.measure(() => postProduct(gateway, random_price, admin_token), "postProduct", "Post product", gateway);
+                const product = await measurementServiceProduct.measure(() => postProduct(gateway, random_price, admin_token), "postProduct", "Post product", gateway, gateway);
                 expect(product).to.be.an("object");
                 expect(product).to.have.property("id");
                 expect(product).to.have.property("name", "Test Product");
@@ -54,7 +52,7 @@ describe("Post product", () => {
     it("Should contain the product in the list of products", async () => {
         for (const gateway of gateways) {
             try {
-                const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway);
+                const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway, gateway);
                 expect(products).to.be.an("array");
                 expect(products.length).to.be.greaterThan(0);
                 const product = products.find((p: any) => p.name === "Test Product");
@@ -71,7 +69,7 @@ describe("Update product", () => {
         for (const gateway of gateways) {
             try {
                 const random_price = Math.floor(Math.random() * 100);
-                const product = await measurementServiceProduct.measure(() => updateProduct(gateway, "Test Product", random_price, admin_token), "updateProduct", "Update product", gateway);
+                const product = await measurementServiceProduct.measure(() => updateProduct(gateway, "Test Product", random_price, admin_token), "updateProduct", "Update product", gateway, gateway);
                 // console.log("Product updated: ", product);
                 // expect(product).to.be.an("object");
                 // expect(product).to.have.property("id");
@@ -85,7 +83,7 @@ describe("Update product", () => {
     it("Should contain the updated product in the list of products", async () => {
         for (const gateway of gateways) {
             try {
-                const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway);
+                const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway, gateway);
                 expect(products).to.be.an("array");
                 expect(products.length).to.be.greaterThan(0);
                 const product = products.find((p: any) => p.name === "Test Product");
@@ -105,7 +103,7 @@ describe("Delete product", () => {
                 if (!productId) {
                     throw new Error("No product ID found to delete");
                 }
-                await measurementServiceProduct.measure(() => deleteProduct(gateway, productId, admin_token), "deleteProduct", "Delete product", gateway);
+                await measurementServiceProduct.measure(() => deleteProduct(gateway, productId, admin_token), "deleteProduct", "Delete product", gateway, gateway);
             } catch (error) {
                 expect.fail(`Delete product failed for ${gateway}: ${error}`);
             }
@@ -114,7 +112,7 @@ describe("Delete product", () => {
     it("Should not contain the deleted product in the list of products", async () => {
         for (const gateway of gateways) {
             try {
-                const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway);
+                const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway, gateway);
                 expect(products).to.be.an("array");
                 expect(products.length).to.be.greaterThan(0);
                 const product = products.find((p: any) => p.name === "Test Product");
