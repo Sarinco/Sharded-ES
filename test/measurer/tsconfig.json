@@ -1,18 +1,23 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "target": "ES6",
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "outDir": "build",
-    "rootDir": ".",
-    "strict": true
-    // "baseUrl": "./src",        // Allows absolute imports from 'src/'
-    // "paths": {
-    //   "@/*": ["*"]             // Optional: helps with '@/' imports
-    // }
-  },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
+    "compilerOptions": {
+        "module": "es2022",
+        "esModuleInterop": true,
+        "target": "es2020",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "outDir": "build",
+        "rootDir": ".",
+        "strict": true,
+        "allowImportingTsExtensions": true
+        // "baseUrl": "./src",        // Allows absolute imports from 'src/'
+        // "paths": {
+        //   "@/*": ["*"]             // Optional: helps with '@/' imports
+        // }
+    },
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
 }

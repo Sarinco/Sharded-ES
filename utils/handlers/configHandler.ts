@@ -62,16 +62,13 @@ export class ConfigManager {
      * @returns Rule
      */
     matchCallback(event: Event) {
-        console.debug("Event:", event);
         const callback = this.rule_map.get(event.topic);
-        console.debug("Callback:", callback);
         if (!callback) {
             console.error('No extraction callback found');
             return this.filter_tree.getDefault();
         }
 
         const extracted_data = callback(event.message.value);
-        console.debug('Extracted data:', extracted_data);
         return extracted_data;
     }
 
@@ -80,7 +77,9 @@ export class ConfigManager {
         if (target_regions.length == 1 && target_regions[0] == BROADCAST) {
             return { action: BROADCAST };
         }
-        const generated_filter: Rule = { action: SHARD, region: target_regions };
+        // Make a copy of the target regions
+        const target_regions_copy = target_regions.slice();
+        const generated_filter: Rule = { action: SHARD, region: target_regions_copy };
         return generated_filter;
     }
 
@@ -248,7 +247,6 @@ class FilterLeaf implements FilterTree {
     }
 
     deleteFilter(parameters: string[]): boolean {
-
         return false;
     }
 

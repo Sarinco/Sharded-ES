@@ -4,7 +4,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 5849836,
+    "value": 9518091,
     "gateway": "http://localhost:80"
   },
   {
@@ -12,7 +12,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 4556574,
+    "value": 9869169,
     "gateway": "http://localhost:81"
   },
   {
@@ -20,7 +20,7 @@
     "name": "postProduct",
     "description": "Post product",
     "unit": "ns",
-    "value": 9763888,
+    "value": 54980263,
     "gateway": "http://localhost:80"
   },
   {
@@ -28,7 +28,7 @@
     "name": "postProduct",
     "description": "Post product",
     "unit": "ns",
-    "value": 8534625,
+    "value": 61357059,
     "gateway": "http://localhost:81"
   },
   {
@@ -36,7 +36,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 4023867,
+    "value": 5519942,
     "gateway": "http://localhost:80"
   },
   {
@@ -44,7 +44,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 5020964,
+    "value": 6413576,
     "gateway": "http://localhost:81"
   },
   {
@@ -52,7 +52,7 @@
     "name": "updateProduct",
     "description": "Update product",
     "unit": "ns",
-    "value": 9840180,
+    "value": 12548559,
     "gateway": "http://localhost:80"
   },
   {
@@ -60,7 +60,7 @@
     "name": "updateProduct",
     "description": "Update product",
     "unit": "ns",
-    "value": 7840926,
+    "value": 12610655,
     "gateway": "http://localhost:81"
   },
   {
@@ -68,7 +68,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 3609110,
+    "value": 5214399,
     "gateway": "http://localhost:80"
   },
   {
@@ -76,7 +76,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 4065114,
+    "value": 6564218,
     "gateway": "http://localhost:81"
   },
   {
@@ -84,7 +84,7 @@
     "name": "deleteProduct",
     "description": "Delete product",
     "unit": "ns",
-    "value": 8568058,
+    "value": 12148470,
     "gateway": "http://localhost:80"
   },
   {
@@ -92,7 +92,7 @@
     "name": "deleteProduct",
     "description": "Delete product",
     "unit": "ns",
-    "value": 7066355,
+    "value": 11033691,
     "gateway": "http://localhost:81"
   },
   {
@@ -100,7 +100,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 3419866,
+    "value": 5249184,
     "gateway": "http://localhost:80"
   },
   {
@@ -108,7 +108,7 @@
     "name": "getProducts",
     "description": "Get products",
     "unit": "ns",
-    "value": 5134376,
+    "value": 5723292,
     "gateway": "http://localhost:81"
   },
   {
@@ -116,7 +116,7 @@
     "name": "addStock",
     "description": "Add stock",
     "unit": "ns",
-    "value": 6731007,
+    "value": 33318891,
     "gateway": "http://localhost:80"
   },
   {
@@ -124,7 +124,7 @@
     "name": "getStock",
     "description": "Get stock",
     "unit": "ns",
-    "value": 7148439,
+    "value": 10383483,
     "gateway": "http://localhost:80"
   },
   {
@@ -132,7 +132,7 @@
     "name": "addStock",
     "description": "Add stock",
     "unit": "ns",
-    "value": 10433522,
+    "value": 36571445,
     "gateway": "http://localhost:81"
   },
   {
@@ -140,23 +140,23 @@
     "name": "adminLogin",
     "description": "Login the admin",
     "unit": "ns",
-    "value": 12888139,
+    "value": 10762042,
     "gateway": "http://localhost:80"
+  },
+  {
+    "topic": "users",
+    "name": "adminLogin",
+    "description": "Login the admin",
+    "unit": "ns",
+    "value": 17147545,
+    "gateway": "http://localhost:81"
   },
   {
     "topic": "stock",
     "name": "getStock",
     "description": "Get stock",
     "unit": "ns",
-    "value": 6269512,
-    "gateway": "http://localhost:81"
-  },
-  {
-    "topic": "users",
-    "name": "adminLogin",
-    "description": "Login the admin",
-    "unit": "ns",
-    "value": 13331700,
+    "value": 7024009,
     "gateway": "http://localhost:81"
   }
 ]
