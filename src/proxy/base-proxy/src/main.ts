@@ -188,14 +188,8 @@ app.post('/direct-forward', (req: Request, res: Response) => {
 app.post('/filter', (req: Request, res: Response) => {
     const body = req.body;
     console.log('Received add filter request : ', body);
-    let { topic, key, value, filter } = body;
-
-    try {
-        filter = JSON.parse(JSON.stringify(filter));
-    } catch (e){
-        console.warn("filter couldn't be parsed : ", filter);
-        res.status(500).send(`Following error occured :  ${e}`);
-    }
+    let { topic, key, value, target } = body;
+    target = target.split(",");
 
     if (IS_MASTER == "true"){
         // broadcast messages to the others
@@ -204,7 +198,7 @@ app.post('/filter', (req: Request, res: Response) => {
         console.log("done");
         console.log("adding to csv filter file");
         // add the filter to the csv
-        const csv_filter: string = "\n" + topic +";"+ key +";"+ value +";"+ JSON.stringify(filter);
+        const csv_filter: string = "\n" + topic +";"+ key +";"+ value +";"+ target;
         appendFile("./src/sharder/filters.csv", csv_filter, (err) =>{
             if (err) throw err;
             console.log("Filter added to csv file : ", csv_filter);
@@ -212,7 +206,7 @@ app.post('/filter', (req: Request, res: Response) => {
         console.log("done");
     }
 
-    config_manager.addFilter([topic, key, value, JSON.stringify(filter)]);
+    config_manager.addFilter([topic, key, value, target]);
 
     res.status(200).send("Filter added successfully");
 })
