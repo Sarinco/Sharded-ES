@@ -39,6 +39,7 @@ LATENCIES=(
 )
 
 # --- Apply Latency ---
+echo "------------------------------------------------------------"
 echo "Applying latency rules..."
 
 # Loop through the defined latencies
@@ -84,6 +85,8 @@ for entry in "${LATENCIES[@]}"; do
 done
 
 echo "Latency rules applied successfully."
+echo "------------------------------------------------------------"
+echo " "
 
 # --- Verify ---
 echo "Verifying rules:"

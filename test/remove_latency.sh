@@ -31,6 +31,8 @@ echo "Found running proxy services: ${services[*]}"
 
 
 # --- Remove Latency ---
+
+echo "------------------------------------------------------------"
 echo "Removing latency rules..."
 
 for (( i=0; i<num_services; i++ )); do
@@ -58,6 +60,8 @@ for (( i=0; i<num_services; i++ )); do
 done
 
 echo "Latency rules removed successfully."
+echo "------------------------------------------------------------"
+
 
 # --- Verify ---
 echo "Verifying rules:"

@@ -1,0 +1,12 @@
+Detecting running proxy services...
+Found running services: proxy-1 proxy-2 proxy-3
+Testing latency between pairs (4 pings each)...
+------------------------------------------------------------
+Testing: proxy-1 <--> proxy-2... Average Latency: 80.137 ms
+Testing: proxy-1 <--> proxy-3... Average Latency: 50.128 ms
+Testing: proxy-2 <--> proxy-1... Average Latency: 80.151 ms
+Testing: proxy-2 <--> proxy-3... Average Latency: 70.120 ms
+Testing: proxy-3 <--> proxy-1... Average Latency: 50.134 ms
+Testing: proxy-3 <--> proxy-2... Average Latency: 70.180 ms
+------------------------------------------------------------
+Latency test complete.

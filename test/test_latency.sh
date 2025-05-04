@@ -43,7 +43,7 @@ num_services=${#services[@]}
 
 echo "Found running services: ${services[*]}"
 echo "Testing latency between pairs (${PING_COUNT} pings each)..."
-echo "--------------------------------------------------"
+echo "------------------------------------------------------------"
 
 # --- Test Latency Between Pairs ---
 
@@ -92,7 +92,7 @@ for (( i=0; i<num_services; i++ )); do
     done
 done
 
-echo "--------------------------------------------------"
+echo "------------------------------------------------------------"
 echo "Latency test complete."
 
 exit 0

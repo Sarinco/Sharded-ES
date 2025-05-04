@@ -1,4 +1,4 @@
-.PHONY : up down stop up-proxy down-proxy up-sites down-sites stop-sites stop-proxy tests clean-tests
+.PHONY : up down stop up-proxy down-proxy up-sites down-sites stop-sites stop-proxy test clean-tests add-latency remove-latency test-latency test-no-write
 
 NB_TESTS ?= 10
 
@@ -37,9 +37,26 @@ stop-sites:
 # make tests NB_TESTS=5 --> will run 5 tests
 # or
 # make tests --> Will use default value of 10
-tests:
-	cd test; bash run.sh $(NB_TESTS)
+test:
+	@echo "Running tests with $(NB_TESTS) iterations"
+	@cd test; cd measurements; mkdir -p $(FOLDER)
+	@echo "Running latency test and saving results in measurements/$(FOLDER)/latency.txt"
+	@cd test; bash test_latency.sh | tee measurements/$(FOLDER)/latency.txt
+	@cd test; bash run.sh $(NB_TESTS)
+
+test-no-write:
+	@echo "Running tests with $(NB_TESTS) iterations"
+	@cd test; bash run.sh $(NB_TESTS)
 
 clean-tests:
-	rm test/measurements/*.json
+	@echo "Cleaning up test results in measurements/$(FOLDER)"
+	rm test/measurements/$(FOLDER)/*.json
 
+add-latency:
+	@bash test/add_latency.sh
+
+remove-latency:
+	@bash test/remove_latency.sh
+
+test-latency:
+	@bash test/test_latency.sh

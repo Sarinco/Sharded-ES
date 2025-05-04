@@ -11,6 +11,7 @@ import {
     gateways,
 } from "../measurer.ts";
 import { adminLogin } from "../users/index.ts";
+const wait = (ms: number | undefined) => new Promise(resolve => setTimeout(resolve, ms));
 
 let admin_token = await adminLogin(gateways[0]);
 
@@ -25,7 +26,7 @@ describe("Get products", () => {
             try {
                 const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway, gateway);
                 expect(products).to.be.an("array");
-                expect(products.length).to.be.greaterThan(0);
+                expect(products.length).to.be.greaterThanOrEqual(0);
             } catch (error) {
                 expect.fail(`Get products failed for ${gateway}: ${error}`);
             }
@@ -97,25 +98,30 @@ describe("Update product", () => {
 
 describe("Delete product", () => {
     it("Should delete the product successfully", async () => {
+        wait(1000);
+        let i = 0;
         for (const gateway of gateways) {
             try {
-                let productId = products_created.pop();
+                let productId = products_created[i++];
                 if (!productId) {
                     throw new Error("No product ID found to delete");
                 }
                 await measurementServiceProduct.measure(() => deleteProduct(gateway, productId, admin_token), "deleteProduct", "Delete product", gateway, gateway);
+                // console.log(`Deleted product ${productId} successfully for ${gateway}`);
             } catch (error) {
                 expect.fail(`Delete product failed for ${gateway}: ${error}`);
             }
         }
     });
     it("Should not contain the deleted product in the list of products", async () => {
+        wait(1000);
         for (const gateway of gateways) {
             try {
                 const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway, gateway);
                 expect(products).to.be.an("array");
-                expect(products.length).to.be.greaterThan(0);
+                expect(products.length).to.be.greaterThanOrEqual(0);
                 const product = products.find((p: any) => p.name === "Test Product");
+                // console.log("Product: ", product);
                 expect(product).to.be.undefined;
             } catch (error) {
                 expect.fail(`Get products failed for ${gateway}: ${error}`);

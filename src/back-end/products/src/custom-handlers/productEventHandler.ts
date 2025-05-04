@@ -36,6 +36,17 @@ export async function productEventHandler(redis: RedisClientType, event: any) {
         case "ProductDeleted":
             const productDeletedEvent = event.data as ProductDeletedEvent;
 
+            // Check if the product exists in Redis
+            await redis.get(productDeletedEvent.id).then(async (product: any) => {
+                if (product === null) {
+                    console.log("Product not found in the Redis");
+                    return;
+                }
+            }).catch((error: any) => {
+                console.log("Error in get method: ", error);
+                throw error;
+            });
+
             await redis.del(productDeletedEvent.id).catch((error: any) => {
                 console.log("Error in delete method: ", error);
                 throw error;
