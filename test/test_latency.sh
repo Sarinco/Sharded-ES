@@ -2,6 +2,21 @@
 
 # Exit immediately if a command exits with a non-zero status.
 # set -e
+#
+
+# --- Prerequisites Check ---
+if ! command -v jq &> /dev/null; then
+    echo "Error: jq is not installed. Please install it (e.g., sudo apt install jq or brew install jq)"
+    exit 1
+fi
+if ! command -v docker &> /dev/null; then
+    echo "Error: docker is not installed or not in PATH."
+    exit 1
+fi
+if ! docker compose --version &> /dev/null; then
+     echo "Error: docker compose (v2) is not installed or not in PATH."
+     exit 1
+fi
 
 # --- Configuration ---
 PING_COUNT=4 # Number of ping packets to send for each test
@@ -37,7 +52,12 @@ for (( i=0; i<num_services; i++ )); do
     source_service=${services[$i]}
 
     # Loop through subsequent services as the target to avoid duplicates (like proxy-1 -> proxy-2 and proxy-2 -> proxy-1)
-    for (( j=i+1; j<num_services; j++ )); do
+    for (( j=0; j<num_services; j++ )); do
+        # Skip if the source and target are the same
+        if [ $i -eq $j ]; then
+            continue
+        fi
+
         target_service=${services[$j]}
 
         echo -n "Testing: ${source_service} <--> ${target_service}... "

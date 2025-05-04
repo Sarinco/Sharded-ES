@@ -42,6 +42,9 @@ services:
     networks:
       - proxy
       - site1
+    cap_add:
+      # This is needed to allow the container to change the network interface
+      - NET_ADMIN
   proxy-2:
     build:
       context: ./src/proxy/base-proxy
@@ -68,6 +71,8 @@ services:
     networks:
       - proxy
       - site2
+    cap_add:
+      - NET_ADMIN
   proxy-3:
     build:
       context: ./src/proxy/base-proxy
@@ -92,6 +97,8 @@ services:
     networks:
       - proxy
       - site3
+    cap_add:
+      - NET_ADMIN
 
 networks:
   site1:
