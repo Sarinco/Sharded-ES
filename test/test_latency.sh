@@ -4,33 +4,42 @@
 # set -e
 #
 
+# Define colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color - resets the text color
+
+# --- Configuration ---
+# Number of pings to send
+PING_COUNT=5
+
+
 # --- Prerequisites Check ---
 if ! command -v jq &> /dev/null; then
-    echo "Error: jq is not installed. Please install it (e.g., sudo apt install jq or brew install jq)"
+    echo -e "${RED}Error: jq is not installed. Please install it (e.g., sudo apt install jq or brew install jq)${NC}"
     exit 1
 fi
 if ! command -v docker &> /dev/null; then
-    echo "Error: docker is not installed or not in PATH."
+    echo -e "${RED}Error: docker is not installed or not in PATH.${NC}"
     exit 1
 fi
 if ! docker compose --version &> /dev/null; then
-     echo "Error: docker compose (v2) is not installed or not in PATH."
+     echo -e "${RED}Error: docker compose (v2) is not installed or not in PATH.${NC}"
      exit 1
 fi
 
-# --- Configuration ---
-PING_COUNT=4 # Number of ping packets to send for each test
-
 # --- Detect Running Proxy Services ---
-echo "Detecting running proxy services..."
+echo -e "${BLUE}Detecting running proxy services...${NC}"
 
 # Use jq to get service names (requires jq installed on host)
 # Filters for services defined in the compose file and currently running
 running_services=$(docker ps --filter "status=running" --format json | jq -r 'select(.Names | contains("proxy") or contains("gateway")) | .Names')
 
 if [ -z "$running_services" ]; then
-    echo "Error: No running proxy services found (proxy-1, proxy-2, ...)."
-    echo "Make sure services are started with 'docker compose up -d'."
+    echo -e "${RED}Error: No running proxy services found (proxy-1, proxy-2, ...).${NC}"
+    echo -e "${YELLOW}Make sure services are started with 'docker compose up -d'.${NC}"
     exit 1
 fi
 
@@ -42,16 +51,16 @@ num_services=${#services[@]}
 gateway_services_raw=$(docker ps --filter "status=running" --format json | jq -r 'select(.Names | contains("gateway")) | .Names')
 
 if [ -z "$gateway_services_raw" ]; then
-    echo "Error: No running gateway services found (gateway-1, gateway-2, ...)."
-    echo "Make sure services are started with 'docker compose up -d'."
+    echo -e "${RED}Error: No running gateway services found (gateway-1, gateway-2, ...).${NC}"
+    echo -e "${YELLOW}Make sure services are started with 'docker compose up -d'.${NC}"
     exit 1
 fi
 
 gateway_services=($gateway_services_raw)
 num_gateways=${#gateway_services[@]}
 
-echo "Found running services: ${services[*]}"
-echo "Testing latency between pairs (${PING_COUNT} pings each)..."
+echo -e "${GREEN}Found running services: ${services[*]}${NC}"
+echo -e "${BLUE}Testing latency between pairs (${PING_COUNT} pings each)...${NC}"
 echo "------------------------------------------------------------"
 
 # --- Test Latency Between Pairs ---
@@ -59,7 +68,7 @@ echo "------------------------------------------------------------"
 # Loop through each service as the source
 for (( i=0; i<num_services; i++ )); do
     source_service=${services[$i]}
-    echo "Testing latency from ${source_service} to other services..."
+    echo -e "${YELLOW}Testing latency from ${source_service} to other services...${NC}"
 
     # Loop through subsequent services as the target to avoid duplicates (like proxy-1 -> proxy-2 and proxy-2 -> proxy-1)
     for (( j=0; j<num_services; j++ )); do
@@ -82,17 +91,17 @@ for (( i=0; i<num_services; i++ )); do
              avg_latency=$(echo "$ping_output" | awk -F'[ =/]+' '/rtt|round-trip/ { print $(NF-2) }')
 
             if [ -n "$avg_latency" ]; then
-                echo "Average Latency: ${avg_latency} ms"
+                echo -e "${GREEN}Average Latency: ${avg_latency} ms${NC}"
             else
-                echo "Could not parse latency from ping output."
+                echo -e "${YELLOW}Could not parse latency from ping output.${NC}"
                 # echo "Debug Output: $ping_output" # Uncomment for debugging
             fi
         else
             # Ping failed
-            echo "Failed!"
+            echo -e "${RED}Failed!${NC}"
             # Extract the error message (often the last line)
             error_msg=$(echo "$ping_output" | tail -n 1)
-            echo "  Error: ${error_msg}"
+            echo -e "  ${RED}Error: ${error_msg}${NC}"
             # echo "Debug Output: $ping_output" # Uncomment for debugging
         fi
     done
@@ -100,22 +109,22 @@ for (( i=0; i<num_services; i++ )); do
 done
 
 echo "------------------------------------------------------------"
-echo "Testing latency from the host to the gateway services..."
+echo -e "${BLUE}Testing latency from the host to the gateway services...${NC}"
 
 for (( i=0; i<num_gateways; i++ )); do
     gateway_service=${gateway_services[$i]}
 
     interface=$(docker exec "$gateway_service" ip route show default 2>/dev/null | awk '{print $5}')
     if [[ -z "$interface" ]]; then
-        echo "Error: Could not determine default interface for $gateway_service. Skipping."
-        echo "Make sure 'iproute2' package is installed in the container and it has a default route."
+        echo -e "${RED}Error: Could not determine default interface for $gateway_service. Skipping.${NC}"
+        echo -e "${YELLOW}Make sure 'iproute2' package is installed in the container and it has a default route.${NC}"
         continue
     fi
     # Get the IP address of the gateway service
     gateway_ip=$(docker exec ${gateway_service} ifconfig ${interface} | awk -F ' *|:' '/inet addr/{print $4}')
 
     if [ -z "$gateway_ip" ]; then
-        echo "Error: Could not retrieve IP address for $gateway_service."
+        echo -e "${RED}Error: Could not retrieve IP address for $gateway_service.${NC}"
         continue
     fi
 
@@ -129,23 +138,23 @@ for (( i=0; i<num_gateways; i++ )); do
         avg_latency=$(echo "$ping_output" | awk -F'[ =/]+' '/rtt|round-trip/ { print $(NF-2) }')
 
         if [ -n "$avg_latency" ]; then
-            echo "Average Latency: ${avg_latency} ms"
+            echo -e "${GREEN}Average Latency: ${avg_latency} ms${NC}"
         else
-            echo "Could not parse latency from ping output."
+            echo -e "${YELLOW}Could not parse latency from ping output.${NC}"
             # echo "Debug Output: $ping_output" # Uncomment for debugging
         fi
     else
         # Ping failed
-        echo "Failed!"
+        echo -e "${RED}Failed!${NC}"
         # Extract the error message (often the last line)
         error_msg=$(echo "$ping_output" | tail -n 1)
-        echo "  Error: ${error_msg}"
+        echo -e "  ${RED}Error: ${error_msg}${NC}"
         # echo "Debug Output: $ping_output" # Uncomment for debugging
     fi
 done
 echo "------------------------------------------------------------"
 
 
-echo "Latency test complete."
+echo -e "${GREEN}Latency test complete.${NC}"
 
 exit 0
