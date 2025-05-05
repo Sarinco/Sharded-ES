@@ -4,7 +4,9 @@ import json
 import os
 import sys
 import polars as pl
+import pandas as pd
 import matplotlib.ticker as ticker
+import seaborn as sns
 
 def load_json(file_path):
     """
@@ -170,7 +172,7 @@ def analyze_speed_dataframe(df: pl.DataFrame, name: str, output_unit: str = 'ns'
         pl.col(value_col_name).quantile(0.95).alias(percentile_col_name),
         pl.col(value_col_name).min().alias(min_col_name),
         pl.col(value_col_name).max().alias(max_col_name),
-        pl.col(value_col_name).std().alias(std_col_name),
+        # pl.col(value_col_name).std().alias(std_col_name),
         pl.col(value_col_name).count().alias("count")
     ]).sort(["source_site", "destination_site"])
 
@@ -261,6 +263,77 @@ def plot_speed_histogram(df: pl.DataFrame, name: str, output_unit: str = 'ns'):
     else:
         print("No data found for plotting combinations.")
 
+def plot_request_statistics(
+    same_site_stats: pl.DataFrame,
+    different_site_stats: pl.DataFrame,
+    topic: str,
+    name: str,
+    output_unit: str = 'ms',
+):
+    """
+    Generates plots to visualize request statistics for same-site and different-site requests.
+
+    Args:
+        same_site_stats: Polars DataFrame containing statistics for same-site requests.
+        different_site_stats: Polars DataFrame containing statistics for different-site requests.
+        average_col: Name of the average column in the DataFrames.
+        median_col: Name of the median column in the DataFrames.
+        percentile_col: Name of the 95th percentile column in the DataFrames.
+        min_col: Name of the minimum column in the DataFrames.
+        max_col: Name of the maximum column in the DataFrames.
+        std_col: Name of the standard deviation column (expected in same_site_stats).
+                 Note: Based on your provided code, std is NOT calculated for different_site_stats.
+        count_col: Name of the count column in the DataFrames.
+    """
+    # Use the converted value column for aggregations
+    value_col_name = f"value_{output_unit}"
+    average_col = f"average_{output_unit}"
+    median_col = f"median_{output_unit}"
+    percentile_col = f"percentile_95_{output_unit}"
+    min_col = f"min_{output_unit}"
+    max_col = f"max_{output_unit}"
+    std_col = f"std_dev_{output_unit}"
+    count_col = "count"
+
+    # --- Same-site requests visualization ---
+
+    print("\nGenerating plots for same-site requests...")
+
+    # Convert to pandas for easier plotting with seaborn/matplotlib
+    # This uses the DataFrame as is after your Polars aggregation
+    same_site_stats_pd = same_site_stats
+    # Convert to pandas
+    different_site_stats_pd = pd.DataFrame(different_site_stats)#.to_pandas()
+    # Convert columns to appropriate names
+    different_site_stats_pd.columns = [
+        "source_site", "destination_site", average_col, median_col,
+        percentile_col, min_col, max_col, count_col
+    ]
+
+    # Combine source and destination for plotting
+    different_site_stats_pd['source_destination'] = different_site_stats_pd['source_site'] + ' -> ' + different_site_stats_pd['destination_site']
+
+
+    fig_diff, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 15))
+    fig_diff.suptitle(f'Request Statistics (${topic} - ${name})', fontsize=16)
+    fig_diff.tight_layout(pad=4.0)
+
+    # Plotting statistics with hue and legend=False to address FutureWarning
+    sns.barplot(ax=axes[0], x="source_site", y=average_col, data=same_site_stats_pd, palette="viridis", hue="source_site", legend=False)
+    axes[0].set_title(f'Average same site request ({average_col})')
+    axes[0].tick_params(axis='x', rotation=45)
+    axes[0].set_xlabel("") # Remove redundant x-label
+    axes[0].set_ylabel(average_col)
+
+    # Plotting statistics with hue and legend=False to address FutureWarning
+    sns.barplot(ax=axes[1], x="source_destination", y=average_col, data=different_site_stats_pd, palette="plasma", hue="source_destination", legend=False)
+    axes[1].set_title(f'Average cross site requests ({average_col})')
+    axes[1].tick_params(axis='x', rotation=45)
+    axes[1].set_xlabel("")
+    axes[1].set_ylabel(average_col)
+
+    plt.show()
+
 if __name__ == "__main__":
     # Get the folder path from the command line arguments
     if len(sys.argv) != 4:
@@ -282,7 +355,8 @@ if __name__ == "__main__":
         # Analyze the speed data
         all_combinations_stats, same_site_stats, different_site_stats = analyze_speed_dataframe(dataframe, name, output_unit='ms')
         # Plot the histogram of speed values
-        plot_speed_histogram(all_combinations_stats, name, output_unit='ms')
+        # plot_speed_histogram(all_combinations_stats, name, output_unit='ms')
+        plot_request_statistics(same_site_stats, different_site_stats, topic, name, 'ms')
 
     print("Data loaded successfully.")
 

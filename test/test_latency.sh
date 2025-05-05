@@ -45,6 +45,7 @@ fi
 
 # Convert the multi-line string from jq into a bash array
 services=($running_services)
+IFS=$'\n' services=($(sort <<<"${services[*]}")); unset IFS
 num_services=${#services[@]}
 
 # List of the gateway services
@@ -57,6 +58,7 @@ if [ -z "$gateway_services_raw" ]; then
 fi
 
 gateway_services=($gateway_services_raw)
+IFS=$'\n' gateway_services=($(sort <<<"${gateway_services[*]}")); unset IFS
 num_gateways=${#gateway_services[@]}
 
 echo -e "${GREEN}Found running services: ${services[*]}${NC}"

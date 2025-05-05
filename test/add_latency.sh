@@ -35,6 +35,7 @@ if [ -z "$running_services" ]; then
 fi
 # Convert the multi-line string from jq into a bash array
 services=($running_services)
+IFS=$'\n' services=($(sort <<<"${services[*]}")); unset IFS
 echo -e "${GREEN}Found running proxy services: ${services[*]}${NC}"
 
 # --- Configuration ---
