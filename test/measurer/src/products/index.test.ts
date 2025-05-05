@@ -98,7 +98,7 @@ describe("Update product", () => {
 
 describe("Delete product", () => {
     it("Should delete the product successfully", async () => {
-        wait(1000);
+        // await wait(1000);
         let i = 0;
         for (const gateway of gateways) {
             try {
@@ -114,7 +114,7 @@ describe("Delete product", () => {
         }
     });
     it("Should not contain the deleted product in the list of products", async () => {
-        wait(1000);
+        await wait(1000);
         for (const gateway of gateways) {
             try {
                 const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway, gateway);

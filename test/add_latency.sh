@@ -19,7 +19,7 @@ if ! docker compose --version &> /dev/null; then
 fi
 
 # --- Detect Running Proxy Services ---
-running_services=$(docker compose ps --filter "status=running" --format json | jq -r 'select(.Service | contains("proxy")) | .Service')
+running_services=$(docker ps --filter "status=running" --format json | jq -r 'select(.Names | contains("proxy") or contains("gateway")) | .Names')
 if [ -z "$running_services" ]; then
     echo "Error: No running proxy services found (proxy-1, proxy-2, ...)."
     echo "Make sure services are started with 'docker compose up -d'."
@@ -32,10 +32,14 @@ echo "Found running proxy services: ${services[*]}"
 # --- Configuration ---
 # Define latency values (in milliseconds) for egress traffic from each proxy.
 LATENCIES=(
-    "proxy-1:30ms"
-    "proxy-2:50ms"
-    "proxy-3:20ms"
-    # Add more services and latencies here if needed
+    # Latency on the interface for all the communication comming from the proxy network
+    "memoire-proxy-1-1:30ms"
+    "site1-gateway-1:30ms"
+
+    "memoire-proxy-2-1:50ms"
+    "site2-gateway-1:50ms"
+
+    "memoire-proxy-3-1:20ms"
 )
 
 # --- Apply Latency ---
@@ -49,14 +53,14 @@ for entry in "${LATENCIES[@]}"; do
     echo "Processing $service with latency $latency_val..."
 
     # Check if the service is running
-    if ! docker compose ps --filter "status=running" --format json | jq -e 'select(.Service == "'"$service"'")' &> /dev/null; then
+    if ! docker ps --filter "status=running" --format json | jq -e 'select(.Names == "'"$service"'")' &> /dev/null; then
         echo "  Error: $service is not running. Skipping."
         continue
     fi
 
     # Dynamically find the default interface inside the container
     echo "  Detecting default interface for $service..."
-    interface=$(docker compose exec "$service" ip route show default 2>/dev/null | awk '{print $5}' || echo "")
+    interface=$(docker exec "$service" ip route show default 2>/dev/null | awk '{print $5}' || echo "")
 
     if [[ -z "$interface" ]]; then
         echo "  Error: Could not determine default interface for $service. Skipping."
@@ -67,12 +71,12 @@ for entry in "${LATENCIES[@]}"; do
 
     # Apply the latency rule using the detected interface
     echo "  Adding ${latency_val} delay to $service (interface ${interface})"
-    if docker compose exec "$service" tc qdisc add dev "${interface}" root netem delay "${latency_val}"; then
+    if docker exec "$service" tc qdisc add dev "${interface}" root netem delay "${latency_val}"; then
         echo "  Successfully applied latency to $service."
     else
         echo "  Error applying latency to $service. It might already have a qdisc. Try removing rules first."
         echo "  Attempting to replace existing qdisc with new latency value..."
-        docker compose exec "$service" tc qdisc replace dev "${interface}" root netem delay "${latency_val}"
+        docker exec "$service" tc qdisc replace dev "${interface}" root netem delay "${latency_val}"
         if [ $? -eq 0 ]; then
             echo "  Successfully replaced existing qdisc with new latency value for $service."
         else
@@ -94,10 +98,10 @@ echo "Verifying rules:"
 for entry in "${LATENCIES[@]}"; do
     IFS=":" read -r service _ <<< "$entry"
 
-    interface=$(docker compose exec "$service" ip route show default 2>/dev/null | awk '{print $5}' || echo "")
+    interface=$(docker exec "$service" ip route show default 2>/dev/null | awk '{print $5}' || echo "")
     if [[ -n "$interface" ]]; then
        echo "  Verification for $service (interface $interface):"
-       docker compose exec "$service" tc qdisc show dev "${interface}"
+       docker exec "$service" tc qdisc show dev "${interface}"
     else
         echo "  Skipping verification for $service (could not determine interface)."
     fi

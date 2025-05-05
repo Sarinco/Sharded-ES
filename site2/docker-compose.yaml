@@ -46,6 +46,8 @@ services:
     networks:
       - default
       - proxy
+    cap_add:
+      - NET_ADMIN
 
 networks:
   default:

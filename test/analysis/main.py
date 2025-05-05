@@ -263,24 +263,26 @@ def plot_speed_histogram(df: pl.DataFrame, name: str, output_unit: str = 'ns'):
 
 if __name__ == "__main__":
     # Get the folder path from the command line arguments
-    if len(sys.argv) != 2:
-        print("Usage: python main.py <folder_path>")
+    if len(sys.argv) != 4:
+        print("Usage: python main.py <folder_path> <topic> <name>")
         exit(1)
     folder_path = sys.argv[1]
+    topic = sys.argv[2]
+    name = sys.argv[3]
     # Load the JSON files from the folder
     data = load_folder(folder_path)
     print(f"Loaded {len(data)} JSON files from {folder_path}.")
 
-    dataframe = get_measures_dataframe(data, "stock", "addStock")
+    dataframe = get_measures_dataframe(data, topic, name)
     if dataframe.is_empty():
         print("No measures found for the specified topic and name.")
     else:
         # print("Filtered measures:")
         # print(dataframe.head())
         # Analyze the speed data
-        all_combinations_stats, same_site_stats, different_site_stats = analyze_speed_dataframe(dataframe, "addStock", output_unit='ms')
+        all_combinations_stats, same_site_stats, different_site_stats = analyze_speed_dataframe(dataframe, name, output_unit='ms')
         # Plot the histogram of speed values
-        plot_speed_histogram(all_combinations_stats, "addStock", output_unit='ms')
+        plot_speed_histogram(all_combinations_stats, name, output_unit='ms')
 
     print("Data loaded successfully.")
 
