@@ -5,3 +5,5 @@ yarn.lock
 
 build/
 Event_sourcing_tests/monolith-project/src/back-end/stock/dist
+
+thesis-venv/
