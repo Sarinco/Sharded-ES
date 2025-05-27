@@ -13,7 +13,6 @@ import {
     UserUpdatedEvent,
 } from '@src/types/events/users-events';
 import { userEventHandler } from '@src/custom-handlers/usersEventHandler';
-import { producer } from "@src/handlers/proxyHandler";
 
 // Import the password middleware
 import { generateSalt, hashPassword, verifyPassword } from '@src/middleware/password';
@@ -30,6 +29,9 @@ const client = new Kafka({
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "users-service";
+
+// Producer
+const producer = ProducerFactory.getInstance(EVENT_CLIENT_ID);
 
 const SERVICE_TOKEN = generateServiceToken("users-service");
 

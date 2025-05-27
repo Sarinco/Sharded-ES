@@ -4,7 +4,7 @@ services:
       context: ../src/back-end/users
       dockerfile: Dockerfile
     volumes:
-      - ../src/back-end/users:/app
+      - ../src/back-end/users/src:/app/src
       - ../utils/types:/app/src/types
       - ../utils/handlers:/app/src/handlers
       - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
@@ -20,6 +20,26 @@ services:
       PROXY_PORT: ${PROXY_PORT}
       EVENT_ADDRESS: ${EVENT_HOST} 
       EVENT_PORT: ${EVENT_PORT} 
+      JWT_SECRET: ${JWT_SECRET}
+      EVENT_CLIENT_ID: "user-service"
+    depends_on:
+      db-users:
+        condition: service_healthy
+      db-users-init:
+        condition: service_completed_successfully
+  db-users-init:
+    build:
+      context: ../src/back-end/users
+      dockerfile: Dockerfile.init-db
+    volumes:
+      - ../src/back-end/users/src:/app/src
+      - ../utils/types:/app/src/types
+      - ../utils/handlers:/app/src/handlers
+      - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER
+    environment:
+      PORT: ${USER_PORT}
+      EVENT_ADDRESS: ${EVENT_HOST}
+      EVENT_PORT: ${EVENT_PORT}
       JWT_SECRET: ${JWT_SECRET}
       EVENT_CLIENT_ID: "user-service"
     depends_on:

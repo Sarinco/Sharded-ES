@@ -7,7 +7,7 @@ import {
     OrderAddedEvent,
 } from '@src/types/events/order-events';
 import { ordersEventHandler } from "@src/custom-handlers/ordersEventHandler";
-import { producer } from "@src/handlers/proxyHandler";
+import { ProducerFactory } from "@src/handlers/kafkaHandler";
 
 // create a client connected to your local kafka instance
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS || "localhost";
@@ -17,6 +17,9 @@ export const client = new Kafka({
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`]
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "order-service";
+
+// Producer
+const producer = ProducerFactory.getInstance(EVENT_CLIENT_ID);
 
 // for redis
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";

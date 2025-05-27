@@ -9,21 +9,23 @@ import {
     DecreaseStockEvent,
     UpdateStockEvent,
 } from "@src/types/events/stock-event";
-import { producer } from "@src/handlers/proxyHandler";
+import { ProducerFactory } from "@src/handlers/kafkaHandler";
 import { productEventHandler } from '@src/custom-handlers/productEventHandler';
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
 const EVENT_PORT = process.env.EVENT_PORT;
+console.debug("EVENT_ADDRESS: ", EVENT_ADDRESS);
+console.debug("EVENT_PORT: ", EVENT_PORT);
 const client = new Kafka({
     clientId: 'event-pipeline',
     brokers: [`${EVENT_ADDRESS}:${EVENT_PORT}`],
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || 'stock-service';
 
-const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
-const PROXY_PORT = process.env.PROXY_PORT;
-const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
+
+// Producer
+const producer = ProducerFactory.getInstance(EVENT_CLIENT_ID);
 
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;

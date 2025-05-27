@@ -11,7 +11,4 @@ services:
     environment:
       EVENT_ADDRESS: ${EVENT_HOST} 
       EVENT_PORT: ${EVENT_PORT} 
-    depends_on:
-      broker:
-        condition: service_healthy
 

@@ -11,7 +11,7 @@ import {
     ProductDeletedEvent,
     ProductUpdatedEvent
 } from "@src/types/events/product-events";
-import { producer } from "@src/handlers/proxyHandler";
+import { ProducerFactory } from "@src/handlers/kafkaHandler";
 
 // Setup environment variables
 const EVENT_ADDRESS = process.env.EVENT_ADDRESS;
@@ -22,9 +22,7 @@ const client = new Kafka({
 });
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || 'product-service';
 
-const PROXY_ADDRESS = process.env.PROXY_ADDRESS;
-const PROXY_PORT = process.env.PROXY_PORT;
-const PROXY = `http://${PROXY_ADDRESS}:${PROXY_PORT}/`;
+const producer = ProducerFactory.getInstance(EVENT_CLIENT_ID);
 
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;

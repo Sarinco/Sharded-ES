@@ -2,7 +2,7 @@
 
 NB_TESTS ?= 10
 
-up: up-sites up-proxy
+up: up-proxy up-sites 
 
 down: down-proxy down-sites
 
@@ -20,18 +20,18 @@ stop-proxy:
 up-sites:
 	cd site1; docker compose up -d
 	cd site2; docker compose up -d
-	cd site3; docker compose up -d
+	#cd site3; docker compose up -d
 
 
 down-sites:
 	cd site1; docker compose down
 	cd site2; docker compose down
-	cd site3; docker compose down
+	#cd site3; docker compose down
 
 stop-sites:
 	cd site1; docker compose stop
 	cd site2; docker compose stop
-	cd site3; docker compose stop
+	#cd site3; docker compose stop
 
 # Use like this:
 # make tests NB_TESTS=5 --> will run 5 tests
