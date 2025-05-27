@@ -53,6 +53,7 @@ describe("Post product", () => {
         done() // Wait for the product to be created before proceeding
     });
     it("Should contain the product in the list of products", async () => {
+	await wait(1000);
         for (const gateway of gateways) {
             try {
                 const products = await measurementServiceProduct.measure(() => getProducts(gateway), "getProducts", "Get products", gateway, gateway);
@@ -106,6 +107,7 @@ describe("Update product", () => {
 describe("Delete product", () => {
     it("Should delete the product successfully", async () => {
         // await wait(1000);
+	await wait(1000);
         let i = 0;
         for (const gateway of gateways) {
             try {

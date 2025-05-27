@@ -27,7 +27,7 @@ fi
 
 # --- Detect Running Proxy Services ---
 echo -e "${BLUE}Detecting running proxy services...${NC}"
-running_services=$(docker ps --filter "status=running" --format json | jq -r 'select(.Names | contains("broker") or contains("gateway")) | .Names')
+running_services=$(docker ps --filter "status=running" --format json | jq -r 'select(.Names | contains("proxy") or contains("gateway")) | .Names')
 if [ -z "$running_services" ]; then
     echo -e "${RED}Error: No running proxy services found (proxy-1, proxy-2, ...).${NC}"
     echo -e "${YELLOW}Make sure services are started with 'docker compose up -d'.${NC}"
@@ -42,13 +42,10 @@ echo -e "${GREEN}Found running proxy services: ${services[*]}${NC}"
 # Define latency values (in milliseconds) for egress traffic from each proxy.
 LATENCIES=(
     # Latency on the interface for all the communication comming from the proxy network
-    "broker-1:15ms"
     "site1-gateway-1:15ms"
 
-    "broker-2:20ms"
     "site2-gateway-1:20ms"
 
-    "broker-3:20ms"
 )
 
 # --- Apply Latency ---
