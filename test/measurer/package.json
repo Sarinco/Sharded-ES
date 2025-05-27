@@ -5,9 +5,9 @@
     "type": "module",
     "main": "main.js",
     "scripts": {
-        "test": "mocha --require ts-node/register  src/**/*.test.ts src/setup.ts",
-        "start": "ts-node src/main.ts",
-        "clean": "ts-node src/clean.ts"
+        "test": "tsx node_modules/mocha/bin/_mocha src/**/*.test.ts src/setup.ts",
+        "start": "tsx src/main.ts",
+        "clean": "tsx src/clean.ts"
     },
     "keywords": [],
     "author": "Maxime Delacroix",
@@ -23,6 +23,7 @@
         "@types/node": "^22.15.3",
         "mocha": "^11.1.0",
         "ts-node": "^10.9.2",
+        "tsx": "^4.19.4",
         "typescript": "^5.8.3"
     }
 }

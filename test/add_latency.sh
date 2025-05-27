@@ -42,11 +42,11 @@ echo -e "${GREEN}Found running proxy services: ${services[*]}${NC}"
 # Define latency values (in milliseconds) for egress traffic from each proxy.
 LATENCIES=(
     # Latency on the interface for all the communication comming from the proxy network
-    "memoire-proxy-1-1:30ms"
-    "site1-gateway-1:30ms"
+    "memoire-proxy-1-1:15ms"
+    "site1-gateway-1:15ms"
 
-    "memoire-proxy-2-1:50ms"
-    "site2-gateway-1:50ms"
+    "memoire-proxy-2-1:20ms"
+    "site2-gateway-1:20ms"
 
     "memoire-proxy-3-1:20ms"
 )
@@ -62,10 +62,10 @@ for entry in "${LATENCIES[@]}"; do
     echo -e "${YELLOW}Processing $service with latency $latency_val...${NC}"
 
     # Check if the service is running
-    if ! docker ps --filter "status=running" --format json | jq -e 'select(.Names == "'"$service"'")' &> /dev/null; then
-        echo -e "  ${RED}Error: $service is not running. Skipping.${NC}"
-        continue
-    fi
+    #if ! docker ps --filter "status=running" --format json | jq -e 'select(.Names == "'"$service"'")' &> /dev/null; then
+    #    echo -e "  ${RED}Error: $service is not running. Skipping.${NC}"
+    #    continue
+    #fi
 
     # Dynamically find the default interface inside the container
     echo -e "  ${YELLOW}Detecting default interface for $service...${NC}"
@@ -106,7 +106,7 @@ echo -e "${BLUE}Verifying rules:${NC}"
 
 for entry in "${LATENCIES[@]}"; do
     IFS=":" read -r service _ <<< "$entry"
-
+#
     interface=$(docker exec "$service" ip route show default 2>/dev/null | awk '{print $5}' || echo "")
     if [[ -n "$interface" ]]; then
        echo -e "${YELLOW}  Verification for $service (interface $interface):${NC}"

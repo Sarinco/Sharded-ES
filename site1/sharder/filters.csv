@@ -2,3 +2,4 @@ topic;key;value;target
 stock;warehouse;charleroi-sud;eu-be
 stock;warehouse;barcelone;eu-spain
 stock;warehouse;*;eu-be,eu-spain
+stock;warehouse;%;eu-it
