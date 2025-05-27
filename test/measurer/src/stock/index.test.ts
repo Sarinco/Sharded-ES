@@ -11,11 +11,12 @@ import {
 } from "./index.ts";
 import { adminLogin } from "../users/index.ts";
 import { deleteProduct, postProduct } from "../products/index.ts";
-import { 
+import {
     MeasurementService,
     gateways,
     gateway_stock_map,
 } from "../measurer.ts";
+const wait = (ms: number | undefined) => new Promise(resolve => setTimeout(resolve, ms));
 
 let admin_token = await adminLogin(gateways[0]);
 let test_product_id = "";
@@ -60,7 +61,7 @@ describe("Setting stock", () => {
 
         }
     });
-    it("Should set the stock of the product in the correct gateway with sharding", async () => {
+    it("Should set the stock of the product in the correct gateway with sharding", function(done) {
         // Ex: Sending stock to barcelone to the gateway 0 in order to see if the 
         // stock is correctly forwarded to gateway 1
         for (const gateway of gateways) {
@@ -72,39 +73,38 @@ describe("Setting stock", () => {
                 if (other_gateway === gateway) {
                     continue;
                 }
-                try {
-                    await measurementServiceStock.measure(() => setStock(other_gateway, test_product_id, warehouse, 20, admin_token), "addStock", "Add stock to the wrong gateway to see the time of the forwarding between sites", gateway, other_gateway);
-                } catch (error) {
+                measurementServiceStock.measure(() => setStock(other_gateway, test_product_id, warehouse, 20, admin_token), "addStock", "Add stock to the wrong gateway to see the time of the forwarding between sites", gateway, other_gateway).catch((error) => {
                     expect.fail(`Add stock failed for ${gateway}: ${error}`);
-                }
-                try {
+                }).then(() => {
                     // Finally, check if the stock is correctly 
-                    const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(gateway, test_product_id, warehouse), "getStock", "Get stock", gateway, gateway);
-                    // Should be an array of objects
-                    expect(stock).to.be.an("array");
-                    expect(stock.length).to.be.greaterThan(0);
-                    // Check if the stock is correctly 
-                    for (const stock_entry of stock) {
-                        expect(stock_entry).to.have.property("warehouse", warehouse);
-                        expect(stock_entry).to.have.property("stock");
-                        expect(stock_entry.stock).to.be.a("string");
-                        expect(parseInt(stock_entry.stock)).to.be.greaterThan(0);
-                        if (stock_entry.warehouse === warehouse) {
-                            expect(parseInt(stock_entry.stock)).to.be.equal(20);
+                    measurementServiceStock.measure(() => getStockOfWarehouse(gateway, test_product_id, warehouse), "getStock", "Get stock", gateway, gateway).catch((error) => {
+                        expect.fail(`Get stock failed for ${gateway}: ${error}`);
+                    }).then((stock) => {
+                        // Should be an array of objects
+                        expect(stock).to.be.an("array");
+                        expect(stock.length).to.be.greaterThan(0);
+                        // Check if the stock is correctly 
+                        for (const stock_entry of stock) {
+                            expect(stock_entry).to.have.property("warehouse", warehouse);
+                            expect(stock_entry).to.have.property("stock");
+                            expect(stock_entry.stock).to.be.a("string");
+                            expect(parseInt(stock_entry.stock)).to.be.greaterThan(0);
+                            if (stock_entry.warehouse === warehouse) {
+                                expect(parseInt(stock_entry.stock)).to.be.equal(20);
+                            }
                         }
-                    }
-                    
-                } catch (error) {
-                    expect.fail(`Get stock failed for ${gateway}: ${error}`);
-                }
+                    });
+
+                });
             }
         }
+        done(); // Wait for the stock to be set before proceeding
     });
 });
 
 //INFO: Test of gateway latency
 describe("Getting stock", () => {
-    it("Should get the stock of the product in the wrong gateway", async () => {
+    it("Should get the stock of the product in the wrong gateway", function(done) {
         for (const gateway of gateways) {
             const warehouse = gateway_stock_map.get(gateway);
             if (!warehouse) {
@@ -115,25 +115,27 @@ describe("Getting stock", () => {
                     continue;
                 }
                 try {
-                    const stock = await measurementServiceStock.measure(() => getStockOfWarehouse(other_gateway, test_product_id, warehouse), "getStock", "Get stock in the wrong gateway to test the gateway latency", other_gateway, gateway);
-                    // Should be an array of objects
-                    expect(stock).to.be.an("array");
-                    expect(stock.length).to.be.greaterThan(0);
-                    // Check if the stock is correctly 
-                    for (const stock_entry of stock) {
-                        expect(stock_entry).to.have.property("warehouse", warehouse);
-                        expect(stock_entry).to.have.property("stock");
-                        expect(stock_entry.stock).to.be.a("string");
-                        expect(parseInt(stock_entry.stock)).to.be.greaterThan(0);
-                        if (stock_entry.warehouse === warehouse) {
-                            expect(parseInt(stock_entry.stock)).to.be.equal(20);
+                    measurementServiceStock.measure(() => getStockOfWarehouse(other_gateway, test_product_id, warehouse), "getStock", "Get stock in the wrong gateway to test the gateway latency", other_gateway, gateway).then((stock) => {
+                        // Should be an array of objects
+                        expect(stock).to.be.an("array");
+                        expect(stock.length).to.be.greaterThan(0);
+                        // Check if the stock is correctly 
+                        for (const stock_entry of stock) {
+                            expect(stock_entry).to.have.property("warehouse", warehouse);
+                            expect(stock_entry).to.have.property("stock");
+                            expect(stock_entry.stock).to.be.a("string");
+                            expect(parseInt(stock_entry.stock)).to.be.greaterThan(0);
+                            if (stock_entry.warehouse === warehouse) {
+                                expect(parseInt(stock_entry.stock)).to.be.equal(20);
+                            }
                         }
-                    }
+                    });
                 } catch (error) {
                     expect.fail(`Get stock failed for ${other_gateway}: ${error}`);
                 }
             }
         }
+        done(); // Wait for the stock to be retrieved before proceeding
     });
 });
 
