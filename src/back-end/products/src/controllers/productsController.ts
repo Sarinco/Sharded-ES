@@ -23,6 +23,7 @@ const client = new Kafka({
 const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || 'product-service';
 
 const producer = ProducerFactory.getInstance(EVENT_CLIENT_ID);
+producer.start();
 
 // For the database
 const DB_ADDRESS = process.env.DB_ADDRESS;

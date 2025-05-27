@@ -32,6 +32,7 @@ const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "users-service";
 
 // Producer
 const producer = ProducerFactory.getInstance(EVENT_CLIENT_ID);
+producer.start();
 
 const SERVICE_TOKEN = generateServiceToken("users-service");
 

@@ -21,7 +21,7 @@ services:
       EVENT_ADDRESS: ${EVENT_HOST} 
       EVENT_PORT: ${EVENT_PORT} 
       JWT_SECRET: ${JWT_SECRET}
-      EVENT_CLIENT_ID: "order-service" 
+      EVENT_CLIENT_ID: ${ORDER_EVENT_CLIENT_ID}  
     command: sh -c "npm install && npm run watch"
     depends_on:
       db-orders:

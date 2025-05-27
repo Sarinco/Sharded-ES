@@ -20,6 +20,7 @@ const EVENT_CLIENT_ID = process.env.EVENT_CLIENT_ID || "order-service";
 
 // Producer
 const producer = ProducerFactory.getInstance(EVENT_CLIENT_ID);
+producer.start();
 
 // for redis
 const DB_ADDRESS = process.env.DB_ADDRESS || "localhost";

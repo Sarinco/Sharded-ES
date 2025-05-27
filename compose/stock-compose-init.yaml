@@ -22,7 +22,7 @@ services:
       PROXY_PORT: ${PROXY_PORT}
       JWT_SECRET: ${JWT_SECRET}
       REGION: ${REGION}
-      EVENT_CLIENT_ID: "stock-service"
+      EVENT_CLIENT_ID: ${STOCK_EVENT_CLIENT_ID} 
     depends_on:
       db-stock:
         condition: service_healthy
@@ -43,7 +43,7 @@ services:
       EVENT_ADDRESS: ${EVENT_HOST}
       EVENT_PORT: ${EVENT_PORT}
       JWT_SECRET: ${JWT_SECRET}
-      EVENT_CLIENT_ID: "stock-service"
+      EVENT_CLIENT_ID: ${STOCK_EVENT_CLIENT_ID} 
     depends_on:
       db-stock:
         condition: service_healthy
