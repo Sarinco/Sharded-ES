@@ -6,99 +6,88 @@ services:
     networks:
       - site1
       - site2
-      - site3
     environment:
       KAFKA_CLUSTERS_0_NAME: ${EVENT_HOST_SITE_1}
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_1}:${EVENT_PORT_SITE_1}
       KAFKA_CLUSTERS_1_NAME: ${EVENT_HOST_SITE_2}
       KAFKA_CLUSTERS_1_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_2}:${EVENT_PORT_SITE_2}
-      KAFKA_CLUSTERS_2_NAME: ${EVENT_HOST_SITE_3}
-      KAFKA_CLUSTERS_2_BOOTSTRAPSERVERS: ${EVENT_HOST_SITE_3}:${EVENT_PORT_SITE_3}
-  proxy-1:
-    build:
-      context: ./src/proxy/base-proxy
-      dockerfile: Dockerfile
-    volumes:
-      - ./src/proxy/base-proxy/src:/app/src
-      - ./utils/handlers:/app/src/handlers
-      - ./utils/helper:/app/src/helper
-      - ./utils/control-plane:/app/src/control-plane
-      - ./site1/sharder/:/app/src/sharder/
+
+  kafka-site1:
+    image: apache/kafka:latest
+    container_name: broker-1
     ports:
-      - "${PROXY_1_EXTERNAL_PORT}:${PROXY_PORT}"
-    # The watch command will check for changes in the code and restart the server
-    command: sh -c "rm -rf node_modules/ && npm install && npm run watch"
+      - 29092:9092
     environment:
-      PORT: ${PROXY_PORT} 
-      EVENT_ADDRESS: ${EVENT_HOST_SITE_1}
-      EVENT_PORT: ${EVENT_PORT_SITE_1}
-      EVENT_CLIENT_ID: "proxy-1"
-      REGION: "eu-be"
-      MASTER: "${MASTER}"
-      CONTROL_PORT: "${CONTROL_PORT}"
-      IS_MASTER: "true"
-      GATEWAY_ADDRESS: "${GATEWAY_ADDRESS}"
-      GATEWAY_PORT: "${GATEWAY_PORT_1}"
-    networks:
-      - proxy
-      - site1
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker
+      KAFKA_LISTENERS: 'PLAINTEXT://:19092,PLAINTEXT_HOST://:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker-1:19092,PLAINTEXT_HOST://localhost:29092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@controller-1:9093,2@controller-2:9093
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
     cap_add:
       # This is needed to allow the container to change the network interface
       - NET_ADMIN
-  proxy-2:
-    build:
-      context: ./src/proxy/base-proxy
-      dockerfile: Dockerfile
-    volumes:
-      - ./src/proxy/base-proxy:/app
-      - ./utils/handlers:/app/src/handlers
-      - ./utils/helper:/app/src/helper
-      - ./utils/control-plane:/app/src/control-plane
+    networks:
+      - site1
+      - proxy
+
+  kafka-site2:
+    image: apache/kafka:latest
+    container_name: broker-2
     ports:
-      - "${PROXY_2_EXTERNAL_PORT}:${PROXY_PORT}"
-    # The watch command will check for changes in the code and restart the server
-    command: sh -c "npm install && npm run watch"
+      - 29093:9092
     environment:
-      PORT: ${PROXY_PORT} 
-      EVENT_ADDRESS: ${EVENT_HOST_SITE_2}
-      EVENT_PORT: ${EVENT_PORT_SITE_2}
-      EVENT_CLIENT_ID: "proxy-2"
-      REGION: "eu-spain"
-      MASTER: "${MASTER}"
-      CONTROL_PORT: "${CONTROL_PORT}"
-      GATEWAY_ADDRESS: "${GATEWAY_ADDRESS}"
-      GATEWAY_PORT: "${GATEWAY_PORT_2}"
+      KAFKA_NODE_ID: 4
+      KAFKA_PROCESS_ROLES: broker
+      KAFKA_LISTENERS: 'PLAINTEXT://:19092,PLAINTEXT_HOST://:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker-2:19092,PLAINTEXT_HOST://localhost:29092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@controller-1:9093,2@controller-2:9093
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    depends_on:
+      - kafka-controller-1
+      - kafka-controller-2
+    cap_add:
+      # This is needed to allow the container to change the network interface
+      - NET_ADMIN
+    networks:
+      - site1
+      - proxy
+
+  kafka-controller-1:
+    image: apache/kafka:latest
+    container_name: controller-1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: controller
+      KAFKA_LISTENERS: CONTROLLER://:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@controller-1:9093,2@controller-2:9093
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     networks:
       - proxy
-      - site2
     cap_add:
       - NET_ADMIN
-  proxy-3:
-    build:
-      context: ./src/proxy/base-proxy
-      dockerfile: Dockerfile
-    volumes:
-      - ./src/proxy/base-proxy:/app
-      - ./utils/handlers:/app/src/handlers
-      - ./utils/helper:/app/src/helper
-      - ./utils/control-plane:/app/src/control-plane
-    ports:
-      - "${PROXY_3_EXTERNAL_PORT}:${PROXY_PORT}"
-    # The watch command will check for changes in the code and restart the server
-    command: sh -c "npm install && npm run watch"
+  kafka-controller-2:
+    image: apache/kafka:latest
+    container_name: controller-2
     environment:
-      PORT: ${PROXY_PORT} 
-      EVENT_ADDRESS: ${EVENT_HOST_SITE_3}
-      EVENT_PORT: ${EVENT_PORT_SITE_3}
-      EVENT_CLIENT_ID: "proxy-3"
-      REGION: "eu-uk"
-      MASTER: "${MASTER}"
-      CONTROL_PORT: "${CONTROL_PORT}"
-    networks:
-      - proxy
-      - site3
-    cap_add:
-      - NET_ADMIN
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: controller
+      KAFKA_LISTENERS: CONTROLLER://:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@controller-1:9093,2@controller-2:9093
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
 networks:
   site1:
@@ -106,9 +95,6 @@ networks:
     external: true
   site2:
     name: site2
-    external: true
-  site3:
-    name: site3
     external: true
   proxy:
     name: proxy
