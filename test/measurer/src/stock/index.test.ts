@@ -73,7 +73,7 @@ describe("Setting stock", () => {
                     continue;
                 }
                 try {
-                    await measurementServiceStock.measure(() => setStock(other_gateway, test_product_id, warehouse, 20, admin_token), "addStock", "Add stock to the wrong gateway to see the time of the forwarding between sites", gateway, other_gateway);
+                    await measurementServiceStock.measure(() => setStock(other_gateway, test_product_id, warehouse, 20, admin_token), "addStock", "Add stock to the wrong gateway to see the time of the forwarding between sites", other_gateway, gateway);
                 } catch (error) {
                     expect.fail(`Add stock failed for ${gateway}: ${error}`);
                 }

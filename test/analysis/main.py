@@ -336,11 +336,37 @@ def plot_request_statistics(
 
 if __name__ == "__main__":
     # Get the folder path from the command line arguments
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 2:
         print("Usage: python main.py <folder_path> <topic> <name>")
         exit(1)
     folder_path = sys.argv[1]
+    # Load the JSON files from the folder
+    data = load_folder(folder_path)
+    print(f"Loaded {len(data)} data points from {folder_path}.")
+   
+    if len(sys.argv) < 3:
+        # Show the different topics available with their associated names
+        topics = set(item.get('topic') for item in data if 'topic' in item)
+        print("Available topics:")
+        for topic in topics:
+            names = set(item.get('name') for item in data if item.get('topic') == topic)
+            print(f"  Topic: {topic}")
+            for name in names:
+                print(f"    Name: {name}")
+        print("Please specify a topic and name to filter the measures.")
+        exit(0)
+
     topic = sys.argv[2]
+    if len(sys.argv) < 4:
+        # Show the different names available for the specified topic
+        names = set(item.get('name') for item in data if item.get('topic') == topic)
+        print(f"Available names for topic '{topic}':")
+        for name in names:
+            print(f"  Name: {name}")
+        print("Please specify a name to filter the measures.")
+        exit(0)
+        
+
     name = sys.argv[3]
     # Load the JSON files from the folder
     data = load_folder(folder_path)
@@ -356,7 +382,7 @@ if __name__ == "__main__":
         all_combinations_stats, same_site_stats, different_site_stats = analyze_speed_dataframe(dataframe, name, output_unit='ms')
         # Plot the histogram of speed values
         # plot_speed_histogram(all_combinations_stats, name, output_unit='ms')
-        plot_request_statistics(same_site_stats, different_site_stats, topic, name, 'ms')
+        # plot_request_statistics(same_site_stats, different_site_stats, topic, name, 'ms')
 
     print("Data loaded successfully.")
 
