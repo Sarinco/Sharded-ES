@@ -1,0 +1,254 @@
+[
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 4674682,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 43980307,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "products",
+    "name": "postProduct",
+    "description": "Post product",
+    "unit": "ns",
+    "value": 6515736,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "products",
+    "name": "postProduct",
+    "description": "Post product",
+    "unit": "ns",
+    "value": 25311236,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 5473381,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 23196497,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "products",
+    "name": "updateProduct",
+    "description": "Update product",
+    "unit": "ns",
+    "value": 4741688,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 5680739,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "products",
+    "name": "updateProduct",
+    "description": "Update product",
+    "unit": "ns",
+    "value": 23931837,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 42961826,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "products",
+    "name": "deleteProduct",
+    "description": "Delete product",
+    "unit": "ns",
+    "value": 5654621,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "products",
+    "name": "deleteProduct",
+    "description": "Delete product",
+    "unit": "ns",
+    "value": 26536183,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 6918532,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "products",
+    "name": "getProducts",
+    "description": "Get products",
+    "unit": "ns",
+    "value": 22977015,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "stock",
+    "name": "addStock",
+    "description": "Add stock",
+    "unit": "ns",
+    "value": 5252085,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "stock",
+    "name": "getStock",
+    "description": "Get stock",
+    "unit": "ns",
+    "value": 2275139,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "stock",
+    "name": "addStock",
+    "description": "Add stock",
+    "unit": "ns",
+    "value": 24731297,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "stock",
+    "name": "getStock",
+    "description": "Get stock",
+    "unit": "ns",
+    "value": 22122862,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "stock",
+    "name": "getStock",
+    "description": "Get stock in the wrong gateway to test the gateway latency",
+    "unit": "ns",
+    "value": 2341303,
+    "source_site": "eu-be",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "stock",
+    "name": "addStock",
+    "description": "Add stock to the wrong gateway to see the time of the forwarding between sites",
+    "unit": "ns",
+    "value": 3904036,
+    "source_site": "eu-spain",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "stock",
+    "name": "deleteStock",
+    "description": "Delete stock",
+    "unit": "ns",
+    "value": 5225606,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "stock",
+    "name": "getStock",
+    "description": "Get stock in the wrong gateway to test the gateway latency",
+    "unit": "ns",
+    "value": 23473657,
+    "source_site": "eu-spain",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "stock",
+    "name": "addStock",
+    "description": "Add stock to the wrong gateway to see the time of the forwarding between sites",
+    "unit": "ns",
+    "value": 25316555,
+    "source_site": "eu-be",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "stock",
+    "name": "getStock",
+    "description": "Get stock",
+    "unit": "ns",
+    "value": 1882122,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "stock",
+    "name": "getStock",
+    "description": "Get stock",
+    "unit": "ns",
+    "value": 43690261,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "stock",
+    "name": "deleteStock",
+    "description": "Delete stock",
+    "unit": "ns",
+    "value": 44160905,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  },
+  {
+    "topic": "users",
+    "name": "adminLogin",
+    "description": "Login the admin",
+    "unit": "ns",
+    "value": 9340807,
+    "source_site": "eu-be",
+    "destination_site": "eu-be"
+  },
+  {
+    "topic": "users",
+    "name": "adminLogin",
+    "description": "Login the admin",
+    "unit": "ns",
+    "value": 29534129,
+    "source_site": "eu-spain",
+    "destination_site": "eu-spain"
+  }
+]
