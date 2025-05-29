@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib.ticker as ticker
 import seaborn as sns
 
+
 def load_json(file_path):
     """
     Load a JSON file and return its content.
@@ -15,9 +16,10 @@ def load_json(file_path):
     if not os.path.exists(file_path):
         print(f"File {file_path} does not exist.")
         exit(1)
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         data = json.load(file)
     return data
+
 
 def load_folder(folder_path):
     """
@@ -28,42 +30,46 @@ def load_folder(folder_path):
         exit(1)
     data = []
     for filename in os.listdir(folder_path):
-        if filename.endswith('.json'):
+        if filename.endswith(".json"):
             file_path = os.path.join(folder_path, filename)
             data += load_json(file_path)
     return data
 
+
 def get_measures_dataframe(data, topic, name):
-  """
-  Filters a list of measure dictionaries by topic and name and returns a pandas DataFrame.
+    """
+    Filters a list of measure dictionaries by topic and name and returns a pandas DataFrame.
 
-  Args:
-    data: A list of dictionaries, where each dictionary represents a measure.
-    topic: The topic to filter by.
-    name: The name to filter by.
+    Args:
+      data: A list of dictionaries, where each dictionary represents a measure.
+      topic: The topic to filter by.
+      name: The name to filter by.
 
-  Returns:
-    A pandas DataFrame containing the filtered measures with columns
-    'id', 'value', 'unit', 'source_site', and 'destination_site'.
-    Returns an empty DataFrame if no matching measures are found.
-  """
-  filtered_data = []
-  for item in data:
-    if item.get('topic') == topic and item.get('name') == name:
-      # Create a new dictionary with only the desired columns
-      filtered_data.append({
-          'value': item.get('value'),
-          'unit': item.get('unit'),
-          'source_site': item.get('source_site'),
-          'destination_site': item.get('destination_site')
-      })
+    Returns:
+      A pandas DataFrame containing the filtered measures with columns
+      'id', 'value', 'unit', 'source_site', and 'destination_site'.
+      Returns an empty DataFrame if no matching measures are found.
+    """
+    filtered_data = []
+    for item in data:
+        if item.get("topic") == topic and item.get("name") == name:
+            # Create a new dictionary with only the desired columns
+            filtered_data.append(
+                {
+                    "value": item.get("value"),
+                    "unit": item.get("unit"),
+                    "source_site": item.get("source_site"),
+                    "destination_site": item.get("destination_site"),
+                }
+            )
 
-  # Create DataFrame from the filtered data
-  df = pl.DataFrame(filtered_data)
+    # Create DataFrame from the filtered data
+    df = pl.DataFrame(filtered_data)
 
-  return df
+    return df
 
-def analyze_speed_dataframe(df: pl.DataFrame, name: str, output_unit: str = 'ns'):
+
+def analyze_speed_dataframe(df: pl.DataFrame, name: str, output_unit: str = "ns"):
     """
     Analyzes speed data in a Polars DataFrame by site and site combination,
     allowing for unit selection and providing a same-site vs. different-site
@@ -87,22 +93,24 @@ def analyze_speed_dataframe(df: pl.DataFrame, name: str, output_unit: str = 'ns'
         - DataFrame with stats for different-site requests (source_site != destination_site).
     """
     if df.is_empty():
-        print(f"Input DataFrame for '{name}' is empty. No analysis or plotting possible.")
+        print(
+            f"Input DataFrame for '{name}' is empty. No analysis or plotting possible."
+        )
         return pl.DataFrame(), pl.DataFrame(), pl.DataFrame()
 
     print(f"\n--- Analyzing speed data for '{name}' (Output Unit: {output_unit}) ---")
 
     # Define conversion factors from nanoseconds (ns)
     conversion_factors = {
-        'ns': 1,
-        'us': 1e-3,  # 1 microsecond = 1000 nanoseconds
-        'ms': 1e-6,  # 1 millisecond = 1,000,000 nanoseconds
-        's':  1e-9   # 1 second = 1,000,000,000 nanoseconds
+        "ns": 1,
+        "us": 1e-3,  # 1 microsecond = 1000 nanoseconds
+        "ms": 1e-6,  # 1 millisecond = 1,000,000 nanoseconds
+        "s": 1e-9,  # 1 second = 1,000,000,000 nanoseconds
     }
 
     if output_unit not in conversion_factors:
         print(f"Warning: Invalid output_unit '{output_unit}'. Defaulting to 'ns'.")
-        output_unit = 'ns'
+        output_unit = "ns"
 
     conversion_factor = conversion_factors[output_unit]
 
@@ -122,66 +130,94 @@ def analyze_speed_dataframe(df: pl.DataFrame, name: str, output_unit: str = 'ns'
 
     # --- 1. Analysis for all source-destination combinations ---
     print("\nCalculating statistics for all source -> destination combinations...")
-    all_combinations_stats = df_converted.group_by(["source_site", "destination_site"], maintain_order=True).agg([
-        pl.col(value_col_name).mean().alias(average_col_name),
-        pl.col(value_col_name).median().alias(median_col_name),
-        pl.col(value_col_name).quantile(0.95).alias(percentile_col_name),
-        pl.col(value_col_name).min().alias(min_col_name),
-        pl.col(value_col_name).max().alias(max_col_name),
-        pl.col(value_col_name).std().alias(std_col_name),
-        pl.col(value_col_name).count().alias("count")
-    ]).sort(["source_site", "destination_site"])
+    all_combinations_stats = (
+        df_converted.group_by(["source_site", "destination_site"], maintain_order=True)
+        .agg(
+            [
+                pl.col(value_col_name).mean().alias(average_col_name),
+                pl.col(value_col_name).median().alias(median_col_name),
+                pl.col(value_col_name).quantile(0.95).alias(percentile_col_name),
+                pl.col(value_col_name).min().alias(min_col_name),
+                pl.col(value_col_name).max().alias(max_col_name),
+                pl.col(value_col_name).std().alias(std_col_name),
+                pl.col(value_col_name).count().alias("count"),
+            ]
+        )
+        .sort(["source_site", "destination_site"])
+    )
 
     print("\nStatistics for all combinations:")
     # Display all float columns in scientific notation
-    print(all_combinations_stats.select(
-        pl.exclude("source_site", "destination_site", "count").cast(pl.Float64).name.suffix("_float"),
-        pl.col("source_site", "destination_site", "count")
-    ))
-
+    print(
+        all_combinations_stats.select(
+            pl.exclude("source_site", "destination_site", "count")
+            .cast(pl.Float64)
+            .name.suffix("_float"),
+            pl.col("source_site", "destination_site", "count"),
+        )
+    )
 
     # --- 2. Analysis for same-site requests ---
-    print("\nCalculating statistics for same-site requests (source_site == destination_site)...")
-    same_site_stats = df_converted.filter(
-        pl.col("source_site") == pl.col("destination_site")
-    ).group_by("source_site", maintain_order=True).agg([
-        pl.col(value_col_name).mean().alias(average_col_name),
-        pl.col(value_col_name).median().alias(median_col_name),
-        pl.col(value_col_name).quantile(0.95).alias(percentile_col_name),
-        pl.col(value_col_name).min().alias(min_col_name),
-        pl.col(value_col_name).max().alias(max_col_name),
-        pl.col(value_col_name).std().alias(std_col_name),
-        pl.col(value_col_name).count().alias("count")
-    ]).sort("source_site")
+    print(
+        "\nCalculating statistics for same-site requests (source_site == destination_site)..."
+    )
+    same_site_stats = (
+        df_converted.filter(pl.col("source_site") == pl.col("destination_site"))
+        .group_by("source_site", maintain_order=True)
+        .agg(
+            [
+                pl.col(value_col_name).mean().alias(average_col_name),
+                pl.col(value_col_name).median().alias(median_col_name),
+                pl.col(value_col_name).quantile(0.95).alias(percentile_col_name),
+                pl.col(value_col_name).min().alias(min_col_name),
+                pl.col(value_col_name).max().alias(max_col_name),
+                pl.col(value_col_name).std().alias(std_col_name),
+                pl.col(value_col_name).count().alias("count"),
+            ]
+        )
+        .sort("source_site")
+    )
 
     print("\nStatistics for same-site requests:")
     # Display all float columns in scientific notation
-    print(same_site_stats.select(
-         pl.exclude("source_site", "count").cast(pl.Float64).name.suffix("_float"),
-         pl.col("source_site", "count")
-    ))
-
+    print(
+        same_site_stats.select(
+            pl.exclude("source_site", "count").cast(pl.Float64).name.suffix("_float"),
+            pl.col("source_site", "count"),
+        )
+    )
 
     # --- 3. Analysis for different-site requests ---
-    print("\nCalculating statistics for different-site requests (source_site != destination_site)...")
-    different_site_stats = df_converted.filter(
-        pl.col("source_site") != pl.col("destination_site")
-    ).group_by(["source_site", "destination_site"], maintain_order=True).agg([
-        pl.col(value_col_name).mean().alias(average_col_name),
-        pl.col(value_col_name).median().alias(median_col_name),
-        pl.col(value_col_name).quantile(0.95).alias(percentile_col_name),
-        pl.col(value_col_name).min().alias(min_col_name),
-        pl.col(value_col_name).max().alias(max_col_name),
-        # pl.col(value_col_name).std().alias(std_col_name),
-        pl.col(value_col_name).count().alias("count")
-    ]).sort(["source_site", "destination_site"])
+    print(
+        "\nCalculating statistics for different-site requests (source_site != destination_site)..."
+    )
+    different_site_stats = (
+        df_converted.filter(pl.col("source_site") != pl.col("destination_site"))
+        .group_by(["source_site", "destination_site"], maintain_order=True)
+        .agg(
+            [
+                pl.col(value_col_name).mean().alias(average_col_name),
+                pl.col(value_col_name).median().alias(median_col_name),
+                pl.col(value_col_name).quantile(0.95).alias(percentile_col_name),
+                pl.col(value_col_name).min().alias(min_col_name),
+                pl.col(value_col_name).max().alias(max_col_name),
+                # pl.col(value_col_name).std().alias(std_col_name),
+                pl.col(value_col_name).count().alias("count"),
+            ]
+        )
+        .sort(["source_site", "destination_site"])
+    )
 
     print("\nStatistics for different-site requests:")
     # Display all float columns in scientific notation
-    print(different_site_stats.select(
-        pl.exclude("source_site", "destination_site", "count").cast(pl.Float64).name.suffix("_float"),
-        pl.col("source_site", "destination_site", "count")
-    ))
+    print(
+        different_site_stats.select(
+            pl.exclude("source_site", "destination_site", "count")
+            .cast(pl.Float64)
+            .name.suffix("_float"),
+            pl.col("source_site", "destination_site", "count"),
+        )
+    )
 
     # --- 4. Statistical Comparison (Same Site vs. Different Site) ---
     print("\n--- Same Site vs. Different Site Comparison ---")
@@ -201,52 +237,62 @@ def analyze_speed_dataframe(df: pl.DataFrame, name: str, output_unit: str = 'ns'
         print("  Same Site: No data")
 
     if different_site_avg is not None:
-         print(f"  Different Site: {different_site_avg:.4e}")
+        print(f"  Different Site: {different_site_avg:.4e}")
     else:
         print("  Different Site: No data")
-
 
     print(f"\nOverall 95th Percentile ({output_unit}):")
     if same_site_95p is not None:
         print(f"  Same Site: {same_site_95p:.4e}")
     else:
-         print("  Same Site: No data")
+        print("  Same Site: No data")
 
     if different_site_95p is not None:
         print(f"  Different Site: {different_site_95p:.4e}")
     else:
         print("  Different Site: No data")
 
-
     print("\nComparison Summary:")
     if same_site_avg is not None and different_site_avg is not None:
         avg_diff = different_site_avg - same_site_avg
         # Avoid division by zero if same_site_avg is zero
-        avg_percent_diff = (avg_diff / same_site_avg) * 100 if same_site_avg != 0 else float('inf')
+        avg_percent_diff = (
+            (avg_diff / same_site_avg) * 100 if same_site_avg != 0 else float("inf")
+        )
         print(f"  Average Difference (Different - Same): {avg_diff:.4e} {output_unit}")
-        if avg_percent_diff != float('inf'):
-             print(f"  Average Percentage Difference: {avg_percent_diff:.2f}%")
+        if avg_percent_diff != float("inf"):
+            print(f"  Average Percentage Difference: {avg_percent_diff:.2f}%")
         else:
-            print("  Average Percentage Difference: Infinite (Same Site Average is zero)")
+            print(
+                "  Average Percentage Difference: Infinite (Same Site Average is zero)"
+            )
 
     if same_site_95p is not None and different_site_95p is not None:
         p95_diff = different_site_95p - same_site_95p
-         # Avoid division by zero if same_site_95p is zero
-        p95_percent_diff = (p95_diff / same_site_95p) * 100 if same_site_95p != 0 else float('inf')
-        print(f"  95th Percentile Difference (Different - Same): {p95_diff:.4e} {output_unit}")
-        if p95_percent_diff != float('inf'):
+        # Avoid division by zero if same_site_95p is zero
+        p95_percent_diff = (
+            (p95_diff / same_site_95p) * 100 if same_site_95p != 0 else float("inf")
+        )
+        print(
+            f"  95th Percentile Difference (Different - Same): {p95_diff:.4e} {output_unit}"
+        )
+        if p95_percent_diff != float("inf"):
             print(f"  95th Percentage Difference: {p95_percent_diff:.2f}%")
         else:
-            print("  95th Percentage Difference: Infinite (Same Site 95th Percentile is zero)")
-
+            print(
+                "  95th Percentage Difference: Infinite (Same Site 95th Percentile is zero)"
+            )
 
     print(f"\n--- Analysis Complete for '{name}' ---")
 
     return all_combinations_stats, same_site_stats, different_site_stats
 
-def plot_speed_histogram(df: pl.DataFrame, name: str, output_unit: str = 'ns'):
+
+def plot_speed_histogram(df: pl.DataFrame, name: str, output_unit: str = "ns"):
     plot_data = df.with_columns(
-        pl.concat_str([pl.col("source_site"), pl.lit(" -> "), pl.col("destination_site")]).alias("combination")
+        pl.concat_str(
+            [pl.col("source_site"), pl.lit(" -> "), pl.col("destination_site")]
+        ).alias("combination")
     )
     if not plot_data.is_empty():
         fig, ax = plt.subplots(figsize=(12, 7))
@@ -256,19 +302,23 @@ def plot_speed_histogram(df: pl.DataFrame, name: str, output_unit: str = 'ns'):
         ax.set_xlabel("Site Combination")
         ax.set_ylabel("Average Speed (ns)")
         ax.set_title(f"Average Speed by Site Combination for '{name}'")
-        plt.xticks(rotation=45, ha='right') # Rotate labels to prevent overlap
-        plt.grid(axis='y', linestyle='--', alpha=0.7) # Add a horizontal grid
-        plt.tight_layout() # Adjust layout to prevent labels from being cut off
+        plt.xticks(rotation=45, ha="right")  # Rotate labels to prevent overlap
+        plt.grid(axis="y", linestyle="--", alpha=0.7)  # Add a horizontal grid
+        plt.tight_layout()  # Adjust layout to prevent labels from being cut off
         plt.show()
     else:
         print("No data found for plotting combinations.")
+
 
 def plot_request_statistics(
     same_site_stats: pl.DataFrame,
     different_site_stats: pl.DataFrame,
     topic: str,
     name: str,
-    output_unit: str = 'ms',
+    output_unit: str = "ms",
+    be_latency: int = 15,
+    spain_latency: int = 20,
+    filename: str = "default.pdf",
 ):
     """
     Generates plots to visualize request statistics for same-site and different-site requests.
@@ -302,37 +352,108 @@ def plot_request_statistics(
     # Convert to pandas for easier plotting with seaborn/matplotlib
     # This uses the DataFrame as is after your Polars aggregation
     same_site_stats_pd = same_site_stats
-    # Convert to pandas
-    different_site_stats_pd = pd.DataFrame(different_site_stats)#.to_pandas()
-    # Convert columns to appropriate names
-    different_site_stats_pd.columns = [
-        "source_site", "destination_site", average_col, median_col,
-        percentile_col, min_col, max_col, count_col
-    ]
 
-    # Combine source and destination for plotting
-    different_site_stats_pd['source_destination'] = different_site_stats_pd['source_site'] + ' -> ' + different_site_stats_pd['destination_site']
+    if not different_site_stats.is_empty():
+        # Convert to pandas
+        different_site_stats_pd = pd.DataFrame(different_site_stats)  # .to_pandas()
+        # Convert columns to appropriate names
+        different_site_stats_pd.columns = [
+            "source_site",
+            "destination_site",
+            average_col,
+            median_col,
+            percentile_col,
+            min_col,
+            max_col,
+            count_col,
+        ]
 
+        # Combine source and destination for plotting
+        different_site_stats_pd["source_destination"] = (
+            different_site_stats_pd["source_site"]
+            + " -> "
+            + different_site_stats_pd["destination_site"]
+        )
+        fig_diff, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 15))
+        fig_diff.suptitle(f"Request Statistics (${topic} - ${name})", fontsize=16)
+        fig_diff.tight_layout(pad=4.0)
 
-    fig_diff, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 15))
-    fig_diff.suptitle(f'Request Statistics (${topic} - ${name})', fontsize=16)
-    fig_diff.tight_layout(pad=4.0)
+        # Plotting statistics with hue and legend=False to address FutureWarning
+        sns.barplot(
+            ax=axes[0],
+            x="source_site",
+            y=average_col,
+            data=same_site_stats_pd,
+            palette="viridis",
+            hue="source_site",
+            legend=False,
+        )
+        axes[0].set_title(f"Average same site request ({average_col})")
+        axes[0].tick_params(axis="x", rotation=45)
+        axes[0].set_xlabel("")  # Remove redundant x-label
+        axes[0].set_ylabel(average_col)
 
-    # Plotting statistics with hue and legend=False to address FutureWarning
-    sns.barplot(ax=axes[0], x="source_site", y=average_col, data=same_site_stats_pd, palette="viridis", hue="source_site", legend=False)
-    axes[0].set_title(f'Average same site request ({average_col})')
-    axes[0].tick_params(axis='x', rotation=45)
-    axes[0].set_xlabel("") # Remove redundant x-label
-    axes[0].set_ylabel(average_col)
+        # Plotting statistics with hue and legend=False to address FutureWarning
+        sns.barplot(
+            ax=axes[1],
+            x="source_destination",
+            y=average_col,
+            data=different_site_stats_pd,
+            palette="plasma",
+            hue="source_destination",
+            legend=False,
+        )
+        axes[1].set_title(f"Average cross site requests ({average_col})")
+        axes[1].tick_params(axis="x", rotation=45)
+        axes[1].set_xlabel("")
+        axes[1].set_ylabel(average_col)
+    else:
+        # Create a single subplot if different site data is empty
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10, 8))
+        # fig.suptitle(f'Same-site Request Statistics ({topic} - {name})', fontsize=16)
+        fig.tight_layout(pad=4.0)
 
-    # Plotting statistics with hue and legend=False to address FutureWarning
-    sns.barplot(ax=axes[1], x="source_destination", y=average_col, data=different_site_stats_pd, palette="plasma", hue="source_destination", legend=False)
-    axes[1].set_title(f'Average cross site requests ({average_col})')
-    axes[1].tick_params(axis='x', rotation=45)
-    axes[1].set_xlabel("")
-    axes[1].set_ylabel(average_col)
+        # Plot same-site data of eu-be (axes[0])
+        # Belgium average latency
+        be_average_latency = same_site_stats_pd.filter(
+            pl.col("source_site") == "eu-be"
+        )[average_col].to_numpy()
+        # Spain average latency
+        spain_average_latency = same_site_stats_pd.filter(
+            pl.col("source_site") == "eu-spain"
+        )[average_col].to_numpy()[0]
 
-    plt.show()
+        # Plotting the latency on two axes
+        axes.axhline(
+            y=be_latency,
+            color="blue",
+            linestyle="--",
+            label=f"Belgium Latency ({be_latency}{output_unit})",
+        )
+
+        axes.axhline(
+            y=spain_latency,
+            color="red",
+            linestyle="--",
+            label=f"Spain Latency ({spain_latency}{output_unit})",
+        )
+
+        # Plotting the belgium average latency
+        sns.barplot(
+            ax=axes,
+            x="source_site",
+            y=average_col,
+            data=same_site_stats_pd,
+            palette="viridis",
+            hue="source_site",
+            legend=False,
+        )
+
+        plt.legend()
+
+        plt.savefig(filename + "_same_site.pdf", format="pdf", bbox_inches="tight")
+        plt.show()
+
 
 if __name__ == "__main__":
     # Get the folder path from the command line arguments
@@ -343,13 +464,13 @@ if __name__ == "__main__":
     # Load the JSON files from the folder
     data = load_folder(folder_path)
     print(f"Loaded {len(data)} data points from {folder_path}.")
-   
+
     if len(sys.argv) < 3:
         # Show the different topics available with their associated names
-        topics = set(item.get('topic') for item in data if 'topic' in item)
+        topics = set(item.get("topic") for item in data if "topic" in item)
         print("Available topics:")
         for topic in topics:
-            names = set(item.get('name') for item in data if item.get('topic') == topic)
+            names = set(item.get("name") for item in data if item.get("topic") == topic)
             print(f"  Topic: {topic}")
             for name in names:
                 print(f"    Name: {name}")
@@ -359,13 +480,12 @@ if __name__ == "__main__":
     topic = sys.argv[2]
     if len(sys.argv) < 4:
         # Show the different names available for the specified topic
-        names = set(item.get('name') for item in data if item.get('topic') == topic)
+        names = set(item.get("name") for item in data if item.get("topic") == topic)
         print(f"Available names for topic '{topic}':")
         for name in names:
             print(f"  Name: {name}")
         print("Please specify a name to filter the measures.")
         exit(0)
-        
 
     name = sys.argv[3]
     # Load the JSON files from the folder
@@ -379,11 +499,20 @@ if __name__ == "__main__":
         # print("Filtered measures:")
         # print(dataframe.head())
         # Analyze the speed data
-        all_combinations_stats, same_site_stats, different_site_stats = analyze_speed_dataframe(dataframe, name, output_unit='ms')
+        all_combinations_stats, same_site_stats, different_site_stats = (
+            analyze_speed_dataframe(dataframe, name, output_unit="ms")
+        )
         # Plot the histogram of speed values
         # plot_speed_histogram(all_combinations_stats, name, output_unit='ms')
-        # plot_request_statistics(same_site_stats, different_site_stats, topic, name, 'ms')
+        if len(sys.argv) > 4:
+            filename = sys.argv[4]
+            plot_request_statistics(
+                same_site_stats,
+                different_site_stats,
+                topic,
+                name,
+                "ms",
+                filename=filename + "_" + topic + "_" + name,
+            )
 
     print("Data loaded successfully.")
-
-
