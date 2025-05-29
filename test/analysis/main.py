@@ -455,6 +455,202 @@ def plot_request_statistics(
         plt.show()
 
 
+def comparison_plot(
+    same_site_stats_with: pl.DataFrame,
+    different_site_stats_with: pl.DataFrame,
+    same_site_stats_without: pl.DataFrame,
+    different_site_stats_without: pl.DataFrame,
+    topic: str,
+    name: str,
+    output_unit: str = "ms",
+    be_latency: int = 15,
+    spain_latency: int = 20,
+    filename: str = "default.pdf",
+):
+    """
+    Generates plots to visualize request statistics for same-site and different-site requests.
+
+    Args:
+        same_site_stats: Polars DataFrame containing statistics for same-site requests.
+        different_site_stats: Polars DataFrame containing statistics for different-site requests.
+        average_col: Name of the average column in the DataFrames.
+        median_col: Name of the median column in the DataFrames.
+        percentile_col: Name of the 95th percentile column in the DataFrames.
+        min_col: Name of the minimum column in the DataFrames.
+        max_col: Name of the maximum column in the DataFrames.
+        std_col: Name of the standard deviation column (expected in same_site_stats).
+                 Note: Based on your provided code, std is NOT calculated for different_site_stats.
+        count_col: Name of the count column in the DataFrames.
+    """
+    # Use the converted value column for aggregations
+    value_col_name = f"value_{output_unit}"
+    average_col = f"average_{output_unit}"
+    median_col = f"median_{output_unit}"
+    percentile_col = f"percentile_95_{output_unit}"
+    min_col = f"min_{output_unit}"
+    max_col = f"max_{output_unit}"
+    std_col = f"std_dev_{output_unit}"
+    count_col = "count"
+
+    # --- Same-site requests visualization ---
+
+    print("\nGenerating plots for same-site requests...")
+
+    # Convert to pandas for easier plotting with seaborn/matplotlib
+    # This uses the DataFrame as is after your Polars aggregation
+    same_site_stats_with_pd = same_site_stats_with
+    same_site_stats_without_pd = same_site_stats_without
+
+    if not different_site_stats_with.is_empty():
+        # Convert to pandas
+        different_site_stats_pd = pd.DataFrame(
+            different_site_stats_with
+        )  # .to_pandas()
+        # Convert columns to appropriate names
+        different_site_stats_pd.columns = [
+            "source_site",
+            "destination_site",
+            average_col,
+            median_col,
+            percentile_col,
+            min_col,
+            max_col,
+            count_col,
+        ]
+
+        # Combine source and destination for plotting
+        different_site_stats_pd["source_destination"] = (
+            different_site_stats_pd["source_site"]
+            + " -> "
+            + different_site_stats_pd["destination_site"]
+        )
+        fig_diff, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 15))
+        fig_diff.suptitle(f"Request Statistics (${topic} - ${name})", fontsize=16)
+        fig_diff.tight_layout(pad=4.0)
+
+        # Plotting statistics with hue and legend=False to address FutureWarning
+        sns.barplot(
+            ax=axes[0],
+            x="source_site",
+            y=average_col,
+            data=same_site_stats_with_pd,
+            palette="viridis",
+            hue="source_site",
+            legend=False,
+        )
+        axes[0].set_title(f"Average same site request ({average_col})")
+        axes[0].tick_params(axis="x", rotation=45)
+        axes[0].set_xlabel("")  # Remove redundant x-label
+        axes[0].set_ylabel(average_col)
+
+        # Plotting statistics with hue and legend=False to address FutureWarning
+        sns.barplot(
+            ax=axes[1],
+            x="source_destination",
+            y=average_col,
+            data=different_site_stats_pd,
+            palette="plasma",
+            hue="source_destination",
+            legend=False,
+        )
+        axes[1].set_title(f"Average cross site requests ({average_col})")
+        axes[1].tick_params(axis="x", rotation=45)
+        axes[1].set_xlabel("")
+        axes[1].set_ylabel(average_col)
+    else:
+        # Create a single subplot if different site data is empty
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(16, 8))
+        # fig.suptitle(f'Same-site Request Statistics ({topic} - {name})', fontsize=16)
+        fig.tight_layout(pad=4.0)
+
+        # Add a column to distinguish the data sources
+        same_site_stats_with_pd = same_site_stats_with_pd.with_columns(
+            pl.lit("With middleware").alias("middleware_status")
+        )
+        same_site_stats_without_pd = same_site_stats_without_pd.with_columns(
+            pl.lit("Without middleware").alias("middleware_status")
+        )
+        # Filter and combine the data for eu-be site
+        combined_be_data = pl.concat(
+            [
+                same_site_stats_with_pd.filter(pl.col("source_site") == "eu-be"),
+                same_site_stats_without_pd.filter(pl.col("source_site") == "eu-be"),
+            ]
+        )
+
+        # Convert to pandas for Seaborn plotting
+        combined_be_data_pd = combined_be_data
+
+        # Plotting the latency on two axes
+        axes[0].axhline(
+            y=be_latency,
+            color="red",
+            linestyle="--",
+            label=f"Belgium Latency ({be_latency}{output_unit})",
+        )
+
+        # Plotting the belgium average latency
+        sns.barplot(
+            ax=axes[0],
+            x="middleware_status",  # Use the new column for x-axis
+            y=average_col,
+            data=combined_be_data_pd,
+            palette="viridis",  # Or choose another palette
+            # hue="middleware_status", # Hue is not strictly necessary if using the column for x
+            legend=False,  # Legend might not be needed if x-axis labels are clear
+        )
+
+        axes[0].set_title("Average same site request in Belgium")
+        axes[0].tick_params(axis="x", rotation=45)
+        axes[0].set_xlabel("")
+        axes[0].set_ylabel(average_col)
+
+        ### SPAIN LATENCY PLOT ###
+
+        # Add a column to distinguish the data sources
+        same_site_stats_with_pd = same_site_stats_with_pd.with_columns(
+            pl.lit("With middleware").alias("middleware_status")
+        )
+        same_site_stats_without_pd = same_site_stats_without_pd.with_columns(
+            pl.lit("Without middleware").alias("middleware_status")
+        )
+
+        # Filter and combine the data for eu-be site
+        combined_spain_data = pl.concat(
+            [
+                same_site_stats_with_pd.filter(pl.col("source_site") == "eu-spain"),
+                same_site_stats_without_pd.filter(pl.col("source_site") == "eu-spain"),
+            ]
+        )
+
+        # Convert to pandas for Seaborn plotting
+        combined_spain_data_pd = combined_spain_data
+        axes[1].axhline(
+            y=spain_latency,
+            color="purple",
+            linestyle="--",
+            label=f"Spain Latency ({spain_latency}{output_unit})",
+        )
+        # Plotting the spain average latency
+        sns.barplot(
+            ax=axes[1],
+            x="middleware_status",  # Use the new column for x-axis
+            y=average_col,
+            data=combined_spain_data_pd,
+            palette="viridis",  # Or choose another palette
+            # hue="middleware_status", # Hue is not strictly necessary if using the column for x
+            legend=False,  # Legend might not be needed if x-axis labels are clear
+        )
+
+        axes[1].set_title("Average same site request in Spain")
+        axes[1].tick_params(axis="x", rotation=45)
+        axes[1].set_xlabel("")
+        axes[1].set_ylabel(average_col)
+
+        plt.savefig(filename + "_same_site.pdf", format="pdf", bbox_inches="tight")
+        plt.show()
+
+
 if __name__ == "__main__":
     # Get the folder path from the command line arguments
     if len(sys.argv) < 2:
@@ -462,8 +658,6 @@ if __name__ == "__main__":
         exit(1)
     folder_path = sys.argv[1]
     # Load the JSON files from the folder
-    data = load_folder(folder_path)
-    print(f"Loaded {len(data)} data points from {folder_path}.")
 
     if len(sys.argv) < 3:
         # Show the different topics available with their associated names
@@ -489,30 +683,50 @@ if __name__ == "__main__":
 
     name = sys.argv[3]
     # Load the JSON files from the folder
-    data = load_folder(folder_path)
-    print(f"Loaded {len(data)} JSON files from {folder_path}.")
+    data_with = load_folder(folder_path + "middleware/")
+    data_without = load_folder(folder_path + "no-middleware/")
+    print(
+        f"Loaded {len(data_with)} measures with middleware and {len(data_without)} without middleware."
+    )
 
-    dataframe = get_measures_dataframe(data, topic, name)
-    if dataframe.is_empty():
+    dataframe_with = get_measures_dataframe(data_with, topic, name)
+    dataframe_without = get_measures_dataframe(data_without, topic, name)
+    if dataframe_with.is_empty() and dataframe_without.is_empty():
         print("No measures found for the specified topic and name.")
     else:
         # print("Filtered measures:")
         # print(dataframe.head())
         # Analyze the speed data
-        all_combinations_stats, same_site_stats, different_site_stats = (
-            analyze_speed_dataframe(dataframe, name, output_unit="ms")
+        all_combinations_stats, same_site_stats_with, different_site_stats_with = (
+            analyze_speed_dataframe(dataframe_with, name, output_unit="ms")
         )
+        (
+            all_combinations_stats_without,
+            same_site_stats_without,
+            different_site_stats_without,
+        ) = analyze_speed_dataframe(dataframe_without, name, output_unit="ms")
         # Plot the histogram of speed values
         # plot_speed_histogram(all_combinations_stats, name, output_unit='ms')
         if len(sys.argv) > 4:
             filename = sys.argv[4]
             plot_request_statistics(
-                same_site_stats,
-                different_site_stats,
+                same_site_stats_with,
+                different_site_stats_with,
                 topic,
                 name,
                 "ms",
                 filename=filename + "_" + topic + "_" + name,
+            )
+        else:
+            comparison_plot(
+                same_site_stats_with,
+                different_site_stats_with,
+                same_site_stats_without,
+                different_site_stats_without,
+                topic,
+                name,
+                output_unit="ms",
+                filename=f"{topic}_{name}_comparison",
             )
 
     print("Data loaded successfully.")
