@@ -201,7 +201,7 @@ def analyze_speed_dataframe(df: pl.DataFrame, name: str, output_unit: str = "ns"
                 pl.col(value_col_name).quantile(0.95).alias(percentile_col_name),
                 pl.col(value_col_name).min().alias(min_col_name),
                 pl.col(value_col_name).max().alias(max_col_name),
-                # pl.col(value_col_name).std().alias(std_col_name),
+                pl.col(value_col_name).std().alias(std_col_name),
                 pl.col(value_col_name).count().alias("count"),
             ]
         )
@@ -365,6 +365,7 @@ def plot_request_statistics(
             percentile_col,
             min_col,
             max_col,
+            std_col,
             count_col,
         ]
 
@@ -518,6 +519,7 @@ def comparison_plot(
             percentile_col,
             min_col,
             max_col,
+            std_col,
             count_col,
         ]
         cross_site_stats_without_pd.columns = [
@@ -528,6 +530,7 @@ def comparison_plot(
             percentile_col,
             min_col,
             max_col,
+            std_col,
             count_col,
         ]
 
@@ -602,6 +605,15 @@ def comparison_plot(
             palette="viridis",  # Or choose another palette
             # hue="middleware_status", # Hue is not strictly necessary if using the column for x
             legend=False,  # Legend might not be needed if x-axis labels are clear
+            errorbar='sd' # Add standard deviation error bars
+        )
+        axes[0].errorbar(
+            x=combined_be_data_pd["middleware_status"],
+            y=combined_be_data_pd[average_col],
+            yerr=combined_be_data_pd[std_col],
+            fmt='none',  # No marker for the error bars
+            capsize=5,  # Length of the error bar caps
+            color='black',  # Color of the error bars
         )
 
         axes[0].set_title("Average cross site request in Belgium\n")
@@ -614,12 +626,6 @@ def comparison_plot(
         # Add a column to distinguish the data sources
         cross_site_stats_with_pd["middleware_status"] = "With middleware"
         cross_site_stats_without_pd["middleware_status"] = "Without middleware"
-        # cross_site_stats_with_pd = cross_site_stats_with_pd.with_columns(
-        #     pl.lit("With middleware").alias("middleware_status")
-        # )
-        # cross_site_stats_without_pd = cross_site_stats_without_pd.with_columns(
-        #     pl.lit("Without middleware").alias("middleware_status")
-        # )
 
         # Filter and combine the data for eu-be site
         combined_spain_data = pd.concat(
@@ -628,12 +634,6 @@ def comparison_plot(
                 cross_site_stats_without_pd[cross_site_stats_without_pd["source_site"] == "eu-spain"],
             ]
         )
-        # combined_spain_data = pl.concat(
-        #     [
-        #         cross_site_stats_with_pd.filter(pl.col("source_site") == "eu-spain"),
-        #         cross_site_stats_without_pd.filter(pl.col("source_site") == "eu-spain"),
-        #     ]
-        # )
 
         # Convert to pandas for Seaborn plotting
         combined_spain_data_pd = combined_spain_data
@@ -659,7 +659,18 @@ def comparison_plot(
             palette="viridis",  # Or choose another palette
             # hue="middleware_status", # Hue is not strictly necessary if using the column for x
             legend=False,  # Legend might not be needed if x-axis labels are clear
+            errorbar='sd' # Add standard deviation error bars
         )
+
+        axes[1].errorbar(
+            x=combined_spain_data_pd["middleware_status"],
+            y=combined_spain_data_pd[average_col],
+            yerr=combined_spain_data[std_col],
+            fmt='none',  # No marker for the error bars
+            capsize=5,  # Length of the error bar caps
+            color='black',  # Color of the error bars
+        )
+        print(combined_spain_data_pd)
 
         axes[1].set_title("Average cross site request in Spain\n")
         axes[1].tick_params(axis="x", rotation=45)
@@ -711,6 +722,16 @@ def comparison_plot(
         palette="viridis",  # Or choose another palette
         # hue="middleware_status", # Hue is not strictly necessary if using the column for x
         legend=False,  # Legend might not be needed if x-axis labels are clear
+        errorbar='sd' # Add standard deviation error bars
+    )
+
+    axes[0].errorbar(
+        x=combined_be_data_pd["middleware_status"],
+        y=combined_be_data_pd[average_col],
+        yerr=combined_be_data_pd[std_col],
+        fmt='none',  # No marker for the error bars
+        capsize=5,  # Length of the error bar caps
+        color='black',  # Color of the error bars
     )
 
     axes[0].set_title("Average same site request in Belgium\n")
@@ -753,6 +774,14 @@ def comparison_plot(
         palette="viridis",  # Or choose another palette
         # hue="middleware_status", # Hue is not strictly necessary if using the column for x
         legend=False,  # Legend might not be needed if x-axis labels are clear
+    )
+    axes[1].errorbar(
+        x=combined_spain_data_pd["middleware_status"],
+        y=combined_spain_data_pd[average_col],
+        yerr=combined_spain_data_pd[std_col],
+        fmt='none',  # No marker for the error bars
+        capsize=5,  # Length of the error bar caps
+        color='black',  # Color of the error bars
     )
 
     axes[1].set_title("Average same site request in Spain\n")
