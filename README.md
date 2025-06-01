@@ -7,6 +7,8 @@ The detail information about the project and the architecture can be found in ou
 - [Structure](#structure)
 - [Getting Started](#getting-started)
 - [Testing](#testing)
+- [License](#license)
+- [API Endpoints](src/API.md)
 
 ## Structure
 
@@ -24,7 +26,7 @@ The detail information about the project and the architecture can be found in ou
 The project is structured into several directories:
 - `compose`: Contains the Docker Compose files to run the different services.
 - `site1`, `site2`, `site3`: Each directory contains the configuration of the different sites.
-- `src`: Contains the source code of the project as explained in [`src/README.md`](src/README.md).
+- `src`: Contains the source code of the project as explained in [`src/README.md`](src/README.md) and the [`src/API.md`](src/API.md) file.
 - `test`: Contains the test code for the project.
 - `utils`: Contains files that were used in multiple places in the project.
 
@@ -97,5 +99,8 @@ make remove-latency
 # This will test the latency between the sites.
 make test-latency
 ```
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 
