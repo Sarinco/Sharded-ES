@@ -3,6 +3,11 @@
 This repository contains the code we used to build and test our thesis project. The goal of this project was to create a content-based routing for event sourced applications in a multi-site architecture.
 The detail information about the project and the architecture can be found in our thesis document.
 
+## Table of Contents
+- [Structure](#structure)
+- [Getting Started](#getting-started)
+- [Testing](#testing)
+
 ## Structure
 
 ```bash
