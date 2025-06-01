@@ -1,0 +1,16 @@
+[0;34mDetecting running proxy services...[0m
+[0;32mFound running services: site1-gateway-1 site2-gateway-1[0m
+[0;34mTesting latency between pairs (5 pings each)...[0m
+------------------------------------------------------------
+[0;33mTesting latency from site1-gateway-1 to other services...[0m
+  Testing: site1-gateway-1 <--> site2-gateway-1... [0;32mAverage Latency: 35.119 ms[0m
+ 
+[0;33mTesting latency from site2-gateway-1 to other services...[0m
+  Testing: site2-gateway-1 <--> site1-gateway-1... [0;32mAverage Latency: 35.149 ms[0m
+ 
+------------------------------------------------------------
+[0;34mTesting latency from the host to the gateway services...[0m
+Testing: Host <--> site1-gateway-1 (172.18.0.9)... [0;32mAverage Latency: 15.069 ms[0m
+Testing: Host <--> site2-gateway-1 (172.18.0.2)... [0;32mAverage Latency: 20.076 ms[0m
+------------------------------------------------------------
+[0;32mLatency test complete.[0m
