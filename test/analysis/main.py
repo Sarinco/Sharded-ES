@@ -503,11 +503,24 @@ def comparison_plot(
 
     if not different_site_stats_with.is_empty():
         # Convert to pandas
-        different_site_stats_pd = pd.DataFrame(
+        cross_site_stats_with_pd = pd.DataFrame(
             different_site_stats_with
         )  # .to_pandas()
+        cross_site_stats_without_pd = pd.DataFrame(
+            different_site_stats_without
+        )
         # Convert columns to appropriate names
-        different_site_stats_pd.columns = [
+        cross_site_stats_with_pd.columns = [
+            "source_site",
+            "destination_site",
+            average_col,
+            median_col,
+            percentile_col,
+            min_col,
+            max_col,
+            count_col,
+        ]
+        cross_site_stats_without_pd.columns = [
             "source_site",
             "destination_site",
             average_col,
@@ -519,64 +532,48 @@ def comparison_plot(
         ]
 
         # Combine source and destination for plotting
-        different_site_stats_pd["source_destination"] = (
-            different_site_stats_pd["source_site"]
+        cross_site_stats_with_pd["source_destination"] = (
+            cross_site_stats_with_pd["source_site"]
             + " -> "
-            + different_site_stats_pd["destination_site"]
+            + cross_site_stats_with_pd["destination_site"]
         )
-        fig_diff, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 15))
-        fig_diff.suptitle(f"Request Statistics (${topic} - ${name})", fontsize=16)
-        fig_diff.tight_layout(pad=4.0)
+        cross_site_stats_without_pd["source_destination"] = (
+            cross_site_stats_without_pd["source_site"]
+            + " -> "
+            + cross_site_stats_without_pd["destination_site"]
+        )
 
-        # Plotting statistics with hue and legend=False to address FutureWarning
-        sns.barplot(
-            ax=axes[0],
-            x="source_site",
-            y=average_col,
-            data=same_site_stats_with_pd,
-            palette="viridis",
-            hue="source_site",
-            legend=False,
-        )
-        axes[0].set_title(f"Average same site request ({average_col})")
-        axes[0].tick_params(axis="x", rotation=45)
-        axes[0].set_xlabel("")  # Remove redundant x-label
-        axes[0].set_ylabel(average_col)
 
-        # Plotting statistics with hue and legend=False to address FutureWarning
-        sns.barplot(
-            ax=axes[1],
-            x="source_destination",
-            y=average_col,
-            data=different_site_stats_pd,
-            palette="plasma",
-            hue="source_destination",
-            legend=False,
-        )
-        axes[1].set_title(f"Average cross site requests ({average_col})")
-        axes[1].tick_params(axis="x", rotation=45)
-        axes[1].set_xlabel("")
-        axes[1].set_ylabel(average_col)
-    else:
         # Create a single subplot if different site data is empty
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(16, 8))
+        plt.rcParams.update({"font.size": 18})
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(16, 9))
         # fig.suptitle(f'Same-site Request Statistics ({topic} - {name})', fontsize=16)
         fig.tight_layout(pad=4.0)
 
         # Add a column to distinguish the data sources
-        same_site_stats_with_pd = same_site_stats_with_pd.with_columns(
-            pl.lit("With middleware").alias("middleware_status")
-        )
-        same_site_stats_without_pd = same_site_stats_without_pd.with_columns(
-            pl.lit("Without middleware").alias("middleware_status")
-        )
+        cross_site_stats_with_pd["middleware_status"] = "With middleware"
+        # cross_site_stats_with_pd = cross_site_stats_with_pd.with_columns(
+        #     pl.lit("With middleware").alias("middleware_status")
+        # )
+
+        cross_site_stats_without_pd["middleware_status"] = "Without middleware"
+        # cross_site_stats_without_pd = cross_site_stats_without_pd.with_columns(
+        #     pl.lit("Without middleware").alias("middleware_status")
+        # )
+
         # Filter and combine the data for eu-be site
-        combined_be_data = pl.concat(
+        combined_be_data = pd.concat(
             [
-                same_site_stats_with_pd.filter(pl.col("source_site") == "eu-be"),
-                same_site_stats_without_pd.filter(pl.col("source_site") == "eu-be"),
+                cross_site_stats_with_pd[cross_site_stats_with_pd["source_site"] == "eu-be"],
+                cross_site_stats_without_pd[cross_site_stats_without_pd["source_site"] == "eu-be"],
             ]
         )
+        # combined_be_data = pl.concat(
+        #     [
+        #         cross_site_stats_with_pd.filter(pl.col("source_site") == "eu-be"),
+        #         cross_site_stats_without_pd.filter(pl.col("source_site") == "eu-be"),
+        #     ]
+        # )
 
         # Convert to pandas for Seaborn plotting
         combined_be_data_pd = combined_be_data
@@ -587,6 +584,13 @@ def comparison_plot(
             color="red",
             linestyle="--",
             label=f"Belgium Latency ({be_latency}{output_unit})",
+        )
+
+        axes[0].axhline(
+            y=2 * be_latency + spain_latency,
+            color="orange",
+            linestyle="--",
+            label=f"Belgium to Spain Latency ({be_latency}{output_unit})",
         )
 
         # Plotting the belgium average latency
@@ -600,7 +604,7 @@ def comparison_plot(
             legend=False,  # Legend might not be needed if x-axis labels are clear
         )
 
-        axes[0].set_title("Average same site request in Belgium")
+        axes[0].set_title("Average cross site request in Belgium\n")
         axes[0].tick_params(axis="x", rotation=45)
         axes[0].set_xlabel("")
         axes[0].set_ylabel(average_col)
@@ -608,29 +612,44 @@ def comparison_plot(
         ### SPAIN LATENCY PLOT ###
 
         # Add a column to distinguish the data sources
-        same_site_stats_with_pd = same_site_stats_with_pd.with_columns(
-            pl.lit("With middleware").alias("middleware_status")
-        )
-        same_site_stats_without_pd = same_site_stats_without_pd.with_columns(
-            pl.lit("Without middleware").alias("middleware_status")
-        )
+        cross_site_stats_with_pd["middleware_status"] = "With middleware"
+        cross_site_stats_without_pd["middleware_status"] = "Without middleware"
+        # cross_site_stats_with_pd = cross_site_stats_with_pd.with_columns(
+        #     pl.lit("With middleware").alias("middleware_status")
+        # )
+        # cross_site_stats_without_pd = cross_site_stats_without_pd.with_columns(
+        #     pl.lit("Without middleware").alias("middleware_status")
+        # )
 
         # Filter and combine the data for eu-be site
-        combined_spain_data = pl.concat(
+        combined_spain_data = pd.concat(
             [
-                same_site_stats_with_pd.filter(pl.col("source_site") == "eu-spain"),
-                same_site_stats_without_pd.filter(pl.col("source_site") == "eu-spain"),
+                cross_site_stats_with_pd[cross_site_stats_with_pd["source_site"] == "eu-spain"],
+                cross_site_stats_without_pd[cross_site_stats_without_pd["source_site"] == "eu-spain"],
             ]
         )
+        # combined_spain_data = pl.concat(
+        #     [
+        #         cross_site_stats_with_pd.filter(pl.col("source_site") == "eu-spain"),
+        #         cross_site_stats_without_pd.filter(pl.col("source_site") == "eu-spain"),
+        #     ]
+        # )
 
         # Convert to pandas for Seaborn plotting
         combined_spain_data_pd = combined_spain_data
         axes[1].axhline(
             y=spain_latency,
-            color="purple",
+            color="red",
             linestyle="--",
             label=f"Spain Latency ({spain_latency}{output_unit})",
         )
+        axes[1].axhline(
+            y=2 * spain_latency + be_latency,
+            color="orange",
+            linestyle="--",
+            label=f"Spain to Belgium Latency ({spain_latency + be_latency}{output_unit})",
+        )
+
         # Plotting the spain average latency
         sns.barplot(
             ax=axes[1],
@@ -642,13 +661,108 @@ def comparison_plot(
             legend=False,  # Legend might not be needed if x-axis labels are clear
         )
 
-        axes[1].set_title("Average same site request in Spain")
+        axes[1].set_title("Average cross site request in Spain\n")
         axes[1].tick_params(axis="x", rotation=45)
         axes[1].set_xlabel("")
         axes[1].set_ylabel(average_col)
 
-        plt.savefig(filename + "_same_site.pdf", format="pdf", bbox_inches="tight")
+        plt.savefig(filename + "_cross_site.pdf", format="pdf", bbox_inches="tight")
         plt.show()
+
+    # Create a single subplot if different site data is empty
+    plt.rcParams.update({"font.size": 18})
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(16, 9))
+    # fig.suptitle(f'Same-site Request Statistics ({topic} - {name})', fontsize=16)
+    fig.tight_layout(pad=4.0)
+
+    # Add a column to distinguish the data sources
+    same_site_stats_with_pd = same_site_stats_with_pd.with_columns(
+        pl.lit("With middleware").alias("middleware_status")
+    )
+    same_site_stats_without_pd = same_site_stats_without_pd.with_columns(
+        pl.lit("Without middleware").alias("middleware_status")
+    )
+    # Filter and combine the data for eu-be site
+    combined_be_data = pl.concat(
+        [
+            same_site_stats_with_pd.filter(pl.col("source_site") == "eu-be"),
+            same_site_stats_without_pd.filter(pl.col("source_site") == "eu-be"),
+        ]
+    )
+
+    # Convert to pandas for Seaborn plotting
+    combined_be_data_pd = combined_be_data
+
+    # Plotting the latency on two axes
+    axes[0].axhline(
+        y=be_latency,
+        color="red",
+        linestyle="--",
+        label=f"Belgium Latency ({be_latency}{output_unit})",
+    )
+    # axes[0].legend()
+
+    # Plotting the belgium average latency
+    sns.barplot(
+        ax=axes[0],
+        x="middleware_status",  # Use the new column for x-axis
+        y=average_col,
+        data=combined_be_data_pd,
+        palette="viridis",  # Or choose another palette
+        # hue="middleware_status", # Hue is not strictly necessary if using the column for x
+        legend=False,  # Legend might not be needed if x-axis labels are clear
+    )
+
+    axes[0].set_title("Average same site request in Belgium\n")
+    axes[0].tick_params(axis="x", rotation=45)
+    axes[0].set_xlabel("")
+    axes[0].set_ylabel(average_col)
+
+    ### SPAIN LATENCY PLOT ###
+
+    # Add a column to distinguish the data sources
+    same_site_stats_with_pd = same_site_stats_with_pd.with_columns(
+        pl.lit("With middleware").alias("middleware_status")
+    )
+    same_site_stats_without_pd = same_site_stats_without_pd.with_columns(
+        pl.lit("Without middleware").alias("middleware_status")
+    )
+
+    # Filter and combine the data for eu-be site
+    combined_spain_data = pl.concat(
+        [
+            same_site_stats_with_pd.filter(pl.col("source_site") == "eu-spain"),
+            same_site_stats_without_pd.filter(pl.col("source_site") == "eu-spain"),
+        ]
+    )
+
+    # Convert to pandas for Seaborn plotting
+    combined_spain_data_pd = combined_spain_data
+    axes[1].axhline(
+        y=spain_latency,
+        color="red",
+        linestyle="--",
+        label=f"Spain Latency ({spain_latency}{output_unit})",
+    )
+    # Plotting the spain average latency
+    sns.barplot(
+        ax=axes[1],
+        x="middleware_status",  # Use the new column for x-axis
+        y=average_col,
+        data=combined_spain_data_pd,
+        palette="viridis",  # Or choose another palette
+        # hue="middleware_status", # Hue is not strictly necessary if using the column for x
+        legend=False,  # Legend might not be needed if x-axis labels are clear
+    )
+
+    axes[1].set_title("Average same site request in Spain\n")
+    axes[1].tick_params(axis="x", rotation=45)
+    axes[1].set_xlabel("")
+    axes[1].set_ylabel(average_col)
+
+    # plt.legend()
+    plt.savefig(filename + "_same_site.pdf", format="pdf", bbox_inches="tight")
+    plt.show()
 
 
 if __name__ == "__main__":
