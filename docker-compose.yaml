@@ -19,7 +19,7 @@ services:
       context: ./src/proxy/base-proxy
       dockerfile: Dockerfile
     volumes:
-      - ./src/proxy/base-proxy:/app
+      - ./src/proxy/base-proxy/src:/app/src
       - ./utils/handlers:/app/src/handlers
       - ./utils/helper:/app/src/helper
       - ./utils/control-plane:/app/src/control-plane
@@ -27,7 +27,7 @@ services:
     ports:
       - "${PROXY_1_EXTERNAL_PORT}:${PROXY_PORT}"
     # The watch command will check for changes in the code and restart the server
-    command: sh -c "npm install && npm run watch"
+    command: sh -c "rm -rf node_modules/ && npm install && npm run watch"
     environment:
       PORT: ${PROXY_PORT} 
       EVENT_ADDRESS: ${EVENT_HOST_SITE_1}
@@ -42,6 +42,9 @@ services:
     networks:
       - proxy
       - site1
+    cap_add:
+      # This is needed to allow the container to change the network interface
+      - NET_ADMIN
   proxy-2:
     build:
       context: ./src/proxy/base-proxy
@@ -68,6 +71,8 @@ services:
     networks:
       - proxy
       - site2
+    cap_add:
+      - NET_ADMIN
   proxy-3:
     build:
       context: ./src/proxy/base-proxy
@@ -92,6 +97,8 @@ services:
     networks:
       - proxy
       - site3
+    cap_add:
+      - NET_ADMIN
 
 networks:
   site1:

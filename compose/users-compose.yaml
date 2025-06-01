@@ -34,7 +34,7 @@ services:
       context: ../src/back-end/users
       dockerfile: Dockerfile.init-db
     volumes:
-      - ../src/back-end/users:/app
+      - ../src/back-end/users/src:/app/src
       - ../utils/types:/app/src/types
       - ../utils/handlers:/app/src/handlers
       - ../utils/middleware:/app/src/middleware # ONLY ONE TO NEED ALL FOLDER

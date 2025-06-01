@@ -6,10 +6,10 @@ const router = Router();
 
 
 // Increase the stock of a product
-router.put('/increase/:id', verifyAdmin, stock.increaseStock);
+router.put('/:id/increase', verifyAdmin, stock.increaseStock);
 
 // Decrease the stock of a product
-router.put('/decrease/:id', stock.decreaseStock);
+router.put('/:id/decrease', stock.decreaseStock);
 
 // Get the stock of a product
 router.get('/:id', stock.getStock);
@@ -18,7 +18,9 @@ router.get('/:id', stock.getStock);
 router.get('/', stock.getAllStock);
 
 // Set the stock of a product
-router.post('/set/:id', verifyAdmin, stock.setStock);
+router.put('/:id', verifyAdmin, stock.setStock);
 
+// Delete the stock of a product
+router.delete('/:id', verifyAdmin, stock.deleteStock);
 
 export default router;

@@ -1,0 +1,40 @@
+[0;34mDetecting running proxy services...[0m
+[0;32mFound running services: memoire-proxy-1-1 memoire-proxy-2-1 memoire-proxy-3-1 site1-gateway-1 site2-gateway-1[0m
+[0;34mTesting latency between pairs (5 pings each)...[0m
+------------------------------------------------------------
+[0;33mTesting latency from memoire-proxy-1-1 to other services...[0m
+  Testing: memoire-proxy-1-1 <--> memoire-proxy-2-1... [0;32mAverage Latency: 20.127 ms[0m
+  Testing: memoire-proxy-1-1 <--> memoire-proxy-3-1... [0;32mAverage Latency: 20.131 ms[0m
+  Testing: memoire-proxy-1-1 <--> site1-gateway-1... [0;32mAverage Latency: 0.081 ms[0m
+  Testing: memoire-proxy-1-1 <--> site2-gateway-1... [0;32mAverage Latency: 20.112 ms[0m
+ 
+[0;33mTesting latency from memoire-proxy-2-1 to other services...[0m
+  Testing: memoire-proxy-2-1 <--> memoire-proxy-1-1... [0;32mAverage Latency: 20.150 ms[0m
+  Testing: memoire-proxy-2-1 <--> memoire-proxy-3-1... [0;32mAverage Latency: 40.173 ms[0m
+  Testing: memoire-proxy-2-1 <--> site1-gateway-1... [0;32mAverage Latency: 24.182 ms[0m
+  Testing: memoire-proxy-2-1 <--> site2-gateway-1... [0;32mAverage Latency: 48.225 ms[0m
+ 
+[0;33mTesting latency from memoire-proxy-3-1 to other services...[0m
+  Testing: memoire-proxy-3-1 <--> memoire-proxy-1-1... [0;32mAverage Latency: 20.151 ms[0m
+  Testing: memoire-proxy-3-1 <--> memoire-proxy-2-1... [0;32mAverage Latency: 40.339 ms[0m
+  Testing: memoire-proxy-3-1 <--> site1-gateway-1... [0;32mAverage Latency: 24.141 ms[0m
+  Testing: memoire-proxy-3-1 <--> site2-gateway-1... [0;32mAverage Latency: 48.211 ms[0m
+ 
+[0;33mTesting latency from site1-gateway-1 to other services...[0m
+  Testing: site1-gateway-1 <--> memoire-proxy-1-1... [0;32mAverage Latency: 0.089 ms[0m
+  Testing: site1-gateway-1 <--> memoire-proxy-2-1... [0;32mAverage Latency: 20.214 ms[0m
+  Testing: site1-gateway-1 <--> memoire-proxy-3-1... [0;32mAverage Latency: 20.206 ms[0m
+  Testing: site1-gateway-1 <--> site2-gateway-1... [0;32mAverage Latency: 20.171 ms[0m
+ 
+[0;33mTesting latency from site2-gateway-1 to other services...[0m
+  Testing: site2-gateway-1 <--> memoire-proxy-1-1... [0;32mAverage Latency: 20.138 ms[0m
+  Testing: site2-gateway-1 <--> memoire-proxy-2-1... [0;32mAverage Latency: 40.172 ms[0m
+  Testing: site2-gateway-1 <--> memoire-proxy-3-1... [0;32mAverage Latency: 40.149 ms[0m
+  Testing: site2-gateway-1 <--> site1-gateway-1... [0;32mAverage Latency: 20.358 ms[0m
+ 
+------------------------------------------------------------
+[0;34mTesting latency from the host to the gateway services...[0m
+Testing: Host <--> site1-gateway-1 (172.19.0.5)... [0;32mAverage Latency: 0.069 ms[0m
+Testing: Host <--> site2-gateway-1 (172.19.0.6)... [0;32mAverage Latency: 20.117 ms[0m
+------------------------------------------------------------
+[0;32mLatency test complete.[0m

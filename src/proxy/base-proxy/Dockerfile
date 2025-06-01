@@ -5,6 +5,8 @@ WORKDIR /app
 # we need CURL to verify that the key-value storage is running (see boot-in-order.sh)
 RUN apk update && apk add curl
 
+RUN apk add iproute2;
+
 # copy package.json and package-lock.json
 COPY package*.json ./
 

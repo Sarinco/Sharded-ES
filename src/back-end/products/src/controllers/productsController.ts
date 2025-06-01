@@ -195,7 +195,16 @@ const stock = {
                 event.toJSON(),
             ).then(() => {
                 console.log("Product updated sent successfully");
-                res.send("Product updated successfully");
+                let response = {
+                    id: event.id,
+                    name: event.name,
+                    price: event.price,
+                    description: event.description,
+                    image: event.image,
+                    category: event.category,
+                    updatedBy: updatedBy
+                }
+                res.send(response);
             }).catch((error: any) => {
                 console.log("Error in update method: ", error);
                 res.status(500).send(error);

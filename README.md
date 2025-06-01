@@ -48,17 +48,17 @@ curl -X PUT -H "Content-Type: application/json" -H "authorization: eyJhbGciOiJIU
 
 To decrease the stock
 ```bash
-curl -X PUT http://localhost:80/api/stock/decrease/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4 -H "Content-Type: application/json" -d '{"count": 100, "warehouse": "charleroi-sud"}'
+curl -X PUT http://localhost:80/api/stock/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4/decrease -H "Content-Type: application/json" -d '{"count": 100, "warehouse": "charleroi-sud"}'
 ```
 
 To increase the stock
 ```bash
-curl -X PUT http://localhost:80/api/stock/increase/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4 -H "Content-Type: application/json" -d '{"count": 100, "warehouse": "charleroi-sud"}' -H "authorization:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDAzMDY1NDAsImV4cCI6MTc1NTg1ODU0MH0.q-ZZUj3Tphe6NEMOZAqtSGu1ziIxPjBaABpbZrCU2y0"
+curl -X PUT http://localhost:80/api/stock/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4/increase -H "Content-Type: application/json" -d '{"count": 100, "warehouse": "charleroi-sud"}' -H "authorization:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDAzMDY1NDAsImV4cCI6MTc1NTg1ODU0MH0.q-ZZUj3Tphe6NEMOZAqtSGu1ziIxPjBaABpbZrCU2y0"
 ```
 
 To set the stock to a specific value
 ```bash
-curl -X POST http://localhost:80/api/stock/set/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4 -H "Content-Type: application/json" -d '{"count": 200, "warehouse": "charleroi-sud"}' -H "authorization:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDAzMDY1NDAsImV4cCI6MTc1NTg1ODU0MH0.q-ZZUj3Tphe6NEMOZAqtSGu1ziIxPjBaABpbZrCU2y0"
+curl -X POST http://localhost:80/api/stock/ebffe9cc-2bf0-4ff6-b68d-ec751635e8b4 -H "Content-Type: application/json" -d '{"count": 200, "warehouse": "charleroi-sud"}' -H "authorization:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQHRlc3QuYmUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDAzMDY1NDAsImV4cCI6MTc1NTg1ODU0MH0.q-ZZUj3Tphe6NEMOZAqtSGu1ziIxPjBaABpbZrCU2y0"
 ```
 
 To get the stock of a product

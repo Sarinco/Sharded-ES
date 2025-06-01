@@ -42,6 +42,14 @@ function split(thing: any) {
     }
 }
 
+const agent = new http.Agent({
+    keepAlive: true,        // Enable keep-alive
+    maxSockets: 100,        // Max concurrent sockets to the same host:port
+    maxFreeSockets: 10,     // Max sockets to keep open in a free state
+    timeout: 60000,         // Socket timeout (ms) - inactivity before socket is discarded
+    keepAliveMsecs: 30000   // How often to send TCP Keep-Alive packets on idle sockets (ms)
+                            // This is important for long-lived idle connections
+});
 
 export class DynamicGateway {
     private app: express.Application;
@@ -193,6 +201,7 @@ export class DynamicGateway {
             target: route.target,
             secure: false,
             changeOrigin: true,
+            agent: agent,
             headers: {
                 host: targetUrl.host
             }
@@ -252,6 +261,7 @@ export class DynamicGateway {
             target: target,
             secure: false,
             changeOrigin: true,
+            agent: agent,
             headers: {
                 host: targetUrl.host
             }

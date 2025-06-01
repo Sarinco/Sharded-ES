@@ -1,0 +1,55 @@
+POST spain ----> belgium
+
+gateway (35.689)
+
+stock
+
+proxy-2 (35.694)
+
+proxy-1 (35.717)
+
+proxy-2 
+
+stock (35.735)
+
+gateway
+
+host ---- 20ms ? ----> site2 ---- 20ms ----> site1 ---- 15ms ----> site2 ---- 20ms ? ----> host 
+
+40ms to spain
+35ms in the spain to belgium link
+
+total = 89ms (with 75ms of tc latency)
+
+----------------------------------------------------------------
+POST belgium ----> spain
+
+gateway (42.801)
+
+stock
+
+proxy-1 (42.806)
+
+proxy-2 (42.824)
+
+proxy-1 
+
+stock (42.847)
+
+gateway
+
+host ---- 15ms ? ----> site1 ---- ~15ms ----> site2 ---- 20ms ----> site1 ---- 15ms ? ----> host 
+
+30ms to belgium 
+35ms in the spain to belgium link
+
+total: 78ms (with 65ms of tc latency)
+
+----------------------------------------------------------------
+GET be -> spain
+
+gateway-1 (00.195) 
+~15ms
+gateway-2 (00.247)
+
+stock (00.248)

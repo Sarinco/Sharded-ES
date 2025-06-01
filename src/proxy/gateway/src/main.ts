@@ -14,8 +14,6 @@ import {
 import { ControlPlane } from '@src/control-plane/control-plane';
 import { DynamicGateway } from '@src/gateway/dynamic-gateway';
 import axios from 'axios';
-import { error } from 'node:console';
-
 
 
 overrideConsole();
